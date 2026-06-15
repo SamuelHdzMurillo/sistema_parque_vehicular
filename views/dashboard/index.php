@@ -84,8 +84,8 @@ document.addEventListener('DOMContentLoaded', function () {
     if (typeof Chart === 'undefined') return;
 
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    const textColor = isDark ? '#a0a0b0' : '#6b7280';
-    const gridColor = isDark ? '#3d3d4d' : '#e5e7eb';
+    const textColor = isDark ? '#b0b0b0' : '#6c757d';
+    const gridColor = isDark ? '#444444' : '#dee2e6';
 
     new Chart(document.getElementById('chartEstadoParque'), {
         type: 'doughnut',
@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     <?= (int) ($kpis['vehiculos_en_mantenimiento'] ?? 0) ?>,
                     <?= max(0, (int) ($kpis['vehiculos_total'] ?? 0) - (int) ($kpis['vehiculos_operativos'] ?? 0)) ?>
                 ],
-                backgroundColor: ['#28a745', '#017e84', '#f0ad4e', '#9ca3af'],
+                backgroundColor: ['#4CAF50', '#F27022', '#f0ad4e', '#adb5bd'],
                 borderWidth: 0
             }]
         },
@@ -120,7 +120,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     <?= (int) ($kpis['alertas_amarillas'] ?? 0) ?>,
                     <?= (int) ($kpis['alertas_pendientes'] ?? 0) ?>
                 ],
-                backgroundColor: ['#dc3545', '#f0ad4e', '#714B67'],
+                backgroundColor: ['#dc3545', '#f0ad4e', '#F27022'],
                 borderRadius: 6
             }]
         },

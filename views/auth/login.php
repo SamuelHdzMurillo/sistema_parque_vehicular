@@ -21,7 +21,7 @@
         </label>
     </div>
 
-    <button type="submit" class="btn btn-primary btn-lg w-100">Iniciar sesión</button>
+    <button type="submit" class="btn btn-primary btn-lg w-100">Entrar</button>
 
     <p class="text-center mt-2 mb-0">
         <a href="<?= url('forgot-password') ?>">¿Olvidó su contraseña?</a>

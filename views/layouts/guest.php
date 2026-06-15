@@ -12,9 +12,11 @@
 <div class="guest-layout">
     <div class="guest-card">
         <div class="guest-brand">
-            <div class="guest-brand-logo">SICV</div>
+            <div class="guest-brand-logo-wrap">
+                <img src="<?= asset('images/logo-cecyte.png') ?>" alt="CECYTE Baja California Sur" class="guest-brand-logo">
+            </div>
             <h1><?= e((string) config('app', 'name')) ?></h1>
-            <p><?= e((string) config('app', 'institution')) ?></p>
+            <p>Panel de administración</p>
         </div>
         <?php App\Core\View::component('flash'); ?>
         <?= $content ?>
