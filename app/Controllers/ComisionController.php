@@ -1,0 +1,99 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Controllers;
+
+use App\Core\Request;
+use App\Services\ComisionService;
+
+final class ComisionController extends BaseController
+{
+    public function __construct(
+        private readonly ComisionService $comisiones = new ComisionService()
+    ) {
+    }
+
+    public function index(Request $request): never
+    {
+        $page = max(1, (int) $request->input('page', 1));
+        $estado = $request->input('estado');
+        $result = $this->comisiones->paginate($page, is_string($estado) ? $estado : null);
+        $this->render('comisiones.index', $result);
+    }
+
+    public function create(Request $request): never
+    {
+        $this->render('comisiones.create', $this->comisiones->getFormData());
+    }
+
+    public function store(Request $request): never
+    {
+        $this->validateCsrf($request);
+        $userId = auth_id();
+        if ($userId === null) {
+            $this->redirect('login');
+        }
+
+        $data = $request->all();
+        $data['responsable_id'] = $data['responsable_id'] ?? $userId;
+        $id = $this->comisiones->create($data, $userId);
+        flash('success', 'Comisión registrada correctamente.');
+        $this->redirect('comisiones/' . $id);
+    }
+
+    public function show(Request $request, string $id): never
+    {
+        $comision = $this->comisiones->find((int) $id);
+        if ($comision === null) {
+            flash('error', 'Comisión no encontrada.');
+            $this->redirect('comisiones');
+        }
+        $this->render('comisiones.show', ['comision' => $comision]);
+    }
+
+    public function edit(Request $request, string $id): never
+    {
+        $comision = $this->comisiones->find((int) $id);
+        if ($comision === null) {
+            flash('error', 'Comisión no encontrada.');
+            $this->redirect('comisiones');
+        }
+        $this->render('comisiones.edit', array_merge($this->comisiones->getFormData(), ['comision' => $comision]));
+    }
+
+    public function update(Request $request, string $id): never
+    {
+        $this->validateCsrf($request);
+        if (!$this->comisiones->update((int) $id, $request->all())) {
+            flash('error', 'No se pudo actualizar la comisión.');
+            $this->redirect('comisiones/' . $id . '/edit');
+        }
+        flash('success', 'Comisión actualizada correctamente.');
+        $this->redirect('comisiones/' . $id);
+    }
+
+    public function iniciar(Request $request, string $id): never
+    {
+        $this->validateCsrf($request);
+        $error = $this->comisiones->iniciar((int) $id);
+        flash($error ? 'error' : 'success', $error ?? 'Comisión iniciada correctamente.');
+        $this->redirect('comisiones/' . $id);
+    }
+
+    public function finalizar(Request $request, string $id): never
+    {
+        $this->validateCsrf($request);
+        $error = $this->comisiones->finalizar((int) $id, $request->all());
+        flash($error ? 'error' : 'success', $error ?? 'Comisión finalizada correctamente.');
+        $this->redirect('comisiones/' . $id);
+    }
+
+    public function cancelar(Request $request, string $id): never
+    {
+        $this->validateCsrf($request);
+        $error = $this->comisiones->cancelar((int) $id, (string) $request->input('motivo', ''));
+        flash($error ? 'error' : 'success', $error ?? 'Comisión cancelada.');
+        $this->redirect('comisiones');
+    }
+}

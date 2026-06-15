@@ -1,0 +1,51 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Controllers;
+
+use App\Core\Request;
+use App\Services\InspeccionService;
+
+final class InspeccionController extends BaseController
+{
+    public function __construct(
+        private readonly InspeccionService $inspecciones = new InspeccionService()
+    ) {
+    }
+
+    public function index(Request $request): never
+    {
+        $page = max(1, (int) $request->input('page', 1));
+        $result = $this->inspecciones->paginate($page);
+        $this->render('inspecciones.index', $result);
+    }
+
+    public function create(Request $request): never
+    {
+        $this->render('inspecciones.create', $this->inspecciones->getFormData());
+    }
+
+    public function store(Request $request): never
+    {
+        $this->validateCsrf($request);
+        $userId = auth_id();
+        if ($userId === null) {
+            $this->redirect('login');
+        }
+
+        $id = $this->inspecciones->create($request->all(), $userId);
+        flash('success', 'Inspección registrada correctamente.');
+        $this->redirect('inspecciones/' . $id);
+    }
+
+    public function show(Request $request, string $id): never
+    {
+        $data = $this->inspecciones->find((int) $id);
+        if ($data === null) {
+            flash('error', 'Inspección no encontrada.');
+            $this->redirect('inspecciones');
+        }
+        $this->render('inspecciones.show', $data);
+    }
+}

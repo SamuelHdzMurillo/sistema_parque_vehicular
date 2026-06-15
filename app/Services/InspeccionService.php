@@ -1,0 +1,112 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Services;
+
+use App\Helpers\FileUploader;
+use App\Repositories\AlertaRepository;
+use App\Repositories\CatalogoRepository;
+use App\Repositories\InspeccionRepository;
+use App\Repositories\VehiculoRepository;
+
+final class InspeccionService
+{
+    public function __construct(
+        private readonly InspeccionRepository $repo = new InspeccionRepository(),
+        private readonly VehiculoRepository $vehiculos = new VehiculoRepository(),
+        private readonly AlertaRepository $alertas = new AlertaRepository(),
+        private readonly CatalogoRepository $catalogos = new CatalogoRepository(),
+    ) {
+    }
+
+    public function paginate(int $page = 1): array
+    {
+        return $this->repo->paginate($page);
+    }
+
+    public function getFormData(): array
+    {
+        return [
+            'vehiculos' => $this->catalogos->getVehiculosDisponibles(),
+            'items' => InspeccionRepository::INSPECCION_ITEMS,
+        ];
+    }
+
+    public function find(int $id): ?array
+    {
+        $data = $this->repo->findWithItems($id);
+        if ($data === null) {
+            return null;
+        }
+        return ['inspeccion' => $data];
+    }
+
+    public function create(array $data, int $userId): int
+    {
+        $items = $this->parseItems($data);
+        $data['responsable_id'] = $userId;
+        if (!empty($data['firma_data'])) {
+            $data['firma_digital'] = FileUploader::saveBase64Signature((string) $data['firma_data'], 'firmas/inspecciones');
+        }
+        $data['resultado_general'] = $this->calcularResultadoGeneral($items);
+        $id = $this->repo->createWithItems($data, $items);
+        $this->vehiculos->updateKilometraje((int) $data['vehiculo_id'], (int) $data['kilometraje'], $userId);
+        $this->generarAlertas((int) $data['vehiculo_id'], $id, $items);
+        AuditService::log('CREATE', 'inspecciones', $id, null, ['vehiculo_id' => $data['vehiculo_id']]);
+        return $id;
+    }
+
+    private function parseItems(array $data): array
+    {
+        $items = [];
+        foreach (InspeccionRepository::INSPECCION_ITEMS as $item) {
+            $codigo = $item['codigo'];
+            $items[] = [
+                'item_codigo' => $codigo,
+                'item_nombre' => $item['nombre'],
+                'calificacion' => $data['items'][$codigo] ?? 'bueno',
+                'observaciones' => $data['obs_items'][$codigo] ?? null,
+            ];
+        }
+        return $items;
+    }
+
+    private function calcularResultadoGeneral(array $items): string
+    {
+        $malos = $regulares = 0;
+        foreach ($items as $item) {
+            if ($item['calificacion'] === 'malo') {
+                $malos++;
+            } elseif ($item['calificacion'] === 'regular') {
+                $regulares++;
+            }
+        }
+        if ($malos > 0) {
+            return 'rechazada';
+        }
+        if ($regulares >= 3) {
+            return 'condicionada';
+        }
+        return 'aprobada';
+    }
+
+    private function generarAlertas(int $vehiculoId, int $inspeccionId, array $items): void
+    {
+        $vehiculo = $this->vehiculos->findById($vehiculoId);
+        foreach ($items as $item) {
+            if ($item['calificacion'] === 'malo') {
+                $tipo = 'inspeccion_' . $item['item_codigo'];
+                if (!$this->alertas->existsActive($vehiculoId, $tipo)) {
+                    $this->alertas->create([
+                        'vehiculo_id' => $vehiculoId,
+                        'tipo' => $tipo,
+                        'titulo' => 'Inspección: ' . $item['item_nombre'] . ' en mal estado',
+                        'mensaje' => 'Vehículo ' . ($vehiculo['numero_economico'] ?? $vehiculoId) . ' — ítem MALO.',
+                        'nivel' => 'rojo',
+                    ]);
+                }
+            }
+        }
+    }
+}
