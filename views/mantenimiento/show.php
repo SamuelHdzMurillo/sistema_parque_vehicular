@@ -8,9 +8,12 @@ $m = $mantenimiento ?? [];
         <h1 class="page-title"><?= e($m['folio'] ?? '') ?></h1>
         <p class="page-subtitle"><span class="badge badge-secondary"><?= e(str_replace('_', ' ', $m['estado'] ?? '')) ?></span></p>
     </div>
-    <?php if (can('mantenimiento.update')): ?>
-    <div class="page-actions"><a href="<?= url('mantenimiento/' . $m['id'] . '/edit') ?>" class="btn btn-secondary">Editar</a></div>
-    <?php endif; ?>
+    <div class="page-actions">
+        <a href="<?= url('formatos/mantenimiento/' . $m['id']) ?>" class="btn btn-secondary" target="_blank">Descargar PDF / Imprimir</a>
+        <?php if (can('mantenimiento.update')): ?>
+        <a href="<?= url('mantenimiento/' . $m['id'] . '/edit') ?>" class="btn btn-secondary">Editar</a>
+        <?php endif; ?>
+    </div>
 </div>
 
 <div class="card mb-2">

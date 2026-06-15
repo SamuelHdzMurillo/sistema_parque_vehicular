@@ -18,6 +18,7 @@ $calBadge = ['bueno' => 'badge-success', 'regular' => 'badge-warning', 'malo' =>
     </div>
     <?php if (!empty($i['vehiculo_id'])): ?>
     <div class="page-actions">
+        <a href="<?= url('formatos/inspeccion/' . $i['id']) ?>" class="btn btn-secondary" target="_blank">Descargar PDF / Imprimir</a>
         <a href="<?= url('vehiculos/' . $i['vehiculo_id']) ?>" class="btn btn-secondary">Ver expediente</a>
     </div>
     <?php endif; ?>

@@ -9,6 +9,9 @@ $estados = ['reportado','en_evaluacion','en_reparacion','reparado','cerrado_sin_
         <h1 class="page-title">Daño en <?= e($d['numero_economico'] ?? '') ?></h1>
         <p class="page-subtitle"><span class="badge badge-warning"><?= e(str_replace('_', ' ', $d['estado'] ?? '')) ?></span></p>
     </div>
+    <div class="page-actions">
+        <a href="<?= url('formatos/danio/' . $d['id']) ?>" class="btn btn-secondary" target="_blank">Descargar PDF / Imprimir</a>
+    </div>
 </div>
 
 <div class="card mb-2">

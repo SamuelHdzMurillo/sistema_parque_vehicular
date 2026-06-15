@@ -11,6 +11,7 @@ use App\Controllers\ComisionController;
 use App\Controllers\DanioController;
 use App\Controllers\DashboardController;
 use App\Controllers\DocumentoController;
+use App\Controllers\FormularioController;
 use App\Controllers\HerramientaController;
 use App\Controllers\InspeccionController;
 use App\Controllers\MantenimientoController;
@@ -116,6 +117,18 @@ $router->post('alertas/config', [AlertaController::class, 'config'], $perm('aler
 // ——— Reportes ———
 $router->get('reportes', [ReporteController::class, 'index'], $perm('dashboard.read'));
 $router->get('reportes/export/{tipo}', [ReporteController::class, 'export'], $perm('reportes.export'));
+
+// ——— Formatos PDF imprimibles (con espacios para firma) ———
+$router->get('formatos/comision', [FormularioController::class, 'comision'], $perm('comisiones.read'));
+$router->get('formatos/comision/{id}', [FormularioController::class, 'comision'], $perm('comisiones.read'));
+$router->get('formatos/inspeccion', [FormularioController::class, 'inspeccion'], $perm('inspecciones.read'));
+$router->get('formatos/inspeccion/{id}', [FormularioController::class, 'inspeccion'], $perm('inspecciones.read'));
+$router->get('formatos/mantenimiento', [FormularioController::class, 'mantenimiento'], $perm('mantenimiento.read'));
+$router->get('formatos/mantenimiento/{id}', [FormularioController::class, 'mantenimiento'], $perm('mantenimiento.read'));
+$router->get('formatos/danio', [FormularioController::class, 'danio'], $perm('danios.read'));
+$router->get('formatos/danio/{id}', [FormularioController::class, 'danio'], $perm('danios.read'));
+$router->get('formatos/combustible', [FormularioController::class, 'combustible'], $perm('combustible.read'));
+$router->get('formatos/combustible/{id}', [FormularioController::class, 'combustible'], $perm('combustible.read'));
 
 // ——— Usuarios ———
 $router->get('usuarios', [UsuarioController::class, 'index'], $perm('usuarios.read'));

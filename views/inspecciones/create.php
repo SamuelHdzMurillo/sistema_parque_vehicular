@@ -90,6 +90,7 @@ $preVehiculo = $_GET['vehiculo_id'] ?? old('vehiculo_id');
 
             <div class="d-flex gap-1">
                 <button type="submit" class="btn btn-primary">Registrar inspección</button>
+                <a href="<?= url('formatos/inspeccion') ?>" class="btn btn-secondary" target="_blank">Formato PDF en blanco</a>
                 <a href="<?= url('inspecciones') ?>" class="btn btn-secondary">Cancelar</a>
             </div>
         </div>

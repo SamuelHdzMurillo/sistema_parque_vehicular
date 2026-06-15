@@ -89,6 +89,7 @@ $preVehiculo = $_GET['vehiculo_id'] ?? old('vehiculo_id');
         </div>
         <div class="d-flex gap-1">
             <button type="submit" class="btn btn-primary">Guardar borrador</button>
+            <a href="<?= url('formatos/comision') ?>" class="btn btn-secondary" target="_blank">Formato PDF en blanco</a>
             <a href="<?= url('comisiones') ?>" class="btn btn-secondary">Cancelar</a>
         </div>
     </form>

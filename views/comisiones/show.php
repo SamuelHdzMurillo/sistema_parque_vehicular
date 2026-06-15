@@ -13,6 +13,7 @@ $estados = ['borrador' => 'Borrador', 'en_curso' => 'En curso', 'finalizada' => 
         </p>
     </div>
     <div class="page-actions">
+        <a href="<?= url('formatos/comision/' . $c['id']) ?>" class="btn btn-secondary" target="_blank">Descargar PDF / Imprimir</a>
         <?php if (can('comisiones.update') && in_array($c['estado'], ['borrador', 'en_curso'], true)): ?>
         <a href="<?= url('comisiones/' . $c['id'] . '/edit') ?>" class="btn btn-secondary">Editar</a>
         <?php endif; ?>
@@ -42,6 +43,15 @@ $estados = ['borrador' => 'Borrador', 'en_curso' => 'En curso', 'finalizada' => 
         <?php endif; ?>
     </div>
 </div>
+
+<?php if (!empty($c['firma_digital'])): ?>
+<div class="card mb-2">
+    <div class="card-header"><h3>Firma digital (regreso)</h3></div>
+    <div class="card-body">
+        <img src="<?= e(url('storage/uploads/' . ltrim($c['firma_digital'], '/'))) ?>" alt="Firma" style="max-width:320px;border:1px solid var(--border-color);border-radius:8px">
+    </div>
+</div>
+<?php endif; ?>
 
 <?php if ($c['estado'] === 'borrador' && can('comisiones.update')): ?>
 <div class="card mb-2">
@@ -79,6 +89,16 @@ $estados = ['borrador' => 'Borrador', 'en_curso' => 'En curso', 'finalizada' => 
             <div class="form-group">
                 <label class="form-label" for="observaciones_fin">Observaciones de regreso</label>
                 <textarea id="observaciones_fin" name="observaciones" class="form-textarea"></textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Firma digital del conductor (regreso)</label>
+                <div class="signature-pad-wrapper" data-signature-pad>
+                    <canvas></canvas>
+                    <div class="signature-actions">
+                        <button type="button" class="btn btn-sm btn-secondary" data-signature-clear>Limpiar firma</button>
+                    </div>
+                    <input type="hidden" name="firma_data" value="">
+                </div>
             </div>
             <button type="submit" class="btn btn-primary">Finalizar comisión</button>
         </form>

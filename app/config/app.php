@@ -25,4 +25,12 @@ return [
         'allowed_docs' => ['application/pdf', 'application/xml', 'text/xml', 'image/jpeg', 'image/png'],
         'path' => BASE_PATH . '/storage/uploads',
     ],
+    'branding' => [
+        'logo_horizontal' => 'assets/images/logo-cecyte-horizontal.png',
+        'green_dark' => '#1A5E20',
+        'green' => '#4CAF50',
+        'green_light' => '#e8f5e9',
+        'green_muted' => '#c8e6c9',
+        'orange' => '#F27022',
+    ],
 ];

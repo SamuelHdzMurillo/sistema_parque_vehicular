@@ -48,6 +48,7 @@ $preVehiculo = $_GET['vehiculo_id'] ?? old('vehiculo_id');
         </div>
         <div class="d-flex gap-1">
             <button type="submit" class="btn btn-primary">Enviar reporte</button>
+            <a href="<?= url('formatos/danio') ?>" class="btn btn-secondary" target="_blank">Formato PDF en blanco</a>
             <a href="<?= url('danios') ?>" class="btn btn-secondary">Cancelar</a>
         </div>
     </form>
