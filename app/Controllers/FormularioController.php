@@ -16,7 +16,8 @@ final class FormularioController extends BaseController
 
     public function comision(Request $request, ?string $id = null): never
     {
-        $this->formatos->comision($id !== null && $id !== '' ? (int) $id : null);
+        $parte = (string) $request->input('parte', 'completo');
+        $this->formatos->comision($id !== null && $id !== '' ? (int) $id : null, $parte);
     }
 
     public function inspeccion(Request $request, ?string $id = null): never

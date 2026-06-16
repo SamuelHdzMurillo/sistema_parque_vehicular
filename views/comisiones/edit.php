@@ -60,6 +60,29 @@ $c = array_merge($comision, array_intersect_key($_SESSION['_old'] ?? [], array_f
                 <input type="number" id="combustible_salida" name="combustible_salida" class="form-control" step="0.01" value="<?= e((string) $c['combustible_salida']) ?>" required>
             </div>
         </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label" for="responsable_regreso_nombre">Responsable de regreso (quien trae el vehículo)</label>
+                <input type="text" id="responsable_regreso_nombre" name="responsable_regreso_nombre" class="form-control" list="responsables-regreso-list"
+                       placeholder="Seleccione o escriba el nombre" value="<?= e((string) ($c['responsable_regreso_nombre'] ?? '')) ?>">
+                <datalist id="responsables-regreso-list">
+                    <?php foreach ($conductores as $u): ?>
+                    <option value="<?= e($u['nombre_completo'] ?? $u['nombre']) ?>">
+                    <?php endforeach; ?>
+                </datalist>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="responsable_regreso_id">Responsable de regreso (usuario)</label>
+                <select id="responsable_regreso_id" name="responsable_regreso_id" class="form-select">
+                    <option value="">— Opcional —</option>
+                    <?php foreach ($conductores as $u): ?>
+                    <option value="<?= (int) $u['id'] ?>" <?= (int) ($c['responsable_regreso_id'] ?? 0) === (int) $u['id'] ? 'selected' : '' ?>>
+                        <?= e($u['nombre_completo'] ?? $u['nombre']) ?>
+                    </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+        </div>
         <div class="form-group">
             <label class="form-label" for="destino">Destino</label>
             <input type="text" id="destino" name="destino" class="form-control" value="<?= e($c['destino']) ?>" required>

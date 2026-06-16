@@ -18,10 +18,10 @@ $preVehiculo = $_GET['vehiculo_id'] ?? old('vehiculo_id');
         <div class="form-row">
             <div class="form-group">
                 <label class="form-label" for="vehiculo_id">Vehículo <span class="required">*</span></label>
-                <select id="vehiculo_id" name="vehiculo_id" class="form-select" required>
+                <select id="vehiculo_id" name="vehiculo_id" class="form-select" required data-km-source>
                     <option value="">Seleccione…</option>
                     <?php foreach ($vehiculos as $v): ?>
-                    <option value="<?= (int) $v['id'] ?>" <?= (string) $preVehiculo === (string) $v['id'] ? 'selected' : '' ?>>
+                    <option value="<?= (int) $v['id'] ?>" data-km="<?= (int) ($v['kilometraje_actual'] ?? 0) ?>" <?= (string) $preVehiculo === (string) $v['id'] ? 'selected' : '' ?>>
                         <?= e($v['numero_economico'] . ' — ' . $v['marca'] . ' ' . $v['placas']) ?>
                     </option>
                     <?php endforeach; ?>
@@ -67,12 +67,37 @@ $preVehiculo = $_GET['vehiculo_id'] ?? old('vehiculo_id');
             </div>
             <div class="form-group">
                 <label class="form-label" for="km_salida">Km salida <span class="required">*</span></label>
-                <input type="number" id="km_salida" name="km_salida" class="form-control" required min="0" value="<?= e((string) old('km_salida')) ?>">
+                <input type="number" id="km_salida" name="km_salida" class="form-control" required min="0"
+                       data-km-target value="<?= e((string) old('km_salida')) ?>">
+                <small class="form-hint text-muted">Se toma el kilometraje actual del vehículo; puede ajustarlo si es necesario.</small>
             </div>
             <div class="form-group">
                 <label class="form-label" for="combustible_salida">Combustible salida (%) <span class="required">*</span></label>
                 <input type="number" id="combustible_salida" name="combustible_salida" class="form-control" required min="0" max="100" step="0.01"
                        value="<?= e((string) old('combustible_salida', '100')) ?>">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label" for="responsable_regreso_nombre">Responsable de regreso (quien trae el vehículo)</label>
+                <input type="text" id="responsable_regreso_nombre" name="responsable_regreso_nombre" class="form-control" list="responsables-regreso-list"
+                       placeholder="Seleccione o escriba el nombre" value="<?= e((string) old('responsable_regreso_nombre')) ?>">
+                <datalist id="responsables-regreso-list">
+                    <?php foreach ($conductores as $u): ?>
+                    <option value="<?= e($u['nombre_completo'] ?? $u['nombre']) ?>">
+                    <?php endforeach; ?>
+                </datalist>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="responsable_regreso_id">Responsable de regreso (usuario)</label>
+                <select id="responsable_regreso_id" name="responsable_regreso_id" class="form-select">
+                    <option value="">— Opcional —</option>
+                    <?php foreach ($conductores as $u): ?>
+                    <option value="<?= (int) $u['id'] ?>" <?= (string) old('responsable_regreso_id') === (string) $u['id'] ? 'selected' : '' ?>>
+                        <?= e($u['nombre_completo'] ?? $u['nombre']) ?>
+                    </option>
+                    <?php endforeach; ?>
+                </select>
             </div>
         </div>
         <div class="form-group">

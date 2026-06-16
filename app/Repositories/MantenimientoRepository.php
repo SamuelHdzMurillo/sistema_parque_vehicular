@@ -163,4 +163,18 @@ final class MantenimientoRepository extends BaseRepository
             [$vehiculoId, '%' . $tipoDescripcion . '%']
         );
     }
+
+    public function getUltimoFinalizado(int $vehiculoId): ?array
+    {
+        return $this->fetchOne(
+            'SELECT m.id, m.folio, m.tipo, m.fecha, m.kilometraje, m.descripcion, m.costo,
+                    p.razon_social AS proveedor_nombre
+             FROM mantenimientos m
+             LEFT JOIN proveedores p ON p.id = m.proveedor_id
+             WHERE m.vehiculo_id = ? AND m.estado = "finalizado"
+             ORDER BY m.fecha DESC, m.id DESC
+             LIMIT 1',
+            [$vehiculoId]
+        );
+    }
 }

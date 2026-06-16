@@ -49,7 +49,20 @@ final class ComisionController extends BaseController
             flash('error', 'Comisión no encontrada.');
             $this->redirect('comisiones');
         }
-        $this->render('comisiones.show', ['comision' => $comision]);
+        $ultimoMantenimiento = $this->comisiones->getUltimoMantenimiento((int) $comision['vehiculo_id']);
+        $this->render('comisiones.show', [
+            'comision' => $comision,
+            'ultimo_mantenimiento' => $ultimoMantenimiento,
+        ]);
+    }
+
+    public function cargarDocumento(Request $request, string $id): never
+    {
+        $this->validateCsrf($request);
+        $tipo = (string) $request->input('tipo', 'salida');
+        $error = $this->comisiones->cargarDocumento((int) $id, $tipo, $request->file('archivo'));
+        flash($error ? 'error' : 'success', $error ?? 'Documento firmado cargado correctamente.');
+        $this->redirect('comisiones/' . $id);
     }
 
     public function edit(Request $request, string $id): never

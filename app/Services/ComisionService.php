@@ -8,6 +8,7 @@ use App\Helpers\FileUploader;
 use App\Repositories\CatalogoRepository;
 use App\Repositories\ComisionRepository;
 use App\Repositories\DocumentoRepository;
+use App\Repositories\MantenimientoRepository;
 use App\Repositories\VehiculoRepository;
 
 final class ComisionService
@@ -17,6 +18,7 @@ final class ComisionService
         private readonly VehiculoRepository $vehiculos = new VehiculoRepository(),
         private readonly DocumentoRepository $documentos = new DocumentoRepository(),
         private readonly CatalogoRepository $catalogos = new CatalogoRepository(),
+        private readonly MantenimientoRepository $mantenimientos = new MantenimientoRepository(),
     ) {
     }
 
@@ -40,10 +42,16 @@ final class ComisionService
         return $this->repo->findById($id);
     }
 
+    public function getUltimoMantenimiento(int $vehiculoId): ?array
+    {
+        return $this->mantenimientos->getUltimoFinalizado($vehiculoId);
+    }
+
     public function create(array $data, int $userId): int
     {
         $data['created_by'] = $userId;
         $data['responsable_id'] = (int) ($data['responsable_id'] ?? $userId);
+        $data = $this->normalizeResponsableRegreso($data);
         $data['folio'] = $this->repo->generateFolio();
         $data['estado'] = 'borrador';
         $id = $this->repo->create($data);
@@ -57,11 +65,57 @@ final class ComisionService
         if ($before === null || !in_array($before['estado'], ['borrador', 'en_curso'], true)) {
             return false;
         }
+        $data = $this->normalizeResponsableRegreso($data);
         $result = $this->repo->update($id, array_merge($before, $data));
         if ($result) {
             AuditService::log('UPDATE', 'comisiones', $id, $before, $data);
         }
         return $result;
+    }
+
+    public function cargarDocumento(int $id, string $tipo, ?array $file): ?string
+    {
+        $tipo = $tipo === 'regreso' ? 'regreso' : 'salida';
+        $comision = $this->repo->findById($id);
+        if ($comision === null) {
+            return 'Comisión no encontrada.';
+        }
+        if ($file === null) {
+            return 'Debe seleccionar un archivo PDF.';
+        }
+        try {
+            $ruta = FileUploader::uploadDocument($file, 'comisiones/documentos');
+            if ($ruta === null) {
+                return 'No se pudo cargar el documento.';
+            }
+            $this->repo->updateDocumento($id, $tipo, $ruta);
+            AuditService::log('UPDATE', 'comisiones', $id, null, ['documento_' . $tipo => $ruta]);
+            return null;
+        } catch (\Throwable $e) {
+            return $e->getMessage();
+        }
+    }
+
+    private function normalizeResponsableRegreso(array $data): array
+    {
+        if (array_key_exists('conductor_id', $data)) {
+            $conductorId = $data['conductor_id'];
+            $data['conductor_id'] = ($conductorId === '' || $conductorId === null) ? null : (int) $conductorId;
+        }
+
+        if (array_key_exists('responsable_regreso_id', $data) || array_key_exists('responsable_regreso_nombre', $data)) {
+            $respId = $data['responsable_regreso_id'] ?? null;
+            $respId = ($respId === '' || $respId === null) ? null : (int) $respId;
+            $data['responsable_regreso_id'] = $respId;
+
+            $nombre = trim((string) ($data['responsable_regreso_nombre'] ?? ''));
+            if ($nombre === '' && $respId !== null) {
+                $nombre = (string) ($this->repo->getUserFullName($respId) ?? '');
+            }
+            $data['responsable_regreso_nombre'] = $nombre !== '' ? $nombre : null;
+        }
+
+        return $data;
     }
 
     public function iniciar(int $id): ?string

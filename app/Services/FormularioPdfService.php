@@ -24,14 +24,24 @@ final class FormularioPdfService
     ) {
     }
 
-    public function comision(?int $id = null): never
+    public function comision(?int $id = null, string $parte = 'completo'): never
     {
+        $parte = in_array($parte, ['salida', 'regreso', 'completo'], true) ? $parte : 'completo';
         $data = $id !== null ? $this->comisiones->findById($id) : null;
         if ($id !== null && $data === null) {
             http_response_code(404);
             exit('Comisión no encontrada.');
         }
-        $this->stream('pdf.comision', ['comision' => $data], 'comision_' . ($data['folio'] ?? 'formato'), 'portrait');
+        $ultimoMantenimiento = $data !== null
+            ? $this->mantenimientos->getUltimoFinalizado((int) $data['vehiculo_id'])
+            : null;
+        $sufijo = $parte !== 'completo' ? '_' . $parte : '';
+        $this->stream(
+            'pdf.comision',
+            ['comision' => $data, 'parte' => $parte, 'ultimo_mantenimiento' => $ultimoMantenimiento],
+            'comision_' . ($data['folio'] ?? 'formato') . $sufijo,
+            'portrait'
+        );
     }
 
     public function inspeccion(?int $id = null): never

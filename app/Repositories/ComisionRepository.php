@@ -9,7 +9,7 @@ final class ComisionRepository extends BaseRepository
     public function findById(int $id): ?array
     {
         return $this->fetchOne(
-            'SELECT c.*, v.numero_economico, v.placas, v.capacidad_tanque,
+            'SELECT c.*, v.numero_economico, v.placas, v.capacidad_tanque, v.marca, v.modelo,
                     a.nombre AS area_solicitante_nombre,
                     CONCAT(u.nombre, " ", u.apellido_paterno) AS responsable_nombre
              FROM comisiones c
@@ -21,14 +21,33 @@ final class ComisionRepository extends BaseRepository
         );
     }
 
+    public function getUserFullName(int $userId): ?string
+    {
+        $row = $this->fetchOne(
+            'SELECT CONCAT(nombre, " ", apellido_paterno) AS nombre_completo FROM users WHERE id = ?',
+            [$userId]
+        );
+        return $row['nombre_completo'] ?? null;
+    }
+
+    public function updateDocumento(int $id, string $tipo, string $ruta): bool
+    {
+        $columna = $tipo === 'regreso' ? 'doc_regreso_ruta' : 'doc_salida_ruta';
+        return $this->execute(
+            "UPDATE comisiones SET {$columna} = ?, updated_at = NOW() WHERE id = ?",
+            [$ruta, $id]
+        );
+    }
+
     public function create(array $data): int
     {
         $this->execute(
             'INSERT INTO comisiones (
                 folio, vehiculo_id, area_solicitante_id, responsable_id, conductor_nombre, conductor_id,
+                responsable_regreso_nombre, responsable_regreso_id,
                 destino, motivo, fecha, hora_salida, km_salida, combustible_salida, observaciones,
                 estado, created_by
-             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
             [
                 $data['folio'],
                 (int) $data['vehiculo_id'],
@@ -36,6 +55,8 @@ final class ComisionRepository extends BaseRepository
                 (int) $data['responsable_id'],
                 $data['conductor_nombre'],
                 $data['conductor_id'] ?? null,
+                $data['responsable_regreso_nombre'] ?? null,
+                $data['responsable_regreso_id'] ?? null,
                 $data['destino'],
                 $data['motivo'],
                 $data['fecha'],
@@ -56,6 +77,7 @@ final class ComisionRepository extends BaseRepository
         return $this->execute(
             'UPDATE comisiones SET
                 area_solicitante_id = ?, responsable_id = ?, conductor_nombre = ?, conductor_id = ?,
+                responsable_regreso_nombre = ?, responsable_regreso_id = ?,
                 destino = ?, motivo = ?, fecha = ?, hora_salida = ?, hora_regreso = ?,
                 km_salida = ?, km_regreso = ?, combustible_salida = ?, combustible_regreso = ?,
                 km_recorridos = ?, litros_consumidos = ?, rendimiento = ?,
@@ -66,6 +88,8 @@ final class ComisionRepository extends BaseRepository
                 (int) $data['responsable_id'],
                 $data['conductor_nombre'],
                 $data['conductor_id'] ?? null,
+                $data['responsable_regreso_nombre'] ?? null,
+                $data['responsable_regreso_id'] ?? null,
                 $data['destino'],
                 $data['motivo'],
                 $data['fecha'],

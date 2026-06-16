@@ -1,6 +1,7 @@
 <?php
 $pageTitle = 'Comisión ' . ($comision['folio'] ?? '');
 $c = $comision ?? [];
+$um = $ultimo_mantenimiento ?? null;
 $estados = ['borrador' => 'Borrador', 'en_curso' => 'En curso', 'finalizada' => 'Finalizada', 'cancelada' => 'Cancelada'];
 ?>
 <div class="page-header">
@@ -13,7 +14,9 @@ $estados = ['borrador' => 'Borrador', 'en_curso' => 'En curso', 'finalizada' => 
         </p>
     </div>
     <div class="page-actions">
-        <a href="<?= url('formatos/comision/' . $c['id']) ?>" class="btn btn-secondary" target="_blank">Descargar PDF / Imprimir</a>
+        <a href="<?= url('formatos/comision/' . $c['id'] . '?parte=salida') ?>" class="btn btn-secondary" target="_blank">Imprimir salida</a>
+        <a href="<?= url('formatos/comision/' . $c['id'] . '?parte=regreso') ?>" class="btn btn-secondary" target="_blank">Imprimir regreso</a>
+        <a href="<?= url('formatos/comision/' . $c['id']) ?>" class="btn btn-secondary" target="_blank">Imprimir completo</a>
         <?php if (can('comisiones.update') && in_array($c['estado'], ['borrador', 'en_curso'], true)): ?>
         <a href="<?= url('comisiones/' . $c['id'] . '/edit') ?>" class="btn btn-secondary">Editar</a>
         <?php endif; ?>
@@ -27,8 +30,9 @@ $estados = ['borrador' => 'Borrador', 'en_curso' => 'En curso', 'finalizada' => 
             <div class="meta-item"><label>Hora salida</label><span><?= e(substr($c['hora_salida'] ?? '', 0, 5)) ?></span></div>
             <div class="meta-item"><label>Hora regreso</label><span><?= $c['hora_regreso'] ? e(substr($c['hora_regreso'], 0, 5)) : '—' ?></span></div>
             <div class="meta-item"><label>Conductor</label><span><?= e($c['conductor_nombre']) ?></span></div>
-            <div class="meta-item"><label>Área</label><span><?= e($c['area_nombre'] ?? '—') ?></span></div>
+            <div class="meta-item"><label>Área</label><span><?= e($c['area_solicitante_nombre'] ?? $c['area_nombre'] ?? '—') ?></span></div>
             <div class="meta-item"><label>Responsable</label><span><?= e($c['responsable_nombre'] ?? '—') ?></span></div>
+            <div class="meta-item"><label>Responsable de regreso</label><span><?= e($c['responsable_regreso_nombre'] ?? '—') ?: '—' ?></span></div>
             <div class="meta-item"><label>Km salida</label><span><?= number_format((int) $c['km_salida']) ?></span></div>
             <div class="meta-item"><label>Km regreso</label><span><?= $c['km_regreso'] !== null ? number_format((int) $c['km_regreso']) : '—' ?></span></div>
             <div class="meta-item"><label>Km recorridos</label><span><?= $c['km_recorridos'] !== null ? number_format((int) $c['km_recorridos']) : '—' ?></span></div>
@@ -49,6 +53,63 @@ $estados = ['borrador' => 'Borrador', 'en_curso' => 'En curso', 'finalizada' => 
     <div class="card-header"><h3>Firma digital (regreso)</h3></div>
     <div class="card-body">
         <img src="<?= e(url('storage/uploads/' . ltrim($c['firma_digital'], '/'))) ?>" alt="Firma" style="max-width:320px;border:1px solid var(--border-color);border-radius:8px">
+    </div>
+</div>
+<?php endif; ?>
+
+<div class="card mb-2">
+    <div class="card-header"><h3>Último mantenimiento del vehículo</h3></div>
+    <div class="card-body">
+        <?php if ($um !== null): ?>
+        <div class="meta-grid">
+            <div class="meta-item"><label>Folio</label><span><?= e($um['folio'] ?? '—') ?></span></div>
+            <div class="meta-item"><label>Fecha</label><span><?= format_date($um['fecha'] ?? null) ?></span></div>
+            <div class="meta-item"><label>Tipo</label><span><?= e(ucfirst((string) ($um['tipo'] ?? '—'))) ?></span></div>
+            <div class="meta-item"><label>Kilometraje</label><span><?= isset($um['kilometraje']) ? number_format((int) $um['kilometraje']) . ' km' : '—' ?></span></div>
+            <div class="meta-item"><label>Proveedor</label><span><?= e($um['proveedor_nombre'] ?? '—') ?: '—' ?></span></div>
+        </div>
+        <?php if (!empty($um['descripcion'])): ?>
+        <p class="mt-2"><strong>Descripción:</strong> <?= e($um['descripcion']) ?></p>
+        <?php endif; ?>
+        <?php else: ?>
+        <p class="text-muted">Sin mantenimientos finalizados registrados para este vehículo.</p>
+        <?php endif; ?>
+    </div>
+</div>
+
+<?php if (can('comisiones.update')): ?>
+<div class="card mb-2">
+    <div class="card-header">
+        <h3>Documentos firmados (escaneados)</h3>
+        <p class="card-header-hint">Cargue el PDF firmado de salida y el de regreso una vez impresos y firmados.</p>
+    </div>
+    <div class="card-body">
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Documento de salida (PDF firmado)</label>
+                <?php if (!empty($c['doc_salida_ruta'])): ?>
+                <p class="mb-1"><a href="<?= e(url('storage/uploads/' . ltrim($c['doc_salida_ruta'], '/'))) ?>" target="_blank">Ver documento de salida cargado</a></p>
+                <?php endif; ?>
+                <form action="<?= url('comisiones/' . $c['id'] . '/documento') ?>" method="post" enctype="multipart/form-data">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="tipo" value="salida">
+                    <input type="file" name="archivo" class="form-control mb-1" accept="application/pdf" required>
+                    <button type="submit" class="btn btn-sm btn-primary"><?= !empty($c['doc_salida_ruta']) ? 'Reemplazar salida' : 'Cargar salida' ?></button>
+                </form>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Documento de regreso (PDF firmado)</label>
+                <?php if (!empty($c['doc_regreso_ruta'])): ?>
+                <p class="mb-1"><a href="<?= e(url('storage/uploads/' . ltrim($c['doc_regreso_ruta'], '/'))) ?>" target="_blank">Ver documento de regreso cargado</a></p>
+                <?php endif; ?>
+                <form action="<?= url('comisiones/' . $c['id'] . '/documento') ?>" method="post" enctype="multipart/form-data">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="tipo" value="regreso">
+                    <input type="file" name="archivo" class="form-control mb-1" accept="application/pdf" required>
+                    <button type="submit" class="btn btn-sm btn-primary"><?= !empty($c['doc_regreso_ruta']) ? 'Reemplazar regreso' : 'Cargar regreso' ?></button>
+                </form>
+            </div>
+        </div>
     </div>
 </div>
 <?php endif; ?>

@@ -286,6 +286,26 @@
         });
     }
 
+    /* ——— Autocompletar km del vehículo seleccionado ——— */
+    function initKmAutofill() {
+        const source = document.querySelector('[data-km-source]');
+        const target = document.querySelector('[data-km-target]');
+        if (!source || !target) return;
+
+        function apply() {
+            const option = source.options[source.selectedIndex];
+            const km = option ? option.getAttribute('data-km') : null;
+            if (km === null || km === '') return;
+            target.value = km;
+            target.min = km;
+        }
+
+        source.addEventListener('change', apply);
+        if (source.value && target.value === '') {
+            apply();
+        }
+    }
+
     /* ——— Confirmación de acciones destructivas ——— */
     function initConfirm() {
         document.querySelectorAll('[data-confirm]').forEach(function (el) {
@@ -308,6 +328,7 @@
         initGlobalSearch();
         initConfirm();
         initDashLights();
+        initKmAutofill();
         window.SICV.initSignaturePads();
 
         document.querySelectorAll('[data-theme-toggle]').forEach(function (btn) {
