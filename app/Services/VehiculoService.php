@@ -51,6 +51,9 @@ final class VehiculoService
             $data['foto_principal'] = FileUploader::uploadImage($data['foto'], 'vehiculos');
         }
         $id = $this->repo->create($data);
+        if (!empty($data['foto_principal'])) {
+            $this->repo->addFoto($id, $data['foto_principal'], 'Fotografía principal', true);
+        }
         $this->herramientas->ensureDefaultsForVehiculo($id);
         AuditService::log('CREATE', 'vehiculos', $id, null, $data);
         return $id;
@@ -89,6 +92,9 @@ final class VehiculoService
         $vehiculo = $this->repo->findById($id);
         if ($vehiculo === null) {
             throw new RuntimeException('Vehículo no encontrado.');
+        }
+        if (!$principal && empty($vehiculo['foto_principal'])) {
+            $principal = true;
         }
         $ruta = FileUploader::uploadImage($file, 'vehiculos/' . $id);
         if ($ruta === null) {

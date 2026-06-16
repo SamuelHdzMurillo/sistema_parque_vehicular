@@ -44,7 +44,14 @@ final class Request
 
     public function file(string $key): ?array
     {
-        return $_FILES[$key] ?? null;
+        $file = $_FILES[$key] ?? null;
+        if ($file === null) {
+            return null;
+        }
+        if (($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+            return null;
+        }
+        return $file;
     }
 
     public function ip(): string

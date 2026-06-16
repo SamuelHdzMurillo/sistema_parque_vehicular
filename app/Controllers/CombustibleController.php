@@ -6,6 +6,7 @@ namespace App\Controllers;
 
 use App\Core\Request;
 use App\Services\CombustibleService;
+use RuntimeException;
 
 final class CombustibleController extends BaseController
 {
@@ -24,7 +25,10 @@ final class CombustibleController extends BaseController
 
     public function create(Request $request): never
     {
-        $this->render('combustible.create', $this->combustible->getFormData());
+        $vehiculoId = $request->input('vehiculo_id');
+        $this->render('combustible.create', $this->combustible->getFormData(
+            is_numeric($vehiculoId) ? (int) $vehiculoId : null
+        ));
     }
 
     public function store(Request $request): never
@@ -35,8 +39,14 @@ final class CombustibleController extends BaseController
             $this->redirect('login');
         }
 
-        $id = $this->combustible->create($request->all(), $userId);
-        flash('success', 'Carga de combustible registrada correctamente.');
-        $this->redirect('combustible');
+        try {
+            $this->combustible->create($request->all(), $userId);
+            flash('success', 'Carga de combustible registrada correctamente.');
+            $this->redirect('combustible');
+        } catch (RuntimeException $e) {
+            $_SESSION['_old'] = $request->all();
+            flash('error', $e->getMessage());
+            $this->redirect('combustible/create');
+        }
     }
 }

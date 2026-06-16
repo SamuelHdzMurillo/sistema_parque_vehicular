@@ -29,6 +29,10 @@ final class Application
     public function run(): void
     {
         try {
+            if (str_starts_with($this->request->uri(), '/storage/uploads/')) {
+                (new \App\Controllers\StorageController())->serve($this->request);
+            }
+
             $this->router->dispatch($this->request);
         } catch (Throwable $e) {
             if (config('app', 'debug')) {

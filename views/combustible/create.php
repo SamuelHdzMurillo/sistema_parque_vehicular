@@ -3,6 +3,16 @@ $pageTitle = 'Registrar carga';
 $vehiculos = $vehiculos ?? [];
 $proveedores = $proveedores ?? [];
 $preVehiculo = $_GET['vehiculo_id'] ?? old('vehiculo_id');
+$kilometrajeInicial = old('kilometraje');
+if ($kilometrajeInicial === null || $kilometrajeInicial === '') {
+    foreach ($vehiculos as $v) {
+        if ((string) $preVehiculo === (string) $v['id']) {
+            $kilometrajeInicial = (int) ($v['kilometraje_actual'] ?? 0);
+            break;
+        }
+    }
+}
+$kilometrajeInicial = $kilometrajeInicial ?? '';
 ?>
 <div class="page-header">
     <div>
@@ -19,7 +29,7 @@ $preVehiculo = $_GET['vehiculo_id'] ?? old('vehiculo_id');
                 <select id="vehiculo_id" name="vehiculo_id" class="form-select" required>
                     <option value="">Seleccione…</option>
                     <?php foreach ($vehiculos as $v): ?>
-                    <option value="<?= (int) $v['id'] ?>" <?= (string) $preVehiculo === (string) $v['id'] ? 'selected' : '' ?>><?= e($v['numero_economico']) ?></option>
+                    <option value="<?= (int) $v['id'] ?>" data-km="<?= (int) ($v['kilometraje_actual'] ?? 0) ?>" <?= (string) $preVehiculo === (string) $v['id'] ? 'selected' : '' ?>><?= e($v['numero_economico']) ?> (<?= number_format((int) ($v['kilometraje_actual'] ?? 0)) ?> km)</option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -29,7 +39,8 @@ $preVehiculo = $_GET['vehiculo_id'] ?? old('vehiculo_id');
             </div>
             <div class="form-group">
                 <label class="form-label" for="kilometraje">Kilometraje al cargar <span class="required">*</span></label>
-                <input type="number" id="kilometraje" name="kilometraje" class="form-control" required min="0" value="<?= e((string) old('kilometraje')) ?>">
+                <input type="number" id="kilometraje" name="kilometraje" class="form-control" required min="0" value="<?= e((string) $kilometrajeInicial) ?>">
+                <small id="kilometraje-hint" class="text-muted">Debe ser igual o mayor al kilometraje actual del vehículo.</small>
             </div>
             <div class="form-group">
                 <label class="form-label" for="litros">Litros <span class="required">*</span></label>
@@ -64,3 +75,27 @@ $preVehiculo = $_GET['vehiculo_id'] ?? old('vehiculo_id');
         </div>
     </form>
 </div>
+<script>
+(function () {
+    var select = document.getElementById('vehiculo_id');
+    var input = document.getElementById('kilometraje');
+    var hint = document.getElementById('kilometraje-hint');
+    if (!select || !input) return;
+
+    function syncKilometraje() {
+        var option = select.options[select.selectedIndex];
+        if (!option || !option.value) return;
+        var km = option.getAttribute('data-km') || '0';
+        input.min = km;
+        if (hint) {
+            hint.textContent = 'Kilometraje actual del vehículo: ' + Number(km).toLocaleString('es-MX') + ' km. Debe ser igual o mayor.';
+        }
+        if (!input.value || Number(input.value) < Number(km)) {
+            input.value = km;
+        }
+    }
+
+    select.addEventListener('change', syncKilometraje);
+    syncKilometraje();
+})();
+</script>

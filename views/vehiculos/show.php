@@ -6,7 +6,19 @@ $estadosLabel = [
     'fuera_servicio' => 'Fuera de servicio', 'baja' => 'Baja',
 ];
 $comEstados = ['borrador' => 'Borrador', 'en_curso' => 'En curso', 'finalizada' => 'Finalizada', 'cancelada' => 'Cancelada'];
-$fotoUrl = !empty($foto_principal) ? url('storage/uploads/' . ltrim($foto_principal, '/')) : null;
+$fotoRuta = $foto_principal ?? null;
+if (empty($fotoRuta) && !empty($fotos)) {
+    foreach ($fotos as $f) {
+        if (!empty($f['es_principal'])) {
+            $fotoRuta = $f['ruta'];
+            break;
+        }
+    }
+    if (empty($fotoRuta)) {
+        $fotoRuta = $fotos[0]['ruta'] ?? null;
+    }
+}
+$fotoUrl = !empty($fotoRuta) ? url('storage/uploads/' . ltrim((string) $fotoRuta, '/')) : null;
 ?>
 <div class="page-header">
     <div>
@@ -94,7 +106,7 @@ $fotoUrl = !empty($foto_principal) ? url('storage/uploads/' . ltrim($foto_princi
                         <input type="text" name="descripcion" class="form-control" placeholder="Descripción">
                     </div>
                     <div class="form-group">
-                        <label class="form-check"><input type="checkbox" name="principal" value="1"> Principal</label>
+                        <label class="form-check"><input type="checkbox" name="principal" value="1" <?= empty($foto_principal) ? 'checked' : '' ?>> Principal</label>
                     </div>
                     <button type="submit" class="btn btn-secondary">Subir</button>
                 </div>

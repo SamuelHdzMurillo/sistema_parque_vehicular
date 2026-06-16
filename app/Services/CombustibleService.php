@@ -25,10 +25,29 @@ final class CombustibleService
         return $this->repo->paginate($page, 15, $filters);
     }
 
-    public function getFormData(): array
+    public function getFormData(?int $vehiculoId = null): array
     {
+        $vehiculos = $this->catalogos->getVehiculosDisponibles();
+        if ($vehiculoId !== null) {
+            $ids = array_map('intval', array_column($vehiculos, 'id'));
+            if (!in_array($vehiculoId, $ids, true)) {
+                $vehiculo = $this->vehiculos->findById($vehiculoId);
+                if ($vehiculo !== null) {
+                    $vehiculos[] = [
+                        'id' => (int) $vehiculo['id'],
+                        'numero_economico' => $vehiculo['numero_economico'],
+                        'marca' => $vehiculo['marca'],
+                        'modelo' => $vehiculo['modelo'],
+                        'placas' => $vehiculo['placas'],
+                        'kilometraje_actual' => (int) $vehiculo['kilometraje_actual'],
+                        'estado' => $vehiculo['estado'],
+                    ];
+                }
+            }
+        }
+
         return [
-            'vehiculos' => $this->catalogos->getVehiculosDisponibles(),
+            'vehiculos' => $vehiculos,
             'proveedores' => $this->catalogos->getProveedores('combustible'),
         ];
     }
@@ -47,8 +66,11 @@ final class CombustibleService
             throw new \RuntimeException('Vehículo no encontrado');
         }
         $kilometraje = (int) $data['kilometraje'];
-        if ($kilometraje < (int) $vehiculo['kilometraje_actual']) {
-            throw new \InvalidArgumentException('El kilometraje no puede ser menor al actual');
+        $kmActual = (int) $vehiculo['kilometraje_actual'];
+        if ($kilometraje < $kmActual) {
+            throw new \RuntimeException(
+                'El kilometraje al cargar (' . number_format($kilometraje) . ' km) no puede ser menor al actual del vehículo (' . number_format($kmActual) . ' km).'
+            );
         }
         $litros = (float) $data['litros'];
         $metricas = $this->repo->calcularRendimiento($vehiculoId, $kilometraje, $litros);

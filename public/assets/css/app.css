@@ -744,6 +744,18 @@ a:hover { color: var(--color-primary-hover); text-decoration: underline; }
 
 .input-group .form-control { flex: 1; }
 
+/* Quitar flechas de incremento en inputs numéricos */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
 /* ——— Alerts / Flash ——— */
 .alert {
     padding: .85rem 1rem;
