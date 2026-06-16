@@ -6,6 +6,37 @@ namespace App\Repositories;
 
 final class DashboardRepository extends BaseRepository
 {
+    public function getResumenVehiculos(): array
+    {
+        return $this->fetchOne(
+            "SELECT
+                COUNT(*) AS total,
+                SUM(estado NOT IN ('baja','fuera_servicio')) AS operativos,
+                SUM(estado = 'en_comision') AS en_comision,
+                SUM(estado = 'en_mantenimiento') AS en_mantenimiento,
+                SUM(estado = 'en_taller') AS en_taller
+             FROM vehiculos WHERE deleted_at IS NULL"
+        ) ?: [];
+    }
+
+    public function getResumenAlertas(): array
+    {
+        return $this->fetchOne(
+            "SELECT
+                SUM(nivel = 'rojo' AND atendida = 0) AS rojas,
+                SUM(nivel = 'amarillo' AND atendida = 0) AS amarillas,
+                SUM(atendida = 0) AS pendientes
+             FROM alertas"
+        ) ?: [];
+    }
+
+    public function getComisionesActivasCount(): int
+    {
+        return (int) ($this->fetchOne(
+            "SELECT COUNT(*) AS c FROM comisiones WHERE estado = 'en_curso'"
+        )['c'] ?? 0);
+    }
+
     public function getVehiculosActivos(): int
     {
         return (int) ($this->fetchOne(
@@ -92,6 +123,119 @@ final class DashboardRepository extends BaseRepository
              WHERE activo = 1 AND fecha_vencimiento IS NOT NULL
                AND fecha_vencimiento <= DATE_ADD(CURDATE(), INTERVAL 60 DAY)'
         )['c'] ?? 0);
+    }
+
+    public function getAlertasPendientes(int $limit = 8): array
+    {
+        return $this->fetchAll(
+            'SELECT a.id, a.tipo, a.titulo, a.mensaje, a.nivel, a.created_at,
+                    v.id AS vehiculo_id, v.numero_economico
+             FROM alertas a
+             LEFT JOIN vehiculos v ON v.id = a.vehiculo_id
+             WHERE a.atendida = 0
+             ORDER BY FIELD(a.nivel, "rojo", "amarillo", "verde"), a.created_at DESC
+             LIMIT ?',
+            [$limit]
+        );
+    }
+
+    public function getDocumentosPorVencer(int $limit = 8): array
+    {
+        return $this->fetchAll(
+            'SELECT d.id, d.titulo, d.tipo, d.fecha_vencimiento,
+                    v.id AS vehiculo_id, v.numero_economico,
+                    DATEDIFF(d.fecha_vencimiento, CURDATE()) AS dias_restantes
+             FROM documentos d
+             JOIN vehiculos v ON v.id = d.vehiculo_id
+             WHERE d.activo = 1 AND d.fecha_vencimiento IS NOT NULL
+               AND d.fecha_vencimiento <= DATE_ADD(CURDATE(), INTERVAL 60 DAY)
+               AND v.deleted_at IS NULL
+             ORDER BY d.fecha_vencimiento ASC
+             LIMIT ?',
+            [$limit]
+        );
+    }
+
+    public function getMantenimientosActivos(int $limit = 8): array
+    {
+        return $this->fetchAll(
+            'SELECT m.id, m.folio, m.tipo, m.fecha, m.estado, m.descripcion,
+                    v.id AS vehiculo_id, v.numero_economico,
+                    p.razon_social AS proveedor
+             FROM mantenimientos m
+             JOIN vehiculos v ON v.id = m.vehiculo_id
+             LEFT JOIN proveedores p ON p.id = m.proveedor_id
+             WHERE m.estado IN ("pendiente", "programado", "autorizado", "en_proceso")
+             ORDER BY FIELD(m.estado, "en_proceso", "autorizado", "programado", "pendiente"), m.fecha ASC
+             LIMIT ?',
+            [$limit]
+        );
+    }
+
+    public function getComisionesEnCurso(int $limit = 8): array
+    {
+        return $this->fetchAll(
+            'SELECT c.id, c.folio, c.destino, c.conductor_nombre, c.fecha, c.hora_salida,
+                    v.id AS vehiculo_id, v.numero_economico,
+                    a.nombre AS area_nombre
+             FROM comisiones c
+             JOIN vehiculos v ON v.id = c.vehiculo_id
+             JOIN areas a ON a.id = c.area_solicitante_id
+             WHERE c.estado = "en_curso"
+             ORDER BY c.fecha DESC, c.hora_salida DESC
+             LIMIT ?',
+            [$limit]
+        );
+    }
+
+    public function getDaniosAbiertos(int $limit = 8): array
+    {
+        return $this->fetchAll(
+            'SELECT d.id, d.tipo_dano, d.ubicacion, d.descripcion, d.estado, d.created_at,
+                    v.id AS vehiculo_id, v.numero_economico
+             FROM danios d
+             JOIN vehiculos v ON v.id = d.vehiculo_id
+             WHERE d.estado NOT IN ("reparado", "cerrado_sin_accion")
+             ORDER BY FIELD(d.estado, "reportado", "en_evaluacion", "en_reparacion"), d.created_at DESC
+             LIMIT ?',
+            [$limit]
+        );
+    }
+
+    public function countDaniosAbiertos(): int
+    {
+        return (int) ($this->fetchOne(
+            'SELECT COUNT(*) AS c FROM danios WHERE estado NOT IN ("reparado", "cerrado_sin_accion")'
+        )['c'] ?? 0);
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public function getAlertaConfigsKm(): array
+    {
+        return $this->fetchAll(
+            'SELECT * FROM alerta_config WHERE unidad = "km" AND activo = 1'
+        );
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public function getVehiculosOperativos(): array
+    {
+        return $this->fetchAll(
+            'SELECT id, numero_economico, kilometraje_actual, estado
+             FROM vehiculos
+             WHERE deleted_at IS NULL AND estado NOT IN ("baja", "fuera_servicio")'
+        );
+    }
+
+    public function getUltimoServicioPreventivo(int $vehiculoId, string $busqueda): ?array
+    {
+        return $this->fetchOne(
+            'SELECT fecha, kilometraje FROM mantenimientos
+             WHERE vehiculo_id = ? AND tipo = "preventivo" AND estado = "finalizado"
+               AND descripcion LIKE ?
+             ORDER BY fecha DESC LIMIT 1',
+            [$vehiculoId, '%' . $busqueda . '%']
+        );
     }
 
     public function getTopVehiculosCostosos(int $limit = 5): array

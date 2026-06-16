@@ -16,7 +16,7 @@ final class DashboardController extends BaseController
 
     public function index(Request $request): never
     {
-        $kpis = $this->dashboard->getKpis();
-        $this->render('dashboard.index', ['kpis' => $kpis]);
+        $data = $this->dashboard->getDashboardData();
+        $this->render('dashboard.index', $data);
     }
 }
