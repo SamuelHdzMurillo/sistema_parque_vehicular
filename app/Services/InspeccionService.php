@@ -30,6 +30,7 @@ final class InspeccionService
         return [
             'vehiculos' => $this->catalogos->getVehiculosDisponibles(),
             'items' => InspeccionRepository::INSPECCION_ITEMS,
+            'luces_tablero' => InspeccionRepository::LUCES_TABLERO,
         ];
     }
 
@@ -45,12 +46,13 @@ final class InspeccionService
     public function create(array $data, int $userId): int
     {
         $items = $this->parseItems($data);
+        $lucesTablero = $this->parseLucesTablero($data);
         $data['responsable_id'] = $userId;
         if (!empty($data['firma_data'])) {
             $data['firma_digital'] = FileUploader::saveBase64Signature((string) $data['firma_data'], 'firmas/inspecciones');
         }
         $data['resultado_general'] = $this->calcularResultadoGeneral($items);
-        $id = $this->repo->createWithItems($data, $items);
+        $id = $this->repo->createWithItems($data, $items, $lucesTablero);
         $this->vehiculos->updateKilometraje((int) $data['vehiculo_id'], (int) $data['kilometraje'], $userId);
         $this->generarAlertas((int) $data['vehiculo_id'], $id, $items);
         AuditService::log('CREATE', 'inspecciones', $id, null, ['vehiculo_id' => $data['vehiculo_id']]);
@@ -70,6 +72,25 @@ final class InspeccionService
             ];
         }
         return $items;
+    }
+
+    private function parseLucesTablero(array $data): array
+    {
+        $selected = $data['luces_tablero'] ?? [];
+        if (!is_array($selected)) {
+            return [];
+        }
+
+        $validCodes = array_column(InspeccionRepository::LUCES_TABLERO, 'codigo');
+        $luces = [];
+        foreach ($selected as $codigo) {
+            $codigo = (string) $codigo;
+            if (in_array($codigo, $validCodes, true)) {
+                $luces[] = $codigo;
+            }
+        }
+
+        return array_values(array_unique($luces));
     }
 
     private function calcularResultadoGeneral(array $items): string

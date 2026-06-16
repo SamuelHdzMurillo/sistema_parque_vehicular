@@ -2,7 +2,12 @@
 $pageTitle = 'Nueva inspección';
 $vehiculos = $vehiculos ?? [];
 $items = $items ?? [];
+$lucesTablero = $luces_tablero ?? [];
 $preVehiculo = $_GET['vehiculo_id'] ?? old('vehiculo_id');
+$selectedLuces = old('luces_tablero', []);
+if (!is_array($selectedLuces)) {
+    $selectedLuces = [];
+}
 ?>
 <div class="page-header">
     <div>
@@ -67,6 +72,31 @@ $preVehiculo = $_GET['vehiculo_id'] ?? old('vehiculo_id');
                 </div>
             </div>
             <?php endforeach; ?>
+        </div>
+    </div>
+
+    <div class="card mb-2">
+        <div class="card-header">
+            <h3>Luces del tablero encendidas</h3>
+            <p class="card-header-hint">Toque cada ícono para marcar las luces de advertencia que estén encendidas al momento de la inspección.</p>
+        </div>
+        <div class="card-body">
+            <div class="dash-lights-grid" data-dash-lights>
+                <?php foreach ($lucesTablero as $luz): ?>
+                <?php $codigo = $luz['codigo']; $isOn = in_array($codigo, $selectedLuces, true); ?>
+                <label class="dash-light-card<?= $isOn ? ' is-on' : '' ?>">
+                    <input type="checkbox" name="luces_tablero[]" value="<?= e($codigo) ?>" <?= $isOn ? 'checked' : '' ?>>
+                    <span class="dash-light-icon" aria-hidden="true">
+                        <img src="<?= e(asset('images/luces-tablero/' . $luz['icon'])) ?>" alt="" width="48" height="48">
+                    </span>
+                    <span class="dash-light-name"><?= e($luz['nombre']) ?></span>
+                    <span class="dash-light-status"><?= $isOn ? 'Encendida' : 'Apagada' ?></span>
+                </label>
+                <?php endforeach; ?>
+            </div>
+            <p class="dash-lights-summary mt-2" data-dash-lights-summary>
+                <span data-dash-lights-count><?= count($selectedLuces) ?></span> luz(es) seleccionada(s)
+            </p>
         </div>
     </div>
 

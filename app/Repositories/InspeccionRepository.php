@@ -6,6 +6,38 @@ namespace App\Repositories;
 
 final class InspeccionRepository extends BaseRepository
 {
+    /** @var list<array{codigo: string, nombre: string, icon: string}> */
+    public const LUCES_TABLERO = [
+        ['codigo' => 'check_engine', 'nombre' => 'Motor (Check Engine)', 'icon' => 'check_engine.svg'],
+        ['codigo' => 'aceite', 'nombre' => 'Presión de aceite', 'icon' => 'aceite.svg'],
+        ['codigo' => 'bateria', 'nombre' => 'Sistema de carga / batería', 'icon' => 'bateria.svg'],
+        ['codigo' => 'frenos', 'nombre' => 'Sistema de frenos', 'icon' => 'frenos.svg'],
+        ['codigo' => 'freno_mano', 'nombre' => 'Freno de estacionamiento', 'icon' => 'freno_mano.svg'],
+        ['codigo' => 'abs', 'nombre' => 'ABS', 'icon' => 'abs.svg'],
+        ['codigo' => 'pastillas_freno', 'nombre' => 'Desgaste de pastillas', 'icon' => 'pastillas_freno.svg'],
+        ['codigo' => 'pedal_freno', 'nombre' => 'Presionar pedal de freno', 'icon' => 'pedal_freno.svg'],
+        ['codigo' => 'airbag', 'nombre' => 'Airbag', 'icon' => 'airbag.svg'],
+        ['codigo' => 'cinturon', 'nombre' => 'Cinturón de seguridad', 'icon' => 'cinturon.svg'],
+        ['codigo' => 'combustible', 'nombre' => 'Combustible bajo', 'icon' => 'combustible.svg'],
+        ['codigo' => 'tpms', 'nombre' => 'Presión de llantas (TPMS)', 'icon' => 'tpms.svg'],
+        ['codigo' => 'direccion', 'nombre' => 'Dirección asistida', 'icon' => 'direccion.svg'],
+        ['codigo' => 'esp', 'nombre' => 'Control de estabilidad (ESP)', 'icon' => 'esp.svg'],
+        ['codigo' => 'traccion', 'nombre' => 'Control de tracción', 'icon' => 'traccion.svg'],
+        ['codigo' => 'fallo_luces', 'nombre' => 'Falla de luz exterior', 'icon' => 'fallo_luces.svg'],
+        ['codigo' => 'luces_cortas', 'nombre' => 'Luces cortas', 'icon' => 'luces_cortas.svg'],
+        ['codigo' => 'luces_altas', 'nombre' => 'Luces altas', 'icon' => 'luces_altas.svg'],
+        ['codigo' => 'direccionales', 'nombre' => 'Direccionales', 'icon' => 'direccionales.svg'],
+        ['codigo' => 'niebla_del', 'nombre' => 'Faros antiniebla', 'icon' => 'niebla_del.svg'],
+        ['codigo' => 'niebla_tras', 'nombre' => 'Antiniebla trasero', 'icon' => 'niebla_tras.svg'],
+        ['codigo' => 'reg_faros', 'nombre' => 'Regulación de faros', 'icon' => 'reg_faros.svg'],
+        ['codigo' => 'precalentamiento', 'nombre' => 'Precalentamiento (diésel)', 'icon' => 'precalentamiento.svg'],
+        ['codigo' => 'dpf', 'nombre' => 'Filtro de partículas (DPF)', 'icon' => 'dpf.svg'],
+        ['codigo' => 'limpiaparabrisas', 'nombre' => 'Nivel líquido limpiaparabrisas', 'icon' => 'limpiaparabrisas.svg'],
+        ['codigo' => 'control_crucero', 'nombre' => 'Control de crucero', 'icon' => 'control_crucero.svg'],
+        ['codigo' => 'llave', 'nombre' => 'Inmovilizador / llave', 'icon' => 'llave.svg'],
+        ['codigo' => 'puerta', 'nombre' => 'Puerta abierta', 'icon' => 'puerta.svg'],
+    ];
+
     public const INSPECCION_ITEMS = [
         ['codigo' => 'aceite', 'nombre' => 'Aceite'],
         ['codigo' => 'anticongelante', 'nombre' => 'Anticongelante'],
@@ -47,11 +79,35 @@ final class InspeccionRepository extends BaseRepository
             'SELECT * FROM inspeccion_fotos WHERE inspeccion_id = ? ORDER BY id ASC',
             [$id]
         );
+        $inspeccion['luces_tablero'] = $this->getLucesTablero($id);
 
         return $inspeccion;
     }
 
-    public function createWithItems(array $data, array $items): int
+    public function getLucesTablero(int $inspeccionId): array
+    {
+        return $this->fetchAll(
+            'SELECT luz_codigo FROM inspeccion_luces_tablero WHERE inspeccion_id = ? ORDER BY luz_codigo ASC',
+            [$inspeccionId]
+        );
+    }
+
+    public function getLucesTableroCatalog(): array
+    {
+        return self::LUCES_TABLERO;
+    }
+
+    public static function luzTableroByCodigo(string $codigo): ?array
+    {
+        foreach (self::LUCES_TABLERO as $luz) {
+            if ($luz['codigo'] === $codigo) {
+                return $luz;
+            }
+        }
+        return null;
+    }
+
+    public function createWithItems(array $data, array $items, array $lucesTablero = []): int
     {
         $this->db->beginTransaction();
         try {
@@ -84,6 +140,13 @@ final class InspeccionRepository extends BaseRepository
                         $item['calificacion'],
                         $item['observaciones'] ?? null,
                     ]
+                );
+            }
+
+            foreach ($lucesTablero as $luzCodigo) {
+                $this->execute(
+                    'INSERT INTO inspeccion_luces_tablero (inspeccion_id, luz_codigo) VALUES (?, ?)',
+                    [$inspeccionId, $luzCodigo]
                 );
             }
 

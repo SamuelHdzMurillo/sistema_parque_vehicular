@@ -64,6 +64,39 @@ ob_start();
     </table>
 </div>
 
+<?php
+$lucesCatalog = $luces_tablero ?? [];
+$lucesOn = [];
+if ($i !== null) {
+    foreach ($i['luces_tablero'] ?? [] as $row) {
+        $lucesOn[] = $row['luz_codigo'];
+    }
+}
+?>
+<?php if (!empty($lucesCatalog)): ?>
+<div class="section">
+    <div class="section-title">Luces del tablero encendidas</div>
+    <table class="data" style="width:100%;border-collapse:separate;border-spacing:6px;">
+        <tr>
+            <?php $col = 0; foreach ($lucesCatalog as $luz): ?>
+            <?php $isOn = in_array($luz['codigo'], $lucesOn, true); $col++; ?>
+            <td style="width:25%;text-align:center;padding:8px;border:<?= $isOn ? '2px solid #f59e0b' : '1px solid #e2e8f0' ?>;border-radius:6px;background:<?= $isOn ? '#fef3c7' : '#f8fafc' ?>;vertical-align:top;">
+                <?php
+                $iconPath = public_path('assets/images/luces-tablero/' . $luz['icon']);
+                if (is_file($iconPath)) {
+                    echo '<img src="' . e($iconPath) . '" width="40" height="40" alt="">';
+                }
+                ?>
+                <div style="font-size:7px;font-weight:<?= $isOn ? '700' : '600' ?>;margin-top:4px;color:<?= $isOn ? '#b45309' : '#475569' ?>;"><?= e($luz['nombre']) ?></div>
+                <div style="font-size:6px;font-weight:<?= $isOn ? '700' : '400' ?>;color:<?= $isOn ? '#d97706' : '#94a3b8' ?>;"><?= $isOn ? '✔ ENCENDIDA' : '○ Apagada' ?></div>
+            </td>
+            <?php if ($col % 4 === 0): ?></tr><tr><?php endif; ?>
+            <?php endforeach; ?>
+        </tr>
+    </table>
+</div>
+<?php endif; ?>
+
 <div class="section">
     <div class="section-title">Firmas de conformidad</div>
     <?php

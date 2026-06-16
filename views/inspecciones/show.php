@@ -4,6 +4,8 @@ $inspeccion = $inspeccion ?? [];
 $i = $inspeccion;
 $calLabels = ['bueno' => 'Bueno', 'regular' => 'Regular', 'malo' => 'Malo'];
 $calBadge = ['bueno' => 'badge-success', 'regular' => 'badge-warning', 'malo' => 'badge-danger'];
+$lucesCatalog = \App\Repositories\InspeccionRepository::LUCES_TABLERO;
+$lucesOn = array_column($i['luces_tablero'] ?? [], 'luz_codigo');
 ?>
 <div class="page-header">
     <div>
@@ -55,6 +57,33 @@ $calBadge = ['bueno' => 'badge-success', 'regular' => 'badge-warning', 'malo' =>
         </table>
     </div>
 </div>
+
+<?php if (!empty($lucesCatalog)): ?>
+<div class="card mb-2">
+    <div class="card-header">
+        <h3>Luces del tablero</h3>
+        <?php if (empty($lucesOn)): ?>
+        <p class="card-header-hint">Ninguna luz de advertencia reportada encendida.</p>
+        <?php else: ?>
+        <p class="card-header-hint"><?= count($lucesOn) ?> luz(es) encendida(s) al momento de la inspección.</p>
+        <?php endif; ?>
+    </div>
+    <div class="card-body">
+        <div class="dash-lights-grid dash-lights-grid--readonly">
+            <?php foreach ($lucesCatalog as $luz): ?>
+            <?php $isOn = in_array($luz['codigo'], $lucesOn, true); ?>
+            <div class="dash-light-card<?= $isOn ? ' is-on' : ' is-off' ?>">
+                <span class="dash-light-icon" aria-hidden="true">
+                    <img src="<?= e(asset('images/luces-tablero/' . $luz['icon'])) ?>" alt="" width="48" height="48">
+                </span>
+                <span class="dash-light-name"><?= e($luz['nombre']) ?></span>
+                <span class="dash-light-status"><?= $isOn ? 'Encendida' : 'Apagada' ?></span>
+            </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
 
 <?php if (!empty($i['firma_digital'])): ?>
 <div class="card">

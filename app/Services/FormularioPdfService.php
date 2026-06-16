@@ -47,6 +47,7 @@ final class FormularioPdfService
         $this->stream('pdf.inspeccion', [
             'inspeccion' => $data,
             'items' => InspeccionRepository::INSPECCION_ITEMS,
+            'luces_tablero' => InspeccionRepository::LUCES_TABLERO,
         ], 'inspeccion_' . ($data['numero_economico'] ?? 'formato'), 'portrait');
     }
 

@@ -1335,6 +1335,146 @@ input[type="number"] {
 .rating-regular input:checked + span { border-color: var(--warning); background: var(--warning-bg); color: #856404; }
 .rating-malo input:checked + span { border-color: var(--danger); background: var(--danger-bg); color: var(--danger); }
 
+/* ——— Luces del tablero ——— */
+.card-header-hint {
+    margin: .25rem 0 0;
+    font-size: .8rem;
+    font-weight: 400;
+    color: var(--text-muted);
+}
+
+.dash-lights-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: .75rem;
+}
+
+.dash-light-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .35rem;
+    padding: .85rem .5rem;
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius);
+    background: var(--bg-table-stripe);
+    cursor: pointer;
+    transition: all var(--transition);
+    text-align: center;
+    user-select: none;
+}
+
+.dash-light-card input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.dash-light-card:hover {
+    border-color: #fbbf24;
+    transform: translateY(-1px);
+}
+
+.dash-light-card.is-on,
+.dash-light-card:has(input:checked) {
+    border-color: #f59e0b;
+    background: rgba(245, 158, 11, .16);
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, .35), 0 8px 22px rgba(245, 158, 11, .3);
+    transform: translateY(-2px) scale(1.04);
+}
+
+/* Palomita de seleccionado */
+.dash-light-card.is-on::after,
+.dash-light-card:has(input:checked)::after {
+    content: "✓";
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #f59e0b;
+    color: #fff;
+    font-size: .8rem;
+    font-weight: 700;
+    line-height: 22px;
+    text-align: center;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, .3);
+}
+
+.dash-light-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    transition: filter var(--transition);
+}
+
+.dash-light-card.is-on .dash-light-icon,
+.dash-light-card:has(input:checked) .dash-light-icon {
+    filter: drop-shadow(0 0 6px rgba(245, 158, 11, .55));
+}
+
+/* Todos los iconos se muestran a color (encendidos) */
+.dash-light-icon img {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+    opacity: 1;
+    transition: transform var(--transition);
+}
+
+.dash-light-card.is-on .dash-light-icon img,
+.dash-light-card:has(input:checked) .dash-light-icon img {
+    transform: scale(1.08);
+}
+
+.dash-light-name {
+    font-size: .72rem;
+    font-weight: 600;
+    line-height: 1.25;
+    color: var(--text-primary);
+}
+
+.dash-light-card.is-on .dash-light-name,
+.dash-light-card:has(input:checked) .dash-light-name {
+    color: #b45309;
+}
+
+.dash-light-status {
+    font-size: .65rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: .03em;
+}
+
+.dash-light-card.is-on .dash-light-status,
+.dash-light-card:has(input:checked) .dash-light-status {
+    color: #d97706;
+    font-weight: 700;
+}
+
+.dash-light-card.is-off {
+    cursor: default;
+}
+
+.dash-light-card.is-off:hover {
+    transform: none;
+    border-color: var(--border-color);
+}
+
+.dash-lights-grid--readonly .dash-light-card {
+    cursor: default;
+}
+
+.dash-lights-summary {
+    font-size: .85rem;
+    color: var(--text-muted);
+}
+
 /* ——— Signature pad ——— */
 .signature-pad-wrapper {
     border: 1px solid var(--border-color);

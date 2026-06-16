@@ -261,6 +261,31 @@
         });
     };
 
+    function initDashLights() {
+        document.querySelectorAll('[data-dash-lights]').forEach(function (grid) {
+            const countEl = document.querySelector('[data-dash-lights-count]');
+
+            function sync() {
+                const checked = grid.querySelectorAll('input[type="checkbox"]:checked');
+                grid.querySelectorAll('.dash-light-card').forEach(function (card) {
+                    const input = card.querySelector('input[type="checkbox"]');
+                    const status = card.querySelector('.dash-light-status');
+                    const isOn = input && input.checked;
+                    card.classList.toggle('is-on', isOn);
+                    if (status) {
+                        status.textContent = isOn ? 'Encendida' : 'Apagada';
+                    }
+                });
+                if (countEl) {
+                    countEl.textContent = String(checked.length);
+                }
+            }
+
+            grid.addEventListener('change', sync);
+            sync();
+        });
+    }
+
     /* ——— Confirmación de acciones destructivas ——— */
     function initConfirm() {
         document.querySelectorAll('[data-confirm]').forEach(function (el) {
@@ -282,6 +307,7 @@
         initTabs();
         initGlobalSearch();
         initConfirm();
+        initDashLights();
         window.SICV.initSignaturePads();
 
         document.querySelectorAll('[data-theme-toggle]').forEach(function (btn) {
