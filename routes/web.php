@@ -58,6 +58,8 @@ $router->get('vehiculos/{id}/edit', [VehiculoController::class, 'edit'], $perm('
 $router->post('vehiculos/{id}', [VehiculoController::class, 'update'], $perm('vehiculos.update'));
 $router->post('vehiculos/{id}/baja', [VehiculoController::class, 'destroy'], $perm('vehiculos.delete'));
 $router->post('vehiculos/{id}/foto', [VehiculoController::class, 'uploadFoto'], $perm('vehiculos.update'));
+$router->post('vehiculos/{id}/foto/{fotoId}/principal', [VehiculoController::class, 'setFotoPrincipal'], $perm('vehiculos.update'));
+$router->post('vehiculos/{id}/foto/{fotoId}/delete', [VehiculoController::class, 'deleteFoto'], $perm('vehiculos.update'));
 
 // ——— Comisiones ———
 $router->get('comisiones', [ComisionController::class, 'index'], $perm('comisiones.read'));

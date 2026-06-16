@@ -44,14 +44,38 @@ final class Request
 
     public function file(string $key): ?array
     {
+        $files = $this->files($key);
+        return $files[0] ?? null;
+    }
+
+    /** @return list<array{name: string, type: string, tmp_name: string, error: int, size: int}> */
+    public function files(string $key): array
+    {
         $file = $_FILES[$key] ?? null;
         if ($file === null) {
-            return null;
+            return [];
         }
-        if (($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
-            return null;
+        if (!is_array($file['name'])) {
+            if (($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+                return [];
+            }
+            return [$file];
         }
-        return $file;
+
+        $normalized = [];
+        foreach ($file['name'] as $i => $name) {
+            if (($file['error'][$i] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+                continue;
+            }
+            $normalized[] = [
+                'name' => $name,
+                'type' => $file['type'][$i],
+                'tmp_name' => $file['tmp_name'][$i],
+                'error' => $file['error'][$i],
+                'size' => $file['size'][$i],
+            ];
+        }
+        return $normalized;
     }
 
     public function ip(): string

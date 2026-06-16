@@ -47,12 +47,21 @@ final class VehiculoService
     {
         $this->validateUniqueFields($data);
         $data['created_by'] = $userId;
+        $fotos = $data['fotos'] ?? [];
         if (!empty($data['foto']) && is_array($data['foto'])) {
-            $data['foto_principal'] = FileUploader::uploadImage($data['foto'], 'vehiculos');
+            array_unshift($fotos, $data['foto']);
         }
+        unset($data['foto'], $data['fotos']);
+        $data['foto_principal'] = null;
         $id = $this->repo->create($data);
-        if (!empty($data['foto_principal'])) {
-            $this->repo->addFoto($id, $data['foto_principal'], 'Fotografía principal', true);
+        foreach ($fotos as $index => $foto) {
+            if (!is_array($foto)) {
+                continue;
+            }
+            $ruta = FileUploader::uploadImage($foto, 'vehiculos/' . $id);
+            if ($ruta !== null) {
+                $this->repo->addFoto($id, $ruta, null, $index === 0);
+            }
         }
         $this->herramientas->ensureDefaultsForVehiculo($id);
         AuditService::log('CREATE', 'vehiculos', $id, null, $data);
@@ -87,20 +96,59 @@ final class VehiculoService
         return $result;
     }
 
-    public function uploadFoto(int $id, array $file, ?string $descripcion, bool $principal): void
+    /** @param list<array> $files */
+    public function uploadFotos(int $id, array $files, ?string $descripcion, bool $marcarPrimeraComoPrincipal): void
     {
         $vehiculo = $this->repo->findById($id);
         if ($vehiculo === null) {
             throw new RuntimeException('Vehículo no encontrado.');
         }
-        if (!$principal && empty($vehiculo['foto_principal'])) {
-            $principal = true;
+        if ($files === []) {
+            throw new RuntimeException('Seleccione al menos una imagen.');
         }
-        $ruta = FileUploader::uploadImage($file, 'vehiculos/' . $id);
-        if ($ruta === null) {
-            throw new RuntimeException('No se pudo cargar la imagen.');
+        $sinPrincipal = empty($vehiculo['foto_principal']);
+        $subidas = 0;
+        foreach ($files as $index => $file) {
+            if (!is_array($file)) {
+                continue;
+            }
+            $esPrincipal = ($marcarPrimeraComoPrincipal && $index === 0) || ($sinPrincipal && $subidas === 0);
+            $ruta = FileUploader::uploadImage($file, 'vehiculos/' . $id);
+            if ($ruta === null) {
+                continue;
+            }
+            $desc = ($index === 0 && $descripcion) ? $descripcion : null;
+            $this->repo->addFoto($id, $ruta, $desc, $esPrincipal);
+            $subidas++;
         }
-        $this->repo->addFoto($id, $ruta, $descripcion, $principal);
+        if ($subidas === 0) {
+            throw new RuntimeException('No se pudo cargar ninguna imagen.');
+        }
+    }
+
+    public function setFotoPrincipal(int $vehiculoId, int $fotoId): void
+    {
+        if ($this->repo->findById($vehiculoId) === null) {
+            throw new RuntimeException('Vehículo no encontrado.');
+        }
+        if (!$this->repo->setFotoPrincipal($vehiculoId, $fotoId)) {
+            throw new RuntimeException('Fotografía no encontrada.');
+        }
+    }
+
+    public function deleteFoto(int $vehiculoId, int $fotoId): void
+    {
+        if ($this->repo->findById($vehiculoId) === null) {
+            throw new RuntimeException('Vehículo no encontrado.');
+        }
+        $foto = $this->repo->deleteFoto($vehiculoId, $fotoId);
+        if ($foto === null) {
+            throw new RuntimeException('Fotografía no encontrada.');
+        }
+        $path = storage_path('uploads/' . ltrim((string) $foto['ruta'], '/'));
+        if (is_file($path)) {
+            unlink($path);
+        }
     }
 
     public function getExpediente(int $id): ?array

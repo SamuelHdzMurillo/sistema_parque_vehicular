@@ -128,8 +128,9 @@ $combustibleLabel = ['gasolina' => 'Gasolina', 'diesel' => 'Diésel', 'hibrido' 
         </div>
 
         <div class="form-group">
-            <label class="form-label" for="foto">Fotografía principal</label>
-            <input type="file" id="foto" name="foto" class="form-control" accept="image/jpeg,image/png,image/webp">
+            <label class="form-label" for="fotos">Fotografías del vehículo</label>
+            <input type="file" id="fotos" name="fotos[]" class="form-control" accept="image/jpeg,image/png,image/webp" multiple>
+            <p class="form-hint">Seleccione todas las imágenes de una vez. La primera será la principal; en el expediente podrá borrar las incorrectas o cambiar la principal.</p>
         </div>
 
         <div class="d-flex gap-1 mt-2">

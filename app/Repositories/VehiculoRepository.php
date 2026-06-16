@@ -307,6 +307,14 @@ final class VehiculoRepository extends BaseRepository
         return $row !== null && in_array($row['estado'], ['activo', 'disponible'], true);
     }
 
+    public function findFoto(int $fotoId, int $vehiculoId): ?array
+    {
+        return $this->fetchOne(
+            'SELECT * FROM vehiculo_fotos WHERE id = ? AND vehiculo_id = ?',
+            [$fotoId, $vehiculoId]
+        );
+    }
+
     public function addFoto(int $vehiculoId, string $ruta, ?string $descripcion, bool $principal): void
     {
         if ($principal) {
@@ -317,5 +325,41 @@ final class VehiculoRepository extends BaseRepository
             'INSERT INTO vehiculo_fotos (vehiculo_id, ruta, descripcion, es_principal) VALUES (?, ?, ?, ?)',
             [$vehiculoId, $ruta, $descripcion, $principal ? 1 : 0]
         );
+    }
+
+    public function setFotoPrincipal(int $vehiculoId, int $fotoId): bool
+    {
+        $foto = $this->findFoto($fotoId, $vehiculoId);
+        if ($foto === null) {
+            return false;
+        }
+        $this->execute('UPDATE vehiculo_fotos SET es_principal = 0 WHERE vehiculo_id = ?', [$vehiculoId]);
+        $this->execute('UPDATE vehiculo_fotos SET es_principal = 1 WHERE id = ?', [$fotoId]);
+        $this->execute('UPDATE vehiculos SET foto_principal = ? WHERE id = ?', [$foto['ruta'], $vehiculoId]);
+        return true;
+    }
+
+    public function deleteFoto(int $vehiculoId, int $fotoId): ?array
+    {
+        $foto = $this->findFoto($fotoId, $vehiculoId);
+        if ($foto === null) {
+            return null;
+        }
+        $wasPrincipal = !empty($foto['es_principal']);
+        $this->execute('DELETE FROM vehiculo_fotos WHERE id = ? AND vehiculo_id = ?', [$fotoId, $vehiculoId]);
+
+        if ($wasPrincipal) {
+            $next = $this->fetchOne(
+                'SELECT id, ruta FROM vehiculo_fotos WHERE vehiculo_id = ? ORDER BY id ASC LIMIT 1',
+                [$vehiculoId]
+            );
+            if ($next !== null) {
+                $this->setFotoPrincipal($vehiculoId, (int) $next['id']);
+            } else {
+                $this->execute('UPDATE vehiculos SET foto_principal = NULL WHERE id = ?', [$vehiculoId]);
+            }
+        }
+
+        return $foto;
     }
 }

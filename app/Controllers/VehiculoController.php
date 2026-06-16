@@ -39,6 +39,7 @@ final class VehiculoController extends BaseController
 
         try {
             $data = $request->all();
+            $data['fotos'] = $request->files('fotos');
             $foto = $request->file('foto');
             if ($foto !== null) {
                 $data['foto'] = $foto;
@@ -109,20 +110,50 @@ final class VehiculoController extends BaseController
     public function uploadFoto(Request $request, string $id): never
     {
         $this->validateCsrf($request);
-        $file = $request->file('foto');
-        if ($file === null) {
-            flash('error', 'Seleccione una imagen.');
+        $files = $request->files('fotos');
+        if ($files === []) {
+            $single = $request->file('foto');
+            if ($single !== null) {
+                $files = [$single];
+            }
+        }
+        if ($files === []) {
+            flash('error', 'Seleccione al menos una imagen.');
             $this->redirect('vehiculos/' . $id);
         }
 
         try {
-            $this->vehiculos->uploadFoto(
+            $this->vehiculos->uploadFotos(
                 (int) $id,
-                $file,
+                $files,
                 $request->input('descripcion') ? (string) $request->input('descripcion') : null,
                 (bool) $request->input('principal')
             );
-            flash('success', 'Fotografía cargada correctamente.');
+            flash('success', count($files) > 1 ? 'Fotografías cargadas correctamente.' : 'Fotografía cargada correctamente.');
+        } catch (RuntimeException $e) {
+            flash('error', $e->getMessage());
+        }
+        $this->redirect('vehiculos/' . $id);
+    }
+
+    public function setFotoPrincipal(Request $request, string $id, string $fotoId): never
+    {
+        $this->validateCsrf($request);
+        try {
+            $this->vehiculos->setFotoPrincipal((int) $id, (int) $fotoId);
+            flash('success', 'Fotografía principal actualizada.');
+        } catch (RuntimeException $e) {
+            flash('error', $e->getMessage());
+        }
+        $this->redirect('vehiculos/' . $id);
+    }
+
+    public function deleteFoto(Request $request, string $id, string $fotoId): never
+    {
+        $this->validateCsrf($request);
+        try {
+            $this->vehiculos->deleteFoto((int) $id, (int) $fotoId);
+            flash('success', 'Fotografía eliminada.');
         } catch (RuntimeException $e) {
             flash('error', $e->getMessage());
         }

@@ -95,23 +95,52 @@ $fotoUrl = !empty($fotoRuta) ? url('storage/uploads/' . ltrim((string) $fotoRuta
             <p class="mt-2"><strong>Observaciones:</strong> <?= e($observaciones) ?></p>
             <?php endif; ?>
 
+            <h4 class="mt-3">Fotografías</h4>
+
             <?php if (can('vehiculos.update')): ?>
-            <form action="<?= url('vehiculos/' . $id . '/foto') ?>" method="post" enctype="multipart/form-data" class="mt-3">
+            <form action="<?= url('vehiculos/' . $id . '/foto') ?>" method="post" enctype="multipart/form-data" class="vehiculo-fotos-upload">
                 <?= csrf_field() ?>
-                <h4>Agregar fotografía</h4>
-                <div class="form-row">
-                    <div class="form-group">
-                        <input type="file" name="foto" class="form-control" accept="image/*" required>
-                    </div>
-                    <div class="form-group">
-                        <input type="text" name="descripcion" class="form-control" placeholder="Descripción">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-check"><input type="checkbox" name="principal" value="1" <?= empty($foto_principal) ? 'checked' : '' ?>> Principal</label>
-                    </div>
-                    <button type="submit" class="btn btn-secondary">Subir</button>
+                <div class="form-group">
+                    <label class="form-label" for="fotos">Subir fotografías</label>
+                    <input type="file" id="fotos" name="fotos[]" class="form-control" accept="image/jpeg,image/png,image/webp" multiple required>
+                    <p class="form-hint">Seleccione todas las imágenes de una vez (Ctrl o Shift para elegir varias). Luego podrá borrar las que no necesite o elegir la principal.</p>
                 </div>
+                <button type="submit" class="btn btn-secondary">Subir fotografías</button>
             </form>
+            <?php endif; ?>
+
+            <?php if (!empty($fotos)): ?>
+            <div class="vehiculo-fotos-grid mt-2">
+                <?php foreach ($fotos as $f): ?>
+                <?php
+                $esPrincipal = !empty($f['es_principal']) || (($foto_principal ?? '') !== '' && ($foto_principal ?? '') === ($f['ruta'] ?? ''));
+                $fUrl = url('storage/uploads/' . ltrim((string) $f['ruta'], '/'));
+                ?>
+                <div class="vehiculo-foto-card<?= $esPrincipal ? ' principal' : '' ?>">
+                    <img src="<?= e($fUrl) ?>" alt="<?= e($f['descripcion'] ?? 'Foto del vehículo') ?>">
+                    <?php if ($esPrincipal): ?>
+                    <span class="vehiculo-foto-badge">Principal</span>
+                    <?php endif; ?>
+                    <?php if (can('vehiculos.update')): ?>
+                    <form action="<?= url('vehiculos/' . $id . '/foto/' . $f['id'] . '/delete') ?>" method="post" class="vehiculo-foto-delete"
+                          onsubmit="return confirm('¿Eliminar esta fotografía?')">
+                        <?= csrf_field() ?>
+                        <button type="submit" class="btn btn-sm btn-danger" title="Eliminar">×</button>
+                    </form>
+                    <?php endif; ?>
+                    <div class="vehiculo-foto-meta">
+                        <?php if (can('vehiculos.update') && !$esPrincipal): ?>
+                        <form action="<?= url('vehiculos/' . $id . '/foto/' . $f['id'] . '/principal') ?>" method="post">
+                            <?= csrf_field() ?>
+                            <button type="submit" class="btn btn-sm btn-secondary">Hacer principal</button>
+                        </form>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+            <?php else: ?>
+            <p class="text-muted mt-2">Sin fotografías registradas.</p>
             <?php endif; ?>
 
             <?php if (!empty($estado_historial)): ?>
