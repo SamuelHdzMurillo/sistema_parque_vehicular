@@ -24,7 +24,7 @@ $data = $data ?? [];
                 <?php endforeach; ?>
             </select>
         </div>
-        <button type="submit" class="btn btn-secondary">Filtrar</button>
+        <button type="submit" class="btn btn-info">Filtrar</button>
     </form>
     <div class="table-responsive">
         <table class="table">
@@ -46,7 +46,7 @@ $data = $data ?? [];
                     <td><?= e($c['conductor_nombre'] ?? '—') ?></td>
                     <td><?= $c['km_recorridos'] !== null ? number_format((int) $c['km_recorridos']) : '—' ?></td>
                     <td><span class="badge badge-secondary"><?= e($comEstados[$c['estado']] ?? $c['estado']) ?></span></td>
-                    <td><a href="<?= url('comisiones/' . $c['id']) ?>" class="btn btn-sm btn-secondary">Ver</a></td>
+                    <td><a href="<?= url('comisiones/' . $c['id']) ?>" class="btn btn-sm btn-info">Ver</a></td>
                 </tr>
                 <?php endforeach; endif; ?>
             </tbody>

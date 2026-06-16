@@ -13,7 +13,7 @@ ob_start();
     pdf_render_fields([
         ['label' => 'Folio', 'value' => pdf_val($c['folio'] ?? null, '')],
         ['label' => 'Fecha', 'value' => pdf_date($c['fecha'] ?? null)],
-        ['label' => 'Vehículo (No. económico)', 'value' => pdf_val($c['numero_economico'] ?? null, '')],
+        ['label' => 'Identificador', 'value' => pdf_val($c['numero_economico'] ?? null, '')],
         ['label' => 'Placas', 'value' => pdf_val($c['placas'] ?? null, '')],
         ['label' => 'Área solicitante', 'value' => pdf_val($c['area_solicitante_nombre'] ?? null, '')],
         ['label' => 'Responsable del vehículo', 'value' => pdf_val($c['responsable_nombre'] ?? null, '')],

@@ -28,7 +28,7 @@
                     <td><?= format_date($d['fecha_vencimiento']) ?></td>
                     <td><span class="badge <?= $badge ?>"><?= $dias ?> días</span></td>
                     <td>
-                        <a href="<?= url('documentos/' . $d['id'] . '/download') ?>" class="btn btn-sm btn-secondary">Descargar</a>
+                        <a href="<?= url('documentos/' . $d['id'] . '/download') ?>" class="btn btn-sm btn-danger">Descargar</a>
                     </td>
                 </tr>
                 <?php endforeach; endif; ?>

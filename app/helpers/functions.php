@@ -176,3 +176,13 @@ function vehiculo_estado_badge(string $estado): string
         default => 'badge-secondary',
     };
 }
+
+function vehiculo_identificador_label(): string
+{
+    return 'Identificador';
+}
+
+function vehiculo_identificador_placeholder(): string
+{
+    return 'Ej. Patrulla 01, Unidad Norte, Camión 3…';
+}

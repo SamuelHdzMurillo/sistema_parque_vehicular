@@ -8,7 +8,7 @@
         <?php if (can('alertas.config')): ?>
         <a href="<?= url('alertas/config') ?>" class="btn btn-secondary">Configuración</a>
         <?php endif; ?>
-        <a href="<?= url('alertas?todas=1') ?>" class="btn btn-link">Ver todas</a>
+        <a href="<?= url('alertas?todas=1') ?>" class="btn btn-sm btn-info">Ver todas</a>
     </div>
 </div>
 <div class="card">

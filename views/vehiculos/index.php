@@ -23,7 +23,7 @@ $estadosLabel = [
     <form class="filters-bar" method="get" action="<?= url('vehiculos') ?>">
         <div class="form-group">
             <label class="form-label" for="q">Buscar</label>
-            <input type="search" id="q" name="q" class="form-control" placeholder="No. económico, placas, VIN…"
+            <input type="search" id="q" name="q" class="form-control" placeholder="Identificador, placas, VIN…"
                    value="<?= e($_GET['q'] ?? '') ?>">
         </div>
         <div class="form-group">
@@ -35,15 +35,15 @@ $estadosLabel = [
                 <?php endforeach; ?>
             </select>
         </div>
-        <button type="submit" class="btn btn-secondary">Filtrar</button>
-        <a href="<?= url('vehiculos') ?>" class="btn btn-link">Limpiar</a>
+        <button type="submit" class="btn btn-info">Filtrar</button>
+        <a href="<?= url('vehiculos') ?>" class="btn btn-secondary">Limpiar</a>
     </form>
 
     <div class="table-responsive">
         <table class="table">
             <thead>
                 <tr>
-                    <th>No. económico</th>
+                    <th><?= e(vehiculo_identificador_label()) ?></th>
                     <th>Marca / Modelo</th>
                     <th>Placas</th>
                     <th>Área</th>
@@ -72,10 +72,10 @@ $estadosLabel = [
                     </td>
                     <td class="table-actions">
                         <?php if (can('expediente.read')): ?>
-                        <a href="<?= url('vehiculos/' . $v['id']) ?>" class="btn btn-sm btn-secondary">Expediente</a>
+                        <a href="<?= url('vehiculos/' . $v['id']) ?>" class="btn btn-sm btn-info">Expediente</a>
                         <?php endif; ?>
                         <?php if (can('vehiculos.update')): ?>
-                        <a href="<?= url('vehiculos/' . $v['id'] . '/edit') ?>" class="btn btn-sm btn-link">Editar</a>
+                        <a href="<?= url('vehiculos/' . $v['id'] . '/edit') ?>" class="btn btn-sm btn-accent">Editar</a>
                         <?php endif; ?>
                     </td>
                 </tr>

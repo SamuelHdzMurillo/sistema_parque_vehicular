@@ -44,8 +44,10 @@ $responsableLabel = static function (array $u): string {
         <h3 class="mb-2">Identificación</h3>
         <div class="form-row">
             <div class="form-group">
-                <label class="form-label" for="numero_economico">No. económico <span class="required">*</span></label>
-                <input type="text" id="numero_economico" name="numero_economico" class="form-control" required value="<?= e($v['numero_economico']) ?>">
+                <label class="form-label" for="numero_economico"><?= e(vehiculo_identificador_label()) ?> <span class="required">*</span></label>
+                <input type="text" id="numero_economico" name="numero_economico" class="form-control" required
+                       placeholder="<?= e(vehiculo_identificador_placeholder()) ?>"
+                       value="<?= e($v['numero_economico']) ?>">
             </div>
             <div class="form-group">
                 <label class="form-label" for="placas">Placas <span class="required">*</span></label>

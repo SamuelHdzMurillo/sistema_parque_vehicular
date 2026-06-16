@@ -71,7 +71,7 @@ $docTipos = [
         <div class="card">
             <div class="card-header">
                 <h3>Comisiones en curso</h3>
-                <a href="<?= url('comisiones') ?>" class="btn btn-sm btn-link">Ver todas</a>
+                <a href="<?= url('comisiones') ?>" class="btn btn-sm btn-info">Ver todas</a>
             </div>
             <div class="card-body p-0">
                 <?php if (empty($comisiones)): ?>
@@ -101,7 +101,7 @@ $docTipos = [
         <div class="card">
             <div class="card-header">
                 <h3>Mantenimientos abiertos</h3>
-                <a href="<?= url('mantenimiento') ?>" class="btn btn-sm btn-link">Ver todos</a>
+                <a href="<?= url('mantenimiento') ?>" class="btn btn-sm btn-info">Ver todos</a>
             </div>
             <div class="card-body p-0">
                 <?php if (empty($mantenimientos)): ?>
@@ -135,7 +135,7 @@ $docTipos = [
         <div class="card dash-activity-full">
             <div class="card-header">
                 <h3>Daños sin resolver</h3>
-                <a href="<?= url('danios') ?>" class="btn btn-sm btn-link">Ver todos</a>
+                <a href="<?= url('danios') ?>" class="btn btn-sm btn-info">Ver todos</a>
             </div>
             <div class="card-body p-0">
                 <ul class="dash-feed dash-feed-cols">
@@ -170,7 +170,7 @@ $docTipos = [
                     <p class="dash-section-desc">Ordenado por urgencia según kilometraje recorrido</p>
                 </div>
                 <?php if (can('mantenimiento.create')): ?>
-                <a href="<?= url('mantenimiento/create') ?>" class="btn btn-sm btn-secondary">Programar servicio</a>
+                <a href="<?= url('mantenimiento/create') ?>" class="btn btn-sm btn-primary">Programar servicio</a>
                 <?php endif; ?>
             </div>
             <div class="card">
@@ -209,7 +209,7 @@ $docTipos = [
                                 <td><?= !empty($item['ultimo_servicio']) ? format_date($item['ultimo_servicio']) : '<span class="text-muted">Sin registro</span>' ?></td>
                                 <td class="text-right">
                                     <?php if (can('expediente.read')): ?>
-                                    <a href="<?= url('vehiculos/' . (int) $item['vehiculo_id']) ?>" class="btn btn-sm btn-link">Expediente</a>
+                                    <a href="<?= url('vehiculos/' . (int) $item['vehiculo_id']) ?>" class="btn btn-sm btn-info">Expediente</a>
                                     <?php endif; ?>
                                 </td>
                             </tr>
@@ -235,7 +235,7 @@ $docTipos = [
                 <div class="card">
                     <div class="card-header">
                         <h3>Alertas</h3>
-                        <a href="<?= url('alertas') ?>" class="btn btn-sm btn-link">Ver todas</a>
+                        <a href="<?= url('alertas') ?>" class="btn btn-sm btn-info">Ver todas</a>
                     </div>
                     <div class="card-body p-0">
                         <?php if (empty($alertas)): ?>
@@ -266,7 +266,7 @@ $docTipos = [
                 <div class="card">
                     <div class="card-header">
                         <h3>Documentos por vencer</h3>
-                        <a href="<?= url('documentos') ?>" class="btn btn-sm btn-link">Ver todos</a>
+                        <a href="<?= url('documentos') ?>" class="btn btn-sm btn-info">Ver todos</a>
                     </div>
                     <div class="card-body p-0">
                         <?php if (empty($documentos)): ?>

@@ -19,7 +19,7 @@
                 <?php endforeach; ?>
             </select>
         </div>
-        <button type="submit" class="btn btn-secondary">Filtrar</button>
+        <button type="submit" class="btn btn-info">Filtrar</button>
     </form>
     <div class="table-responsive">
         <table class="table">
@@ -36,7 +36,7 @@
                     <td><?= e($m['proveedor_nombre'] ?? $m['razon_social'] ?? '—') ?></td>
                     <td><?= format_money($m['costo'] ?? 0) ?></td>
                     <td><span class="badge badge-secondary"><?= e(str_replace('_', ' ', $m['estado'])) ?></span></td>
-                    <td><a href="<?= url('mantenimiento/' . $m['id']) ?>" class="btn btn-sm btn-secondary">Ver</a></td>
+                    <td><a href="<?= url('mantenimiento/' . $m['id']) ?>" class="btn btn-sm btn-info">Ver</a></td>
                 </tr>
                 <?php endforeach; endif; ?>
             </tbody>

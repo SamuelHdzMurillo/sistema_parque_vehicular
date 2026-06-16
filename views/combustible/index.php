@@ -26,7 +26,7 @@ $vehiculos = $vehiculos ?? [];
                 <?php endforeach; ?>
             </select>
         </div>
-        <button type="submit" class="btn btn-secondary">Filtrar</button>
+        <button type="submit" class="btn btn-info">Filtrar</button>
     </form>
     <div class="table-responsive">
         <table class="table">
@@ -43,7 +43,7 @@ $vehiculos = $vehiculos ?? [];
                     <td><?= number_format((int) $c['kilometraje']) ?></td>
                     <td><?= $c['rendimiento'] !== null ? number_format((float) $c['rendimiento'], 2) . ' km/L' : '—' ?></td>
                     <td><?= $c['costo_por_km'] !== null ? format_money($c['costo_por_km']) : '—' ?></td>
-                    <td><a href="<?= url('formatos/combustible/' . $c['id']) ?>" class="btn btn-sm btn-secondary" target="_blank">PDF</a></td>
+                    <td><a href="<?= url('formatos/combustible/' . $c['id']) ?>" class="btn btn-sm btn-danger" target="_blank">PDF</a></td>
                 </tr>
                 <?php endforeach; endif; ?>
             </tbody>

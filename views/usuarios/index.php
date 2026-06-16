@@ -14,7 +14,7 @@
             <label class="form-label" for="q">Buscar</label>
             <input type="search" id="q" name="q" class="form-control" placeholder="Nombre o correo…" value="<?= e($_GET['q'] ?? '') ?>">
         </div>
-        <button type="submit" class="btn btn-secondary">Buscar</button>
+        <button type="submit" class="btn btn-info">Buscar</button>
     </form>
     <div class="table-responsive">
         <table class="table">
@@ -37,7 +37,7 @@
                     </td>
                     <td>
                         <?php if (can('usuarios.update')): ?>
-                        <a href="<?= url('usuarios/' . $u['id'] . '/edit') ?>" class="btn btn-sm btn-secondary">Editar</a>
+                        <a href="<?= url('usuarios/' . $u['id'] . '/edit') ?>" class="btn btn-sm btn-accent">Editar</a>
                         <?php endif; ?>
                     </td>
                 </tr>

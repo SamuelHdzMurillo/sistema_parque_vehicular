@@ -21,7 +21,7 @@ ob_start();
     <div class="section-title">Datos de la inspección</div>
     <?php
     pdf_render_fields([
-        ['label' => 'Vehículo (No. económico)', 'value' => pdf_val($i['numero_economico'] ?? null, '')],
+        ['label' => 'Identificador', 'value' => pdf_val($i['numero_economico'] ?? null, '')],
         ['label' => 'Fecha', 'value' => pdf_date($i['fecha'] ?? null)],
         ['label' => 'Kilometraje', 'value' => isset($i['kilometraje']) ? number_format((int) $i['kilometraje']) . ' km' : ''],
         ['label' => 'Responsable', 'value' => pdf_val($i['responsable_nombre'] ?? null, '')],

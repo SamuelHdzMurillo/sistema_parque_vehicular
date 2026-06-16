@@ -111,7 +111,7 @@ final class VehiculoService
     private function validateUniqueFields(array $data, ?int $excludeId = null): void
     {
         if ($this->repo->existsNumeroEconomico($data['numero_economico'], $excludeId)) {
-            throw new RuntimeException('El número económico ya está registrado.');
+            throw new RuntimeException('Ese identificador ya está registrado.');
         }
     }
 }

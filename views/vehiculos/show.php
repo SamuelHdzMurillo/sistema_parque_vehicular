@@ -29,7 +29,7 @@ $fotoUrl = !empty($fotoRuta) ? url('storage/uploads/' . ltrim((string) $fotoRuta
     </div>
     <div class="page-actions">
         <?php if (can('vehiculos.update')): ?>
-        <a href="<?= url('vehiculos/' . $id . '/edit') ?>" class="btn btn-secondary">Editar</a>
+        <a href="<?= url('vehiculos/' . $id . '/edit') ?>" class="btn btn-accent">Editar</a>
         <?php endif; ?>
         <?php if (can('herramientas.read')): ?>
         <a href="<?= url('herramientas/vehiculo/' . $id) ?>" class="btn btn-secondary">Herramientas</a>
@@ -50,6 +50,7 @@ $fotoUrl = !empty($fotoRuta) ? url('storage/uploads/' . ltrim((string) $fotoRuta
         <h1><?= e($numero_economico) ?> — <?= e($marca . ' ' . $modelo) ?></h1>
         <span class="badge <?= vehiculo_estado_badge($estado) ?>"><?= e($estadosLabel[$estado] ?? $estado) ?></span>
         <div class="meta-grid">
+            <div class="meta-item"><label><?= e(vehiculo_identificador_label()) ?></label><span><?= e($numero_economico) ?></span></div>
             <div class="meta-item"><label>Placas</label><span><?= e($placas) ?></span></div>
             <div class="meta-item"><label>VIN</label><span><?= e($serie_vin) ?></span></div>
             <div class="meta-item"><label>Área</label><span><?= e($area_nombre ?? '—') ?></span></div>
@@ -156,7 +157,7 @@ $fotoUrl = !empty($fotoRuta) ? url('storage/uploads/' . ltrim((string) $fotoRuta
                         <td><?= $c['km_recorridos'] !== null ? number_format((int) $c['km_recorridos']) : '—' ?></td>
                         <td><?= $c['rendimiento'] !== null ? number_format((float) $c['rendimiento'], 2) . ' km/L' : '—' ?></td>
                         <td><span class="badge badge-secondary"><?= e($comEstados[$c['estado']] ?? $c['estado']) ?></span></td>
-                        <td><a href="<?= url('comisiones/' . $c['id']) ?>" class="btn btn-sm btn-link">Ver</a></td>
+                        <td><a href="<?= url('comisiones/' . $c['id']) ?>" class="btn btn-sm btn-info">Ver</a></td>
                     </tr>
                     <?php endforeach; endif; ?>
                     </tbody>
@@ -259,7 +260,7 @@ $fotoUrl = !empty($fotoRuta) ? url('storage/uploads/' . ltrim((string) $fotoRuta
                         <td><?= number_format((int) $i['kilometraje']) ?></td>
                         <td><span class="badge <?= $i['resultado_general'] === 'aprobada' ? 'badge-success' : ($i['resultado_general'] === 'rechazada' ? 'badge-danger' : 'badge-warning') ?>"><?= e(ucfirst($i['resultado_general'])) ?></span></td>
                         <td><?= (int) ($i['items_malo'] ?? 0) ?></td>
-                        <td><a href="<?= url('inspecciones/' . $i['id']) ?>" class="btn btn-sm btn-link">Ver</a></td>
+                        <td><a href="<?= url('inspecciones/' . $i['id']) ?>" class="btn btn-sm btn-info">Ver</a></td>
                     </tr>
                     <?php endforeach; endif; ?>
                     </tbody>
