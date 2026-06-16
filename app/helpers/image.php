@@ -82,10 +82,10 @@ function image_from_file(string $full, string $mime = ''): \GdImage|false
 function brand_logo_web_src(): string
 {
     foreach ([
-        'assets/images/logo_Cecyte_vertical_sin_fondo.png',
-        'assets/images/logo_Cecyte_vertical_sin_fondo.jpg',
+        'images/logo_Cecyte_vertical_sin_fondo.png',
+        'images/logo_Cecyte_vertical_sin_fondo.jpg',
     ] as $candidate) {
-        $path = public_path($candidate);
+        $path = public_path('assets/' . $candidate);
         if (is_file($path)) {
             return asset($candidate);
         }
