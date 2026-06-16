@@ -53,6 +53,9 @@ final class ComisionController extends BaseController
         $this->render('comisiones.show', [
             'comision' => $comision,
             'ultimo_mantenimiento' => $ultimoMantenimiento,
+            'luces_tablero' => $this->comisiones->getLucesCatalog(),
+            'liquidos' => $this->comisiones->getLiquidosCatalog(),
+            'nivel_opciones' => $this->comisiones->getNivelOpciones(),
         ]);
     }
 

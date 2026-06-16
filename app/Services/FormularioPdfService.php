@@ -32,13 +32,27 @@ final class FormularioPdfService
             http_response_code(404);
             exit('Comisión no encontrada.');
         }
-        $ultimoMantenimiento = $data !== null
-            ? $this->mantenimientos->getUltimoFinalizado((int) $data['vehiculo_id'])
-            : null;
+        $ultimoMantenimiento = null;
+        if ($data !== null) {
+            $ultimoMantenimiento = $this->mantenimientos->getUltimoFinalizado((int) $data['vehiculo_id']);
+            $luces = $this->comisiones->getLuces((int) $data['id']);
+            $data['luces_salida'] = $luces['salida'];
+            $data['luces_regreso'] = $luces['regreso'];
+            $niveles = $this->comisiones->getNiveles((int) $data['id']);
+            $data['niveles_salida'] = $niveles['salida'];
+            $data['niveles_regreso'] = $niveles['regreso'];
+        }
         $sufijo = $parte !== 'completo' ? '_' . $parte : '';
         $this->stream(
             'pdf.comision',
-            ['comision' => $data, 'parte' => $parte, 'ultimo_mantenimiento' => $ultimoMantenimiento],
+            [
+                'comision' => $data,
+                'parte' => $parte,
+                'ultimo_mantenimiento' => $ultimoMantenimiento,
+                'luces_catalogo' => InspeccionRepository::LUCES_TABLERO,
+                'liquidos_catalogo' => ComisionRepository::LIQUIDOS,
+                'nivel_opciones' => ComisionRepository::NIVEL_OPCIONES,
+            ],
             'comision_' . ($data['folio'] ?? 'formato') . $sufijo,
             'portrait'
         );

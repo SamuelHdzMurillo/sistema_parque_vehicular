@@ -2,7 +2,51 @@
 $pageTitle = 'Comisión ' . ($comision['folio'] ?? '');
 $c = $comision ?? [];
 $um = $ultimo_mantenimiento ?? null;
+$lucesTablero = $luces_tablero ?? [];
+$lucesById = [];
+foreach ($lucesTablero as $luz) {
+    $lucesById[$luz['codigo']] = $luz;
+}
+$liquidos = $liquidos ?? [];
+$nivelOpciones = $nivel_opciones ?? [];
 $estados = ['borrador' => 'Borrador', 'en_curso' => 'En curso', 'finalizada' => 'Finalizada', 'cancelada' => 'Cancelada'];
+
+$renderNiveles = static function (array $niveles) use ($liquidos, $nivelOpciones): string {
+    if ($niveles === []) {
+        return '<p class="text-muted" style="margin:0">Sin registro de niveles.</p>';
+    }
+    $html = '<div class="meta-grid">';
+    foreach ($liquidos as $liq) {
+        $cod = $liq['codigo'];
+        if (!isset($niveles[$cod])) {
+            continue;
+        }
+        $txt = $nivelOpciones[$niveles[$cod]] ?? $niveles[$cod];
+        $html .= '<div class="meta-item"><label>' . e($liq['nombre']) . '</label><span>' . e($txt) . '</span></div>';
+    }
+    $html .= '</div>';
+    return $html;
+};
+
+$renderLuces = static function (array $codigos) use ($lucesById): string {
+    if ($codigos === []) {
+        return '<p class="text-muted" style="margin:0">No tiene luces prendidas.</p>';
+    }
+    $html = '<div class="dash-lights-grid">';
+    foreach ($codigos as $codigo) {
+        $luz = $lucesById[$codigo] ?? null;
+        if ($luz === null) {
+            continue;
+        }
+        $html .= '<div class="dash-light-card is-on" style="cursor:default">'
+            . '<span class="dash-light-icon" aria-hidden="true"><img src="' . e(asset('images/luces-tablero/' . $luz['icon'])) . '" alt="" width="48" height="48"></span>'
+            . '<span class="dash-light-name">' . e($luz['nombre']) . '</span>'
+            . '<span class="dash-light-status">Encendida</span>'
+            . '</div>';
+    }
+    $html .= '</div>';
+    return $html;
+};
 ?>
 <div class="page-header">
     <div>
@@ -56,6 +100,26 @@ $estados = ['borrador' => 'Borrador', 'en_curso' => 'En curso', 'finalizada' => 
     </div>
 </div>
 <?php endif; ?>
+
+<div class="card mb-2">
+    <div class="card-header"><h3>Luces del tablero</h3></div>
+    <div class="card-body">
+        <h4 style="margin:0 0 6px;font-size:.9rem">A la salida</h4>
+        <?= $renderLuces($c['luces_salida'] ?? []) ?>
+        <h4 style="margin:14px 0 6px;font-size:.9rem">Al regreso</h4>
+        <?= $renderLuces($c['luces_regreso'] ?? []) ?>
+    </div>
+</div>
+
+<div class="card mb-2">
+    <div class="card-header"><h3>Niveles de líquidos</h3></div>
+    <div class="card-body">
+        <h4 style="margin:0 0 6px;font-size:.9rem">A la salida</h4>
+        <?= $renderNiveles($c['niveles_salida'] ?? []) ?>
+        <h4 style="margin:14px 0 6px;font-size:.9rem">Al regreso</h4>
+        <?= $renderNiveles($c['niveles_regreso'] ?? []) ?>
+    </div>
+</div>
 
 <div class="card mb-2">
     <div class="card-header"><h3>Último mantenimiento del vehículo</h3></div>
@@ -150,6 +214,53 @@ $estados = ['borrador' => 'Borrador', 'en_curso' => 'En curso', 'finalizada' => 
             <div class="form-group">
                 <label class="form-label" for="observaciones_fin">Observaciones de regreso</label>
                 <textarea id="observaciones_fin" name="observaciones" class="form-textarea"></textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Luces del tablero encendidas (al regreso)</label>
+                <p class="card-header-hint">Marque las luces de advertencia encendidas al momento del regreso. Si no hay ninguna, déjelas apagadas.</p>
+                <?php $lucesRegreso = $c['luces_regreso'] ?? []; ?>
+                <div class="dash-lights-grid" data-dash-lights>
+                    <?php foreach ($lucesTablero as $luz): ?>
+                    <?php $codigo = $luz['codigo']; $isOn = in_array($codigo, $lucesRegreso, true); ?>
+                    <label class="dash-light-card<?= $isOn ? ' is-on' : '' ?>">
+                        <input type="checkbox" name="luces_regreso[]" value="<?= e($codigo) ?>" <?= $isOn ? 'checked' : '' ?>>
+                        <span class="dash-light-icon" aria-hidden="true">
+                            <img src="<?= e(asset('images/luces-tablero/' . $luz['icon'])) ?>" alt="" width="48" height="48">
+                        </span>
+                        <span class="dash-light-name"><?= e($luz['nombre']) ?></span>
+                        <span class="dash-light-status"><?= $isOn ? 'Encendida' : 'Apagada' ?></span>
+                    </label>
+                    <?php endforeach; ?>
+                </div>
+                <p class="dash-lights-summary mt-2" data-dash-lights-summary>
+                    <span data-dash-lights-count><?= count($lucesRegreso) ?></span> luz(es) seleccionada(s)
+                </p>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Niveles de líquidos (al regreso)</label>
+                <?php $nivelesRegreso = $c['niveles_regreso'] ?? []; ?>
+                <div class="checklist-grid">
+                    <?php foreach ($liquidos as $liq): ?>
+                    <?php $cod = $liq['codigo']; $sel = (string) ($nivelesRegreso[$cod] ?? 'lleno'); ?>
+                    <div class="checklist-item">
+                        <div class="checklist-item-name"><?= e($liq['nombre']) ?></div>
+                        <div class="rating-group">
+                            <label class="rating-bueno">
+                                <input type="radio" name="niveles_regreso[<?= e($cod) ?>]" value="lleno" <?= $sel === 'lleno' ? 'checked' : '' ?>>
+                                <span>Lleno</span>
+                            </label>
+                            <label class="rating-regular">
+                                <input type="radio" name="niveles_regreso[<?= e($cod) ?>]" value="medio" <?= $sel === 'medio' ? 'checked' : '' ?>>
+                                <span>Medio</span>
+                            </label>
+                            <label class="rating-malo">
+                                <input type="radio" name="niveles_regreso[<?= e($cod) ?>]" value="bajo" <?= $sel === 'bajo' ? 'checked' : '' ?>>
+                                <span>Bajo</span>
+                            </label>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
             </div>
             <div class="form-group">
                 <label class="form-label">Firma digital del conductor (regreso)</label>

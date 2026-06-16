@@ -95,6 +95,69 @@ $c = array_merge($comision, array_intersect_key($_SESSION['_old'] ?? [], array_f
             <label class="form-label" for="observaciones">Observaciones</label>
             <textarea id="observaciones" name="observaciones" class="form-textarea"><?= e($c['observaciones'] ?? '') ?></textarea>
         </div>
+
+        <?php
+        $lucesTablero = $luces_tablero ?? [];
+        $lucesSalida = $c['luces_salida'] ?? [];
+        if (!is_array($lucesSalida)) {
+            $lucesSalida = [];
+        }
+        ?>
+        <div class="form-group">
+            <label class="form-label">Luces del tablero encendidas (a la salida)</label>
+            <p class="card-header-hint">Marque las luces de advertencia encendidas al momento de la salida.</p>
+            <div class="dash-lights-grid" data-dash-lights>
+                <?php foreach ($lucesTablero as $luz): ?>
+                <?php $codigo = $luz['codigo']; $isOn = in_array($codigo, $lucesSalida, true); ?>
+                <label class="dash-light-card<?= $isOn ? ' is-on' : '' ?>">
+                    <input type="checkbox" name="luces_salida[]" value="<?= e($codigo) ?>" <?= $isOn ? 'checked' : '' ?>>
+                    <span class="dash-light-icon" aria-hidden="true">
+                        <img src="<?= e(asset('images/luces-tablero/' . $luz['icon'])) ?>" alt="" width="48" height="48">
+                    </span>
+                    <span class="dash-light-name"><?= e($luz['nombre']) ?></span>
+                    <span class="dash-light-status"><?= $isOn ? 'Encendida' : 'Apagada' ?></span>
+                </label>
+                <?php endforeach; ?>
+            </div>
+            <p class="dash-lights-summary mt-2" data-dash-lights-summary>
+                <span data-dash-lights-count><?= count($lucesSalida) ?></span> luz(es) seleccionada(s)
+            </p>
+        </div>
+
+        <?php
+        $liquidos = $liquidos ?? [];
+        $nivelOpciones = $nivel_opciones ?? [];
+        $nivelesSalida = $c['niveles_salida'] ?? [];
+        if (!is_array($nivelesSalida)) {
+            $nivelesSalida = [];
+        }
+        ?>
+        <div class="form-group">
+            <label class="form-label">Niveles de líquidos (a la salida)</label>
+            <div class="checklist-grid">
+                <?php foreach ($liquidos as $liq): ?>
+                <?php $cod = $liq['codigo']; $sel = (string) ($nivelesSalida[$cod] ?? 'lleno'); ?>
+                <div class="checklist-item">
+                    <div class="checklist-item-name"><?= e($liq['nombre']) ?></div>
+                    <div class="rating-group">
+                        <label class="rating-bueno">
+                            <input type="radio" name="niveles_salida[<?= e($cod) ?>]" value="lleno" <?= $sel === 'lleno' ? 'checked' : '' ?>>
+                            <span>Lleno</span>
+                        </label>
+                        <label class="rating-regular">
+                            <input type="radio" name="niveles_salida[<?= e($cod) ?>]" value="medio" <?= $sel === 'medio' ? 'checked' : '' ?>>
+                            <span>Medio</span>
+                        </label>
+                        <label class="rating-malo">
+                            <input type="radio" name="niveles_salida[<?= e($cod) ?>]" value="bajo" <?= $sel === 'bajo' ? 'checked' : '' ?>>
+                            <span>Bajo</span>
+                        </label>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+
         <div class="d-flex gap-1">
             <button type="submit" class="btn btn-primary">Guardar</button>
             <a href="<?= url('comisiones/' . $c['id']) ?>" class="btn btn-secondary">Cancelar</a>

@@ -6,6 +6,23 @@ namespace App\Repositories;
 
 final class ComisionRepository extends BaseRepository
 {
+    /** @var list<array{codigo: string, nombre: string}> */
+    public const LIQUIDOS = [
+        ['codigo' => 'aceite_motor', 'nombre' => 'Aceite de motor'],
+        ['codigo' => 'liquido_frenos', 'nombre' => 'Líquido de frenos'],
+        ['codigo' => 'refrigerante', 'nombre' => 'Refrigerante / anticongelante'],
+        ['codigo' => 'direccion_hidraulica', 'nombre' => 'Dirección hidráulica'],
+        ['codigo' => 'limpiaparabrisas', 'nombre' => 'Líquido limpiaparabrisas'],
+        ['codigo' => 'transmision', 'nombre' => 'Líquido de transmisión'],
+    ];
+
+    /** @var array<string, string> */
+    public const NIVEL_OPCIONES = [
+        'lleno' => 'Lleno',
+        'medio' => 'Medio',
+        'bajo' => 'Bajo',
+    ];
+
     public function findById(int $id): ?array
     {
         return $this->fetchOne(
@@ -37,6 +54,67 @@ final class ComisionRepository extends BaseRepository
             "UPDATE comisiones SET {$columna} = ?, updated_at = NOW() WHERE id = ?",
             [$ruta, $id]
         );
+    }
+
+    /** @return array{salida: list<string>, regreso: list<string>} */
+    public function getLuces(int $comisionId): array
+    {
+        $rows = $this->fetchAll(
+            'SELECT momento, luz_codigo FROM comision_luces_tablero WHERE comision_id = ? ORDER BY luz_codigo ASC',
+            [$comisionId]
+        );
+        $luces = ['salida' => [], 'regreso' => []];
+        foreach ($rows as $row) {
+            $momento = $row['momento'] === 'regreso' ? 'regreso' : 'salida';
+            $luces[$momento][] = $row['luz_codigo'];
+        }
+        return $luces;
+    }
+
+    public function saveLuces(int $comisionId, string $momento, array $codigos): void
+    {
+        $momento = $momento === 'regreso' ? 'regreso' : 'salida';
+        $this->execute(
+            'DELETE FROM comision_luces_tablero WHERE comision_id = ? AND momento = ?',
+            [$comisionId, $momento]
+        );
+        foreach ($codigos as $codigo) {
+            $this->execute(
+                'INSERT INTO comision_luces_tablero (comision_id, momento, luz_codigo) VALUES (?, ?, ?)',
+                [$comisionId, $momento, (string) $codigo]
+            );
+        }
+    }
+
+    /** @return array{salida: array<string, string>, regreso: array<string, string>} */
+    public function getNiveles(int $comisionId): array
+    {
+        $rows = $this->fetchAll(
+            'SELECT momento, liquido_codigo, nivel FROM comision_niveles_liquidos WHERE comision_id = ?',
+            [$comisionId]
+        );
+        $niveles = ['salida' => [], 'regreso' => []];
+        foreach ($rows as $row) {
+            $momento = $row['momento'] === 'regreso' ? 'regreso' : 'salida';
+            $niveles[$momento][$row['liquido_codigo']] = $row['nivel'];
+        }
+        return $niveles;
+    }
+
+    /** @param array<string, string> $niveles */
+    public function saveNiveles(int $comisionId, string $momento, array $niveles): void
+    {
+        $momento = $momento === 'regreso' ? 'regreso' : 'salida';
+        $this->execute(
+            'DELETE FROM comision_niveles_liquidos WHERE comision_id = ? AND momento = ?',
+            [$comisionId, $momento]
+        );
+        foreach ($niveles as $codigo => $nivel) {
+            $this->execute(
+                'INSERT INTO comision_niveles_liquidos (comision_id, momento, liquido_codigo, nivel) VALUES (?, ?, ?, ?)',
+                [$comisionId, $momento, (string) $codigo, (string) $nivel]
+            );
+        }
     }
 
     public function create(array $data): int

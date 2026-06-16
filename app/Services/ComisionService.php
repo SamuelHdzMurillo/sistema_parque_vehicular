@@ -8,6 +8,7 @@ use App\Helpers\FileUploader;
 use App\Repositories\CatalogoRepository;
 use App\Repositories\ComisionRepository;
 use App\Repositories\DocumentoRepository;
+use App\Repositories\InspeccionRepository;
 use App\Repositories\MantenimientoRepository;
 use App\Repositories\VehiculoRepository;
 
@@ -34,17 +35,45 @@ final class ComisionService
             'vehiculos' => $this->catalogos->getVehiculosDisponibles(),
             'areas' => $this->catalogos->getAreas(),
             'conductores' => $this->catalogos->getUsersForSelect(),
+            'luces_tablero' => InspeccionRepository::LUCES_TABLERO,
+            'liquidos' => ComisionRepository::LIQUIDOS,
+            'nivel_opciones' => ComisionRepository::NIVEL_OPCIONES,
         ];
     }
 
     public function find(int $id): ?array
     {
-        return $this->repo->findById($id);
+        $comision = $this->repo->findById($id);
+        if ($comision === null) {
+            return null;
+        }
+        $luces = $this->repo->getLuces($id);
+        $comision['luces_salida'] = $luces['salida'];
+        $comision['luces_regreso'] = $luces['regreso'];
+        $niveles = $this->repo->getNiveles($id);
+        $comision['niveles_salida'] = $niveles['salida'];
+        $comision['niveles_regreso'] = $niveles['regreso'];
+        return $comision;
     }
 
     public function getUltimoMantenimiento(int $vehiculoId): ?array
     {
         return $this->mantenimientos->getUltimoFinalizado($vehiculoId);
+    }
+
+    public function getLucesCatalog(): array
+    {
+        return InspeccionRepository::LUCES_TABLERO;
+    }
+
+    public function getLiquidosCatalog(): array
+    {
+        return ComisionRepository::LIQUIDOS;
+    }
+
+    public function getNivelOpciones(): array
+    {
+        return ComisionRepository::NIVEL_OPCIONES;
     }
 
     public function create(array $data, int $userId): int
@@ -55,6 +84,8 @@ final class ComisionService
         $data['folio'] = $this->repo->generateFolio();
         $data['estado'] = 'borrador';
         $id = $this->repo->create($data);
+        $this->repo->saveLuces($id, 'salida', $this->parseLuces($data, 'luces_salida'));
+        $this->repo->saveNiveles($id, 'salida', $this->parseNiveles($data, 'niveles_salida'));
         AuditService::log('CREATE', 'comisiones', $id, null, $data);
         return $id;
     }
@@ -68,6 +99,12 @@ final class ComisionService
         $data = $this->normalizeResponsableRegreso($data);
         $result = $this->repo->update($id, array_merge($before, $data));
         if ($result) {
+            if (array_key_exists('luces_salida', $data)) {
+                $this->repo->saveLuces($id, 'salida', $this->parseLuces($data, 'luces_salida'));
+            }
+            if (array_key_exists('niveles_salida', $data)) {
+                $this->repo->saveNiveles($id, 'salida', $this->parseNiveles($data, 'niveles_salida'));
+            }
             AuditService::log('UPDATE', 'comisiones', $id, $before, $data);
         }
         return $result;
@@ -94,6 +131,43 @@ final class ComisionService
         } catch (\Throwable $e) {
             return $e->getMessage();
         }
+    }
+
+    /** @return list<string> */
+    private function parseLuces(array $data, string $campo): array
+    {
+        $selected = $data[$campo] ?? [];
+        if (!is_array($selected)) {
+            return [];
+        }
+        $validCodes = array_column(InspeccionRepository::LUCES_TABLERO, 'codigo');
+        $luces = [];
+        foreach ($selected as $codigo) {
+            $codigo = (string) $codigo;
+            if (in_array($codigo, $validCodes, true)) {
+                $luces[] = $codigo;
+            }
+        }
+        return array_values(array_unique($luces));
+    }
+
+    /** @return array<string, string> */
+    private function parseNiveles(array $data, string $campo): array
+    {
+        $selected = $data[$campo] ?? [];
+        if (!is_array($selected)) {
+            return [];
+        }
+        $validNiveles = array_keys(ComisionRepository::NIVEL_OPCIONES);
+        $niveles = [];
+        foreach (ComisionRepository::LIQUIDOS as $liquido) {
+            $codigo = $liquido['codigo'];
+            $nivel = (string) ($selected[$codigo] ?? '');
+            if (in_array($nivel, $validNiveles, true)) {
+                $niveles[$codigo] = $nivel;
+            }
+        }
+        return $niveles;
     }
 
     private function normalizeResponsableRegreso(array $data): array
@@ -154,6 +228,8 @@ final class ComisionService
             $metricas = $this->repo->calcularMetricas($merged, $capacidad);
             $merged = array_merge($merged, $metricas, ['estado' => 'finalizada']);
             $this->repo->update($id, $merged);
+            $this->repo->saveLuces($id, 'regreso', $this->parseLuces($data, 'luces_regreso'));
+            $this->repo->saveNiveles($id, 'regreso', $this->parseNiveles($data, 'niveles_regreso'));
             $this->vehiculos->updateKilometraje((int) $comision['vehiculo_id'], (int) $merged['km_regreso'], auth_id());
             $this->vehiculos->updateEstado((int) $comision['vehiculo_id'], 'disponible', 'Fin comisión ' . $comision['folio'], auth_id());
             AuditService::log('UPDATE', 'comisiones', $id, ['estado' => 'en_curso'], ['estado' => 'finalizada']);
