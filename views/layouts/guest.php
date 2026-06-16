@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-theme="light">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,10 +12,7 @@
 <div class="guest-layout">
     <div class="guest-card">
         <div class="guest-brand">
-            <div class="guest-brand-logo-wrap">
-                <img src="<?= asset('images/logo-cecyte-horizontal.svg') ?>" alt="CECYTE Baja California Sur" class="guest-brand-logo"
-                     onerror="this.onerror=null;this.src='<?= asset('images/logo-cecyte.png') ?>';">
-            </div>
+            <?= brand_logo_img('guest-brand-logo') ?>
             <h1><?= e((string) config('app', 'name')) ?></h1>
             <p>Panel de administración</p>
         </div>

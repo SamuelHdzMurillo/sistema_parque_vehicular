@@ -1,22 +1,19 @@
-/* SICV — Estilos institucionales CECYTE BCS */
+/* SICV — Estilos esenciales CECYTE BCS */
 :root {
-    --font-sans: 'Segoe UI', system-ui, -apple-system, sans-serif;
-    --sidebar-width: 260px;
-    --topbar-height: 56px;
-    --radius: 8px;
-    --radius-lg: 12px;
-    --shadow: 0 1px 3px rgba(0,0,0,.08), 0 4px 12px rgba(0,0,0,.04);
-    --shadow-lg: 0 4px 20px rgba(0,0,0,.1);
-    --transition: .2s ease;
+    --font-sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --sidebar-width: 240px;
+    --topbar-height: 52px;
+    --radius: 4px;
+    --radius-lg: 4px;
+    --shadow: none;
+    --transition: .15s ease;
 
-    /* CECYTE: naranja institucional */
-    --color-primary: #F27022;
-    --color-primary-hover: #d95f18;
-    --color-primary-light: rgba(242,112,34,.12);
-    /* CECYTE: verde institucional */
-    --color-accent: #4CAF50;
-    --color-accent-hover: #43a047;
-    --color-green-dark: #1A5E20;
+    --color-primary: #F17829;
+    --color-primary-hover: #d96a22;
+    --color-primary-light: rgba(241,120,41,.1);
+    --color-accent: #76BC43;
+    --color-accent-hover: #5fa032;
+    --color-green-dark: #237F3A;
 
     --bg-body: #f4f4f4;
     --bg-surface: #ffffff;
@@ -38,7 +35,7 @@
     --border-color: #dee2e6;
     --border-focus: var(--color-primary);
 
-    --success: #4CAF50;
+    --success: #76BC43;
     --success-bg: #d4edda;
     --warning: #f0ad4e;
     --warning-bg: #fff3cd;
@@ -116,28 +113,19 @@ a:hover { color: var(--color-primary-hover); text-decoration: underline; }
 .sidebar.collapsed { transform: translateX(-100%); }
 
 .sidebar-brand {
-    padding: 1rem;
+    padding: .85rem 1rem;
     border-bottom: 1px solid var(--border-color);
     display: flex;
     align-items: center;
-    gap: .75rem;
-}
-
-.sidebar-brand-logo-wrap {
-    background: #000;
-    border-radius: var(--radius);
-    padding: .35rem;
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    gap: .65rem;
 }
 
 .sidebar-brand-logo {
     height: 36px;
     width: auto;
-    max-width: 40px;
+    max-width: 150px;
     object-fit: contain;
+    flex-shrink: 0;
 }
 
 .sidebar-brand-text strong {
@@ -212,15 +200,13 @@ a:hover { color: var(--color-primary-hover); text-decoration: underline; }
     height: var(--topbar-height);
     background: var(--bg-topbar);
     border-bottom: 1px solid var(--border-color);
-    border-top: 3px solid var(--color-primary);
     display: flex;
     align-items: center;
-    padding: 0 1.25rem;
+    padding: 0 1rem;
     gap: 1rem;
     position: sticky;
     top: 0;
     z-index: 100;
-    box-shadow: var(--shadow);
 }
 
 .topbar-toggle {
@@ -377,34 +363,25 @@ a:hover { color: var(--color-primary-hover); text-decoration: underline; }
 
 .guest-card {
     width: 100%;
-    max-width: 440px;
+    max-width: 400px;
     background: var(--bg-surface);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-lg);
-    padding: 2.5rem 2rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 2rem 1.5rem;
 }
 
 .guest-brand {
     text-align: center;
-    margin-bottom: 1.75rem;
-}
-
-.guest-brand-logo-wrap {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background: #000;
-    border-radius: var(--radius-lg);
-    padding: .75rem 1.25rem;
-    margin-bottom: 1.25rem;
+    margin-bottom: 1.5rem;
 }
 
 .guest-brand-logo {
-    height: 80px;
+    height: 56px;
     width: auto;
-    max-width: 100%;
+    max-width: 240px;
     object-fit: contain;
     display: block;
+    margin: 0 auto 1rem;
 }
 
 .guest-brand h1 {
@@ -467,8 +444,7 @@ a:hover { color: var(--color-primary-hover); text-decoration: underline; }
 .card {
     background: var(--bg-surface);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow);
+    border-radius: var(--radius);
     overflow: hidden;
 }
 
@@ -506,13 +482,9 @@ a:hover { color: var(--color-primary-hover); text-decoration: underline; }
 .kpi-card {
     background: var(--bg-surface);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg);
-    padding: 1.25rem;
-    box-shadow: var(--shadow);
-    transition: transform var(--transition);
+    border-radius: var(--radius);
+    padding: 1rem;
 }
-
-.kpi-card:hover { transform: translateY(-2px); }
 
 .kpi-label {
     font-size: .75rem;
@@ -551,12 +523,11 @@ a:hover { color: var(--color-primary-hover); text-decoration: underline; }
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 1rem;
-    margin-bottom: 2rem;
-    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
     background: var(--bg-surface);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow);
+    border-radius: var(--radius);
 }
 
 .dash-kpi {

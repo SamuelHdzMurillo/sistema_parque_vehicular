@@ -9,9 +9,7 @@ $isActive = static function (string $segment) use ($currentPath): bool {
 ?>
 <aside class="sidebar" id="sidebar">
     <div class="sidebar-brand">
-        <div class="sidebar-brand-logo-wrap">
-            <img src="<?= asset('images/logo-cecyte.png') ?>" alt="CECYTE" class="sidebar-brand-logo">
-        </div>
+        <?= brand_logo_img('sidebar-brand-logo') ?>
         <div class="sidebar-brand-text">
             <strong>Control Vehicular</strong>
             <small><?= e((string) config('app', 'institution')) ?></small>

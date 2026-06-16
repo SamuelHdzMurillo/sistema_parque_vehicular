@@ -26,11 +26,10 @@ return [
         'path' => BASE_PATH . '/storage/uploads',
     ],
     'branding' => [
-        'logo_horizontal' => 'assets/images/logo-cecyte-horizontal.png',
-        'green_dark' => '#1A5E20',
-        'green' => '#4CAF50',
-        'green_light' => '#e8f5e9',
-        'green_muted' => '#c8e6c9',
-        'orange' => '#F27022',
+        'logo' => 'assets/images/logo_Cecyte_vertical_sin_fondo.png',
+        'logo_pdf_height' => 42,
+        'green_dark' => '#237F3A',
+        'green' => '#76BC43',
+        'orange' => '#F17829',
     ],
 ];

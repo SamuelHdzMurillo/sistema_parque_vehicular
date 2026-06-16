@@ -217,7 +217,7 @@
 
         function sync() {
             if (hiddenInput && hasStroke) {
-                hiddenInput.value = canvas.toDataURL('image/png');
+                hiddenInput.value = canvas.toDataURL('image/jpeg', 0.92);
             }
         }
 
@@ -229,7 +229,7 @@
 
         resize();
         window.addEventListener('resize', function () {
-            const data = hasStroke ? canvas.toDataURL() : null;
+            const data = hasStroke ? canvas.toDataURL('image/jpeg', 0.92) : null;
             resize();
             if (data) {
                 const img = new Image();

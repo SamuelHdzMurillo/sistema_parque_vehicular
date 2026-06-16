@@ -45,58 +45,12 @@ function pdf_brand(string $key, string $default = ''): string
 
 function pdf_image_file_to_data_uri(string $full): string
 {
-    if (!is_file($full)) {
-        return '';
-    }
-
-    $mime = mime_content_type($full) ?: '';
-    if (str_contains($mime, 'svg')) {
-        return 'data:image/svg+xml;base64,' . base64_encode((string) file_get_contents($full));
-    }
-
-    if (!extension_loaded('gd')) {
-        return '';
-    }
-
-    $image = match ($mime) {
-        'image/png' => @imagecreatefrompng($full),
-        'image/jpeg', 'image/jpg' => @imagecreatefromjpeg($full),
-        'image/webp' => function_exists('imagecreatefromwebp') ? @imagecreatefromwebp($full) : false,
-        default => false,
-    };
-
-    if ($image === false) {
-        return '';
-    }
-
-    ob_start();
-    imagejpeg($image, null, 92);
-    imagedestroy($image);
-    $jpeg = ob_get_clean();
-
-    return is_string($jpeg) && $jpeg !== ''
-        ? 'data:image/jpeg;base64,' . base64_encode($jpeg)
-        : '';
+    return image_to_jpeg_data_uri($full);
 }
 
 function pdf_logo_data_uri(): string
 {
-    $configured = pdf_brand('logo_horizontal');
-    $candidates = array_values(array_unique(array_filter([
-        $configured !== '' ? public_path($configured) : null,
-        public_path('assets/images/logo-cecyte-horizontal.png'),
-        public_path('assets/images/logo-cecyte-horizontal.svg'),
-        public_path('assets/images/logo-cecyte.png'),
-    ])));
-
-    foreach ($candidates as $path) {
-        $uri = pdf_image_file_to_data_uri($path);
-        if ($uri !== '') {
-            return $uri;
-        }
-    }
-
-    return '';
+    return brand_logo_data_uri();
 }
 
 function pdf_firma_data_uri(?string $path): string
@@ -105,7 +59,12 @@ function pdf_firma_data_uri(?string $path): string
         return '';
     }
 
-    return pdf_image_file_to_data_uri(storage_path('uploads/' . ltrim($path, '/')));
+    $full = storage_path('uploads/' . ltrim($path, '/'));
+    if (!is_file($full)) {
+        return '';
+    }
+
+    return image_to_jpeg_data_uri($full);
 }
 
 /**

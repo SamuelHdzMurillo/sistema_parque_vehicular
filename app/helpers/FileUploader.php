@@ -68,17 +68,35 @@ final class FileUploader
         if (!str_contains($base64, 'base64,')) {
             return null;
         }
-        $data = explode('base64,', $base64, 2)[1];
+
+        [$meta, $data] = explode('base64,', $base64, 2);
         $binary = base64_decode($data, true);
         if ($binary === false) {
             return null;
         }
+
         $dir = storage_path('uploads/' . trim($subdir, '/'));
         if (!is_dir($dir)) {
             mkdir($dir, 0755, true);
         }
-        $filename = bin2hex(random_bytes(16)) . '.png';
-        file_put_contents($dir . '/' . $filename, $binary);
-        return trim($subdir, '/') . '/' . $filename;
+
+        $filename = bin2hex(random_bytes(16)) . '.jpg';
+        $dest = $dir . '/' . $filename;
+
+        if (str_contains(strtolower($meta), 'image/jpeg') || str_contains(strtolower($meta), 'image/jpg')) {
+            file_put_contents($dest, $binary);
+            return trim($subdir, '/') . '/' . $filename;
+        }
+
+        if (extension_loaded('gd')) {
+            $image = @imagecreatefromstring($binary);
+            if ($image !== false) {
+                imagejpeg($image, $dest, 92);
+                imagedestroy($image);
+                return trim($subdir, '/') . '/' . $filename;
+            }
+        }
+
+        return null;
     }
 }
