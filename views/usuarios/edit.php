@@ -50,7 +50,7 @@ $u = $usuario;
                 <select id="area_id" name="area_id" class="form-select">
                     <option value="">—</option>
                     <?php foreach ($areas as $a): ?>
-                    <option value="<?= (int) $a['id'] ?>" <?= (int) ($u['area_id'] ?? 0) === (int) $a['id'] ? 'selected' : '' ?>><?= e($a['nombre']) ?></option>
+                    <option value="<?= (int) $a['id'] ?>" <?= (int) ($u['area_id'] ?? 0) === (int) $a['id'] ? 'selected' : '' ?>><?= e(catalogo_area_label($a)) ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>

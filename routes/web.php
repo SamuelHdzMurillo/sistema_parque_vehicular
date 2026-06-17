@@ -3,11 +3,14 @@
 declare(strict_types=1);
 
 use App\Controllers\AlertaController;
+use App\Controllers\AreaController;
 use App\Controllers\AuditoriaController;
 use App\Controllers\AuthController;
 use App\Controllers\BusquedaController;
+use App\Controllers\CatalogoController;
 use App\Controllers\CombustibleController;
 use App\Controllers\ComisionController;
+use App\Controllers\ConductorController;
 use App\Controllers\DanioController;
 use App\Controllers\DashboardController;
 use App\Controllers\DocumentoController;
@@ -15,6 +18,7 @@ use App\Controllers\FormularioController;
 use App\Controllers\HerramientaController;
 use App\Controllers\InspeccionController;
 use App\Controllers\MantenimientoController;
+use App\Controllers\PlantelController;
 use App\Controllers\ProveedorController;
 use App\Controllers\ReporteController;
 use App\Controllers\UsuarioController;
@@ -143,6 +147,27 @@ $router->get('formatos/danio', [FormularioController::class, 'danio'], $perm('da
 $router->get('formatos/danio/{id}', [FormularioController::class, 'danio'], $perm('danios.read'));
 $router->get('formatos/combustible', [FormularioController::class, 'combustible'], $perm('combustible.read'));
 $router->get('formatos/combustible/{id}', [FormularioController::class, 'combustible'], $perm('combustible.read'));
+
+// ——— Catálogos (áreas, conductores, planteles) ———
+$router->get('catalogos', [CatalogoController::class, 'index'], $perm('catalogos.read'));
+$router->get('catalogos/planteles', [PlantelController::class, 'index'], $perm('catalogos.read'));
+$router->get('catalogos/planteles/create', [PlantelController::class, 'create'], $perm('catalogos.create'));
+$router->post('catalogos/planteles', [PlantelController::class, 'store'], $perm('catalogos.create'));
+$router->get('catalogos/planteles/{id}/edit', [PlantelController::class, 'edit'], $perm('catalogos.update'));
+$router->post('catalogos/planteles/{id}', [PlantelController::class, 'update'], $perm('catalogos.update'));
+$router->post('catalogos/planteles/{id}/toggle', [PlantelController::class, 'toggle'], $perm('catalogos.update'));
+$router->get('catalogos/areas', [AreaController::class, 'index'], $perm('catalogos.read'));
+$router->get('catalogos/areas/create', [AreaController::class, 'create'], $perm('catalogos.create'));
+$router->post('catalogos/areas', [AreaController::class, 'store'], $perm('catalogos.create'));
+$router->get('catalogos/areas/{id}/edit', [AreaController::class, 'edit'], $perm('catalogos.update'));
+$router->post('catalogos/areas/{id}', [AreaController::class, 'update'], $perm('catalogos.update'));
+$router->post('catalogos/areas/{id}/toggle', [AreaController::class, 'toggle'], $perm('catalogos.update'));
+$router->get('catalogos/conductores', [ConductorController::class, 'index'], $perm('catalogos.read'));
+$router->get('catalogos/conductores/create', [ConductorController::class, 'create'], $perm('catalogos.create'));
+$router->post('catalogos/conductores', [ConductorController::class, 'store'], $perm('catalogos.create'));
+$router->get('catalogos/conductores/{id}/edit', [ConductorController::class, 'edit'], $perm('catalogos.update'));
+$router->post('catalogos/conductores/{id}', [ConductorController::class, 'update'], $perm('catalogos.update'));
+$router->post('catalogos/conductores/{id}/toggle', [ConductorController::class, 'toggle'], $perm('catalogos.update'));
 
 // ——— Usuarios ———
 $router->get('usuarios', [UsuarioController::class, 'index'], $perm('usuarios.read'));

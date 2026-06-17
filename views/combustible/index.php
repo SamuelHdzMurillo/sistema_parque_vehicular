@@ -22,7 +22,7 @@ $vehiculos = $vehiculos ?? [];
             <select id="vehiculo_id" name="vehiculo_id" class="form-select">
                 <option value="">Todos</option>
                 <?php foreach ($vehiculos as $v): ?>
-                <option value="<?= (int) $v['id'] ?>" <?= ($_GET['vehiculo_id'] ?? '') == $v['id'] ? 'selected' : '' ?>><?= e($v['numero_economico']) ?></option>
+                <option value="<?= (int) $v['id'] ?>" <?= ($_GET['vehiculo_id'] ?? '') == $v['id'] ? 'selected' : '' ?>><?= e(catalogo_vehiculo_label($v)) ?></option>
                 <?php endforeach; ?>
             </select>
         </div>

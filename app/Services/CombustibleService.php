@@ -28,27 +28,8 @@ final class CombustibleService
 
     public function getFormData(?int $vehiculoId = null): array
     {
-        $vehiculos = $this->catalogos->getVehiculosOperativos();
-        if ($vehiculoId !== null) {
-            $ids = array_map('intval', array_column($vehiculos, 'id'));
-            if (!in_array($vehiculoId, $ids, true)) {
-                $vehiculo = $this->vehiculos->findById($vehiculoId);
-                if ($vehiculo !== null) {
-                    $vehiculos[] = [
-                        'id' => (int) $vehiculo['id'],
-                        'numero_economico' => $vehiculo['numero_economico'],
-                        'marca' => $vehiculo['marca'],
-                        'modelo' => $vehiculo['modelo'],
-                        'placas' => $vehiculo['placas'],
-                        'kilometraje_actual' => (int) $vehiculo['kilometraje_actual'],
-                        'estado' => $vehiculo['estado'],
-                    ];
-                }
-            }
-        }
-
         return [
-            'vehiculos' => $vehiculos,
+            'vehiculos' => $this->catalogos->getVehiculosCatalogo(),
             'proveedores' => $this->catalogos->getProveedores('combustible'),
         ];
     }

@@ -32,9 +32,10 @@ final class ComisionService
     public function getFormData(): array
     {
         return [
-            'vehiculos' => $this->catalogos->getVehiculosDisponibles(),
+            'vehiculos' => $this->catalogos->getVehiculosCatalogo(),
             'areas' => $this->catalogos->getAreas(),
-            'conductores' => $this->catalogos->getUsersForSelect(),
+            'conductores' => $this->catalogos->getConductores(),
+            'usuarios' => $this->catalogos->getUsersForSelect(),
             'luces_tablero' => InspeccionRepository::LUCES_TABLERO,
             'liquidos' => ComisionRepository::LIQUIDOS,
             'nivel_opciones' => ComisionRepository::NIVEL_OPCIONES,
@@ -81,6 +82,7 @@ final class ComisionService
         $data['created_by'] = $userId;
         $data['responsable_id'] = (int) ($data['responsable_id'] ?? $userId);
         $data = $this->normalizeResponsableRegreso($data);
+        $data = $this->normalizeConductor($data);
         $data['folio'] = $this->repo->generateFolio();
         $data['estado'] = 'borrador';
         $id = $this->repo->create($data);
@@ -97,6 +99,7 @@ final class ComisionService
             return false;
         }
         $data = $this->normalizeResponsableRegreso($data);
+        $data = $this->normalizeConductor($data);
         $result = $this->repo->update($id, array_merge($before, $data));
         if ($result) {
             if (array_key_exists('luces_salida', $data)) {
@@ -187,6 +190,30 @@ final class ComisionService
                 $nombre = (string) ($this->repo->getUserFullName($respId) ?? '');
             }
             $data['responsable_regreso_nombre'] = $nombre !== '' ? $nombre : null;
+        }
+
+        return $data;
+    }
+
+    private function normalizeConductor(array $data): array
+    {
+        if (array_key_exists('conductor_id', $data)) {
+            $conductorId = $data['conductor_id'];
+            $conductorId = ($conductorId === '' || $conductorId === null) ? null : (int) $conductorId;
+            $data['conductor_id'] = $conductorId;
+            if ($conductorId !== null) {
+                $conductor = $this->catalogos->getConductorById($conductorId);
+                if ($conductor !== null) {
+                    $data['conductor_nombre'] = $conductor['nombre'];
+                }
+            }
+        }
+
+        $nombre = trim((string) ($data['conductor_nombre'] ?? ''));
+        if ($nombre === '' && empty($data['conductor_id'])) {
+            $data['conductor_nombre'] = '';
+        } elseif ($nombre !== '') {
+            $data['conductor_nombre'] = $nombre;
         }
 
         return $data;

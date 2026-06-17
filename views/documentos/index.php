@@ -20,7 +20,7 @@ $vehiculos = $vehiculos ?? [];
                 <option value="">Todos los vehículos</option>
                 <?php foreach ($vehiculos as $v): ?>
                 <option value="<?= (int) $v['id'] ?>" <?= ($_GET['vehiculo_id'] ?? '') == $v['id'] ? 'selected' : '' ?>>
-                    <?= e($v['numero_economico'] . ' — ' . ($v['placas'] ?? '')) ?>
+                    <?= e(catalogo_vehiculo_label($v)) ?>
                 </option>
                 <?php endforeach; ?>
             </select>

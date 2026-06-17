@@ -29,7 +29,7 @@ $kilometrajeInicial = $kilometrajeInicial ?? '';
                 <select id="vehiculo_id" name="vehiculo_id" class="form-select" required>
                     <option value="">Seleccione…</option>
                     <?php foreach ($vehiculos as $v): ?>
-                    <option value="<?= (int) $v['id'] ?>" data-km="<?= (int) ($v['kilometraje_actual'] ?? 0) ?>" <?= (string) $preVehiculo === (string) $v['id'] ? 'selected' : '' ?>><?= e($v['numero_economico']) ?> (<?= number_format((int) ($v['kilometraje_actual'] ?? 0)) ?> km<?php if (!empty($v['estado']) && !in_array($v['estado'], ['activo', 'disponible'], true)): ?> — <?= e(str_replace('_', ' ', $v['estado'])) ?><?php endif; ?>)</option>
+                    <option value="<?= (int) $v['id'] ?>" data-km="<?= (int) ($v['kilometraje_actual'] ?? 0) ?>" <?= (string) $preVehiculo === (string) $v['id'] ? 'selected' : '' ?>><?= e(catalogo_vehiculo_label($v)) ?> (<?= number_format((int) ($v['kilometraje_actual'] ?? 0)) ?> km)</option>
                     <?php endforeach; ?>
                 </select>
             </div>

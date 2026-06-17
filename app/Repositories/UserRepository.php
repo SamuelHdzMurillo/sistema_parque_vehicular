@@ -176,7 +176,15 @@ final class UserRepository extends BaseRepository
 
     public function getAreas(): array
     {
-        return $this->fetchAll('SELECT id, nombre FROM areas WHERE activo = 1 ORDER BY nombre');
+        return $this->fetchAll(
+            'SELECT a.id, a.clave, a.nombre, a.plantel_id,
+                    p.clave AS plantel_clave, p.nombre AS plantel_nombre,
+                    CONCAT(a.nombre, IF(p.clave IS NOT NULL, CONCAT(" - ", p.clave), "")) AS label
+             FROM areas a
+             LEFT JOIN planteles p ON p.id = a.plantel_id
+             WHERE a.activo = 1
+             ORDER BY p.clave ASC, a.nombre ASC'
+        );
     }
 
     public function create(array $data): int

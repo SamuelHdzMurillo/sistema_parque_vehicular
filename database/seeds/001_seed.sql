@@ -36,6 +36,9 @@ INSERT INTO permissions (slug, modulo, accion, descripcion) VALUES
 ('proveedores.read', 'proveedores', 'read', 'Ver proveedores'),
 ('proveedores.create', 'proveedores', 'create', 'Crear proveedores'),
 ('proveedores.update', 'proveedores', 'update', 'Editar proveedores'),
+('catalogos.read', 'catalogos', 'read', 'Ver catálogos'),
+('catalogos.create', 'catalogos', 'create', 'Crear registros en catálogos'),
+('catalogos.update', 'catalogos', 'update', 'Editar catálogos'),
 ('combustible.read', 'combustible', 'read', 'Ver combustible'),
 ('combustible.create', 'combustible', 'create', 'Registrar cargas'),
 ('combustible.update', 'combustible', 'update', 'Editar cargas'),
@@ -79,12 +82,28 @@ SELECT 4, id FROM permissions WHERE slug IN (
 INSERT INTO role_permissions (role_id, permission_id)
 SELECT 5, id FROM permissions WHERE accion = 'read' OR slug IN ('expediente.read','dashboard.read','reportes.export');
 
-INSERT INTO areas (clave, nombre) VALUES
+INSERT INTO planteles (clave, nombre) VALUES
 ('DG', 'Dirección General'),
-('TRANS', 'Departamento de Transporte'),
-('PLANTEL-LP', 'Plantel La Paz'),
-('PLANTEL-CAB', 'Plantel Cabo San Lucas'),
-('SERV-GEN', 'Servicios Generales');
+('LP', 'Plantel La Paz'),
+('CAB', 'Plantel Cabo San Lucas');
+
+INSERT INTO areas (clave, nombre, plantel_id) VALUES
+('DG', 'Dirección General', 1),
+('JUR', 'Jurídico', 1),
+('TRANS', 'Departamento de Transporte', 1),
+('SERV-GEN', 'Servicios Generales', 1),
+('PLANTEL-LP', 'Plantel La Paz', 2),
+('ADM', 'Administración', 2),
+('PLANTEL-CAB', 'Plantel Cabo San Lucas', 3),
+('ADM-CAB', 'Administración', 3);
+
+INSERT INTO conductores (nombre, area_id, telefono) VALUES
+('Lic. María González', 2, '6121001101'),
+('Ing. Roberto Sánchez', 3, '6121001102'),
+('Lic. Patricia Morales', 1, '6121001103'),
+('Juan Pérez López', 5, '6124445566'),
+('Ana Torres Vega', 7, '6121112233'),
+('Carlos Mendoza Ruiz', 3, '6127654321');
 
 INSERT INTO alerta_config (tipo, nombre, umbral_verde, umbral_amarillo, umbral_rojo, unidad) VALUES
 ('cambio_aceite', 'Cambio de aceite', 5000, 2000, 500, 'km'),
@@ -99,9 +118,9 @@ INSERT INTO alerta_config (tipo, nombre, umbral_verde, umbral_amarillo, umbral_r
 -- Password: Admin123!
 INSERT INTO users (role_id, area_id, nombre, apellido_paterno, apellido_materno, email, telefono, password_hash, activo) VALUES
 (1, 1, 'Administrador', 'Sistema', 'SICV', 'admin@cecytebcs.edu.mx', '6121234567', '$2y$10$CAMUM/AOqSlJTZwOY3glH.siSsRFemZUAHGgVl.47/.f7SSk9NkQ6', 1),
-(2, 2, 'Carlos', 'Mendoza', 'Ruiz', 'transporte@cecytebcs.edu.mx', '6127654321', '$2y$10$CAMUM/AOqSlJTZwOY3glH.siSsRFemZUAHGgVl.47/.f7SSk9NkQ6', 1),
-(3, 2, 'Ana', 'Torres', 'Vega', 'supervisor@cecytebcs.edu.mx', '6121112233', '$2y$10$CAMUM/AOqSlJTZwOY3glH.siSsRFemZUAHGgVl.47/.f7SSk9NkQ6', 1),
-(4, 3, 'Juan', 'Pérez', 'López', 'responsable@cecytebcs.edu.mx', '6124445566', '$2y$10$CAMUM/AOqSlJTZwOY3glH.siSsRFemZUAHGgVl.47/.f7SSk9NkQ6', 1);
+(2, 3, 'Carlos', 'Mendoza', 'Ruiz', 'transporte@cecytebcs.edu.mx', '6127654321', '$2y$10$CAMUM/AOqSlJTZwOY3glH.siSsRFemZUAHGgVl.47/.f7SSk9NkQ6', 1),
+(3, 3, 'Ana', 'Torres', 'Vega', 'supervisor@cecytebcs.edu.mx', '6121112233', '$2y$10$CAMUM/AOqSlJTZwOY3glH.siSsRFemZUAHGgVl.47/.f7SSk9NkQ6', 1),
+(4, 5, 'Juan', 'Pérez', 'López', 'responsable@cecytebcs.edu.mx', '6124445566', '$2y$10$CAMUM/AOqSlJTZwOY3glH.siSsRFemZUAHGgVl.47/.f7SSk9NkQ6', 1);
 
 INSERT INTO proveedores (razon_social, rfc, telefono, tipo) VALUES
 ('Taller Automotriz del Pacífico', 'TAP850101ABC', '6123001100', 'mantenimiento'),
@@ -109,9 +128,9 @@ INSERT INTO proveedores (razon_social, rfc, telefono, tipo) VALUES
 ('Refacciones BCS SA de CV', 'RBS950303DEF', '6123003300', 'ambos');
 
 INSERT INTO vehiculos (numero_economico, marca, modelo, version, anio, color, placas, serie_vin, motor, tipo_combustible, capacidad_tanque, kilometraje_actual, area_id, responsable_id, fecha_adquisicion, estado, created_by) VALUES
-('VEH-001', 'Nissan', 'NP300', 'SE', 2022, 'Blanco', 'ABC123A', '1N6AD0EV5NN123456', '2.5L', 'gasolina', 80.00, 45230, 3, 4, '2022-03-15', 'disponible', 1),
-('VEH-002', 'Toyota', 'Hilux', 'SR', 2021, 'Gris', 'XYZ789B', '5TFJX4GN2MX654321', '2.7L', 'gasolina', 80.00, 67890, 4, 4, '2021-06-20', 'activo', 1),
-('VEH-003', 'Chevrolet', 'Aveo', 'LT', 2020, 'Rojo', 'DEF456C', '3G1TC5CF0LL789012', '1.6L', 'gasolina', 45.00, 89120, 5, 4, '2020-01-10', 'en_mantenimiento', 1);
+('VEH-001', 'Nissan', 'NP300', 'SE', 2022, 'Blanco', 'ABC123A', '1N6AD0EV5NN123456', '2.5L', 'gasolina', 80.00, 45230, 5, 4, '2022-03-15', 'disponible', 1),
+('VEH-002', 'Toyota', 'Hilux', 'SR', 2021, 'Gris', 'XYZ789B', '5TFJX4GN2MX654321', '2.7L', 'gasolina', 80.00, 67890, 7, 4, '2021-06-20', 'activo', 1),
+('VEH-003', 'Chevrolet', 'Aveo', 'LT', 2020, 'Rojo', 'DEF456C', '3G1TC5CF0LL789012', '1.6L', 'gasolina', 45.00, 89120, 4, 4, '2020-01-10', 'en_mantenimiento', 1);
 
 INSERT INTO herramientas_vehiculo (vehiculo_id, tipo, estado) VALUES
 (1, 'gato', 'presente'), (1, 'cruceta', 'presente'), (1, 'extintor', 'presente'),

@@ -73,7 +73,7 @@ $renderLuces = static function (array $codigos) use ($lucesById): string {
             <div class="meta-item"><label>Fecha</label><span><?= format_date($c['fecha']) ?></span></div>
             <div class="meta-item"><label>Hora salida</label><span><?= e(substr($c['hora_salida'] ?? '', 0, 5)) ?></span></div>
             <div class="meta-item"><label>Hora regreso</label><span><?= $c['hora_regreso'] ? e(substr($c['hora_regreso'], 0, 5)) : '—' ?></span></div>
-            <div class="meta-item"><label>Conductor</label><span><?= e($c['conductor_nombre']) ?></span></div>
+            <div class="meta-item"><label>Conductor</label><span><?= e($c['conductor_nombre']) ?><?php if (!empty($c['conductor_telefono'])): ?> <span class="text-muted">(<?= e($c['conductor_telefono']) ?>)</span><?php endif; ?></span></div>
             <div class="meta-item"><label>Área</label><span><?= e($c['area_solicitante_nombre'] ?? $c['area_nombre'] ?? '—') ?></span></div>
             <div class="meta-item"><label>Responsable</label><span><?= e($c['responsable_nombre'] ?? '—') ?></span></div>
             <div class="meta-item"><label>Responsable de regreso</label><span><?= e($c['responsable_regreso_nombre'] ?? '—') ?: '—' ?></span></div>

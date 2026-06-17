@@ -99,7 +99,7 @@ $combustibleLabel = ['gasolina' => 'Gasolina', 'diesel' => 'Diésel', 'hibrido' 
                 <select id="area_id" name="area_id" class="form-select" required>
                     <option value="">Seleccione…</option>
                     <?php foreach ($areas as $a): ?>
-                    <option value="<?= (int) $a['id'] ?>" <?= (string) old('area_id') === (string) $a['id'] ? 'selected' : '' ?>><?= e($a['nombre']) ?></option>
+                    <option value="<?= (int) $a['id'] ?>" <?= (string) old('area_id') === (string) $a['id'] ? 'selected' : '' ?>><?= e(catalogo_area_label($a)) ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>

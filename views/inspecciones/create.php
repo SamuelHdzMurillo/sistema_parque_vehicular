@@ -28,7 +28,7 @@ if (!is_array($selectedLuces)) {
                         <option value="">Seleccione…</option>
                         <?php foreach ($vehiculos as $v): ?>
                         <option value="<?= (int) $v['id'] ?>" <?= (string) $preVehiculo === (string) $v['id'] ? 'selected' : '' ?>>
-                            <?= e($v['numero_economico'] . ' — ' . ($v['placas'] ?? '')) ?>
+                            <?= e(catalogo_vehiculo_label($v)) ?>
                         </option>
                         <?php endforeach; ?>
                     </select>

@@ -412,6 +412,34 @@
         });
     }
 
+    /* ——— Catálogo de conductores en comisiones ——— */
+    function initConductorSelect() {
+        const select = document.querySelector('[data-conductor-select]');
+        if (!select) return;
+
+        const nombreInput = document.getElementById('conductor_nombre');
+        const telefonoHint = document.querySelector('[data-conductor-telefono]');
+
+        function sync() {
+            const option = select.options[select.selectedIndex];
+            if (!option || !option.value) {
+                if (telefonoHint) telefonoHint.textContent = '';
+                return;
+            }
+            const nombre = option.getAttribute('data-nombre') || option.textContent.trim();
+            const telefono = option.getAttribute('data-telefono') || '';
+            if (nombreInput) {
+                nombreInput.value = nombre;
+            }
+            if (telefonoHint) {
+                telefonoHint.textContent = telefono ? 'Teléfono: ' + telefono : '';
+            }
+        }
+
+        select.addEventListener('change', sync);
+        sync();
+    }
+
     /* ——— Init ——— */
     document.addEventListener('DOMContentLoaded', function () {
         initTheme();
@@ -423,6 +451,7 @@
         initConfirm();
         initDashLights();
         initKmAutofill();
+        initConductorSelect();
         initLightbox();
         initImagePreview();
         window.SICV.initSignaturePads();

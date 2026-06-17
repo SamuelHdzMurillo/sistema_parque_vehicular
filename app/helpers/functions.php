@@ -347,6 +347,35 @@ function vehiculo_identificador_placeholder(): string
     return 'Ej. Patrulla 01, Unidad Norte, Camión 3…';
 }
 
+/** @param array<string, mixed> $area */
+function catalogo_area_label(array $area): string
+{
+    if (!empty($area['label'])) {
+        return (string) $area['label'];
+    }
+    $nombre = trim((string) ($area['nombre'] ?? ''));
+    $plantel = trim((string) ($area['plantel_clave'] ?? $area['plantel_nombre'] ?? ''));
+    if ($nombre !== '' && $plantel !== '') {
+        return $nombre . ' - ' . $plantel;
+    }
+    return $nombre !== '' ? $nombre : '—';
+}
+
+/** @param array<string, mixed> $vehiculo */
+function catalogo_vehiculo_label(array $vehiculo, bool $incluirEstado = true): string
+{
+    $partes = array_filter([
+        trim((string) ($vehiculo['numero_economico'] ?? '')),
+        trim(trim((string) ($vehiculo['marca'] ?? '')) . ' ' . trim((string) ($vehiculo['modelo'] ?? ''))),
+        trim((string) ($vehiculo['placas'] ?? '')),
+    ]);
+    $etiqueta = implode(' — ', $partes);
+    if ($incluirEstado && !empty($vehiculo['estado']) && !in_array($vehiculo['estado'], ['activo', 'disponible'], true)) {
+        $etiqueta .= ' [' . ucfirst(str_replace('_', ' ', (string) $vehiculo['estado'])) . ']';
+    }
+    return $etiqueta !== '' ? $etiqueta : '—';
+}
+
 function rol_badge_class(string $slug): string
 {
     return match ($slug) {

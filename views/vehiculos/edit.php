@@ -113,7 +113,7 @@ $responsableLabel = static function (array $u): string {
                 <label class="form-label" for="area_id">Área <span class="required">*</span></label>
                 <select id="area_id" name="area_id" class="form-select" required>
                     <?php foreach ($areas as $a): ?>
-                    <option value="<?= (int) $a['id'] ?>" <?= (string) $v['area_id'] === (string) $a['id'] ? 'selected' : '' ?>><?= e($a['nombre']) ?></option>
+                    <option value="<?= (int) $a['id'] ?>" <?= (string) $v['area_id'] === (string) $a['id'] ? 'selected' : '' ?>><?= e(catalogo_area_label($a)) ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>

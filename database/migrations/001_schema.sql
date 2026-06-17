@@ -40,8 +40,8 @@ CREATE TABLE role_permissions (
     FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- ===================== USUARIOS =====================
-CREATE TABLE areas (
+-- ===================== CATÁLOGOS =====================
+CREATE TABLE planteles (
     id SMALLINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     clave VARCHAR(20) NOT NULL UNIQUE,
     nombre VARCHAR(150) NOT NULL,
@@ -49,6 +49,30 @@ CREATE TABLE areas (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
+CREATE TABLE areas (
+    id SMALLINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    clave VARCHAR(20) NOT NULL UNIQUE,
+    nombre VARCHAR(150) NOT NULL,
+    plantel_id SMALLINT UNSIGNED NULL,
+    activo TINYINT(1) NOT NULL DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (plantel_id) REFERENCES planteles(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE conductores (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(200) NOT NULL,
+    area_id SMALLINT UNSIGNED NOT NULL,
+    telefono VARCHAR(20) NOT NULL,
+    activo TINYINT(1) NOT NULL DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (area_id) REFERENCES areas(id),
+    INDEX idx_conductores_area (area_id),
+    INDEX idx_conductores_activo (activo)
+) ENGINE=InnoDB;
+
+-- ===================== USUARIOS =====================
 CREATE TABLE users (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     role_id TINYINT UNSIGNED NOT NULL,
@@ -218,7 +242,7 @@ CREATE TABLE comisiones (
     FOREIGN KEY (vehiculo_id) REFERENCES vehiculos(id),
     FOREIGN KEY (area_solicitante_id) REFERENCES areas(id),
     FOREIGN KEY (responsable_id) REFERENCES users(id),
-    FOREIGN KEY (conductor_id) REFERENCES users(id) ON DELETE SET NULL,
+    FOREIGN KEY (conductor_id) REFERENCES conductores(id) ON DELETE SET NULL,
     FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
     INDEX idx_comisiones_vehiculo (vehiculo_id),
     INDEX idx_comisiones_fecha (fecha),

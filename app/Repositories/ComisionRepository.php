@@ -27,11 +27,14 @@ final class ComisionRepository extends BaseRepository
     {
         return $this->fetchOne(
             'SELECT c.*, v.numero_economico, v.placas, v.capacidad_tanque, v.marca, v.modelo,
-                    a.nombre AS area_solicitante_nombre,
+                    CONCAT(a.nombre, IF(p.clave IS NOT NULL, CONCAT(" - ", p.clave), "")) AS area_solicitante_nombre,
+                    cond.telefono AS conductor_telefono,
                     CONCAT(u.nombre, " ", u.apellido_paterno) AS responsable_nombre
              FROM comisiones c
              JOIN vehiculos v ON v.id = c.vehiculo_id
              JOIN areas a ON a.id = c.area_solicitante_id
+             LEFT JOIN planteles p ON p.id = a.plantel_id
+             LEFT JOIN conductores cond ON cond.id = c.conductor_id
              JOIN users u ON u.id = c.responsable_id
              WHERE c.id = ?',
             [$id]
@@ -233,10 +236,12 @@ final class ComisionRepository extends BaseRepository
         $queryParams = array_merge($params, [$perPage, $offset]);
         $rows = $this->fetchAll(
             "SELECT c.id, c.folio, c.fecha, c.destino, c.estado, c.km_recorridos, c.rendimiento,
-                    v.numero_economico, a.nombre AS area_nombre
+                    v.numero_economico,
+                    CONCAT(a.nombre, IF(p.clave IS NOT NULL, CONCAT(' - ', p.clave), '')) AS area_nombre
              FROM comisiones c
              JOIN vehiculos v ON v.id = c.vehiculo_id
              JOIN areas a ON a.id = c.area_solicitante_id
+             LEFT JOIN planteles p ON p.id = a.plantel_id
              {$where}
              ORDER BY c.fecha DESC, c.id DESC
              LIMIT ? OFFSET ?",

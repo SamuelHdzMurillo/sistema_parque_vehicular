@@ -9,10 +9,13 @@ final class VehiculoRepository extends BaseRepository
     public function findById(int $id): ?array
     {
         return $this->fetchOne(
-            'SELECT v.*, a.nombre AS area_nombre, a.clave AS area_clave,
+            'SELECT v.*, a.clave AS area_clave,
+                    CONCAT(a.nombre, IF(p.clave IS NOT NULL, CONCAT(" - ", p.clave), "")) AS area_nombre,
+                    p.clave AS plantel_clave,
                     CONCAT(u.nombre, " ", u.apellido_paterno) AS responsable_nombre
              FROM vehiculos v
              JOIN areas a ON a.id = v.area_id
+             LEFT JOIN planteles p ON p.id = a.plantel_id
              JOIN users u ON u.id = v.responsable_id
              WHERE v.id = ? AND v.deleted_at IS NULL',
             [$id]
@@ -185,10 +188,12 @@ final class VehiculoRepository extends BaseRepository
         $queryParams = array_merge($params, [$perPage, $offset]);
         $rows = $this->fetchAll(
             "SELECT v.id, v.numero_economico, v.marca, v.modelo, v.placas, v.anio, v.estado,
-                    v.kilometraje_actual, a.nombre AS area_nombre,
+                    v.kilometraje_actual,
+                    CONCAT(a.nombre, IF(p.clave IS NOT NULL, CONCAT(' - ', p.clave), '')) AS area_nombre,
                     CONCAT(u.nombre, ' ', u.apellido_paterno) AS responsable_nombre
              FROM vehiculos v
              JOIN areas a ON a.id = v.area_id
+             LEFT JOIN planteles p ON p.id = a.plantel_id
              JOIN users u ON u.id = v.responsable_id
              {$where}
              ORDER BY v.numero_economico ASC
@@ -204,9 +209,10 @@ final class VehiculoRepository extends BaseRepository
         $like = '%' . $term . '%';
         return $this->fetchAll(
             'SELECT v.id, v.numero_economico, v.marca, v.modelo, v.placas, v.estado, v.serie_vin,
-                    a.nombre AS area_nombre
+                    CONCAT(a.nombre, IF(p.clave IS NOT NULL, CONCAT(" - ", p.clave), "")) AS area_nombre
              FROM vehiculos v
              JOIN areas a ON a.id = v.area_id
+             LEFT JOIN planteles p ON p.id = a.plantel_id
              WHERE v.deleted_at IS NULL
                AND (v.numero_economico LIKE ? OR v.placas LIKE ? OR v.serie_vin LIKE ?
                     OR v.marca LIKE ? OR v.modelo LIKE ?)

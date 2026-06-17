@@ -8,12 +8,40 @@ final class CatalogoRepository extends BaseRepository
 {
     public function getAreas(bool $soloActivos = true): array
     {
-        $sql = 'SELECT id, clave, nombre FROM areas';
+        $sql = 'SELECT a.id, a.clave, a.nombre, a.plantel_id,
+                       p.clave AS plantel_clave, p.nombre AS plantel_nombre,
+                       CONCAT(a.nombre, IF(p.clave IS NOT NULL, CONCAT(" - ", p.clave), "")) AS label
+                FROM areas a
+                LEFT JOIN planteles p ON p.id = a.plantel_id';
         if ($soloActivos) {
-            $sql .= ' WHERE activo = 1';
+            $sql .= ' WHERE a.activo = 1';
         }
-        $sql .= ' ORDER BY nombre ASC';
+        $sql .= ' ORDER BY p.clave ASC, a.nombre ASC';
         return $this->fetchAll($sql);
+    }
+
+    public function getConductores(bool $soloActivos = true): array
+    {
+        $sql = 'SELECT c.id, c.nombre, c.telefono, c.area_id,
+                       a.nombre AS area_nombre, p.clave AS plantel_clave,
+                       CONCAT(a.nombre, IF(p.clave IS NOT NULL, CONCAT(" - ", p.clave), "")) AS area_label
+                FROM conductores c
+                JOIN areas a ON a.id = c.area_id
+                LEFT JOIN planteles p ON p.id = a.plantel_id';
+        if ($soloActivos) {
+            $sql .= ' WHERE c.activo = 1';
+        }
+        $sql .= ' ORDER BY c.nombre ASC';
+        return $this->fetchAll($sql);
+    }
+
+    public function getConductorById(int $id): ?array
+    {
+        return $this->fetchOne(
+            'SELECT c.id, c.nombre, c.telefono, c.area_id
+             FROM conductores c WHERE c.id = ? AND c.activo = 1',
+            [$id]
+        );
     }
 
     public function getProveedores(?string $tipo = null, bool $soloActivos = true): array
@@ -87,24 +115,24 @@ final class CatalogoRepository extends BaseRepository
         ];
     }
 
-    public function getVehiculosDisponibles(): array
+    /** Catálogo completo de vehículos (sin filtrar por estado). */
+    public function getVehiculosCatalogo(): array
     {
         return $this->fetchAll(
-            "SELECT v.id, v.numero_economico, v.marca, v.modelo, v.placas, v.kilometraje_actual, v.estado
+            'SELECT v.id, v.numero_economico, v.marca, v.modelo, v.placas, v.kilometraje_actual, v.estado
              FROM vehiculos v
-             WHERE v.deleted_at IS NULL AND v.estado IN ('activo','disponible')
-             ORDER BY v.numero_economico ASC"
+             WHERE v.deleted_at IS NULL
+             ORDER BY v.numero_economico ASC'
         );
     }
 
-    /** Vehículos en operación (excluye baja y fuera de servicio). */
+    public function getVehiculosDisponibles(): array
+    {
+        return $this->getVehiculosCatalogo();
+    }
+
     public function getVehiculosOperativos(): array
     {
-        return $this->fetchAll(
-            "SELECT v.id, v.numero_economico, v.marca, v.modelo, v.placas, v.kilometraje_actual, v.estado
-             FROM vehiculos v
-             WHERE v.deleted_at IS NULL AND v.estado NOT IN ('baja', 'fuera_servicio')
-             ORDER BY v.numero_economico ASC"
-        );
+        return $this->getVehiculosCatalogo();
     }
 }

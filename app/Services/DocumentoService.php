@@ -10,6 +10,12 @@ use App\Services\AuditService;
 
 final class DocumentoService extends BaseRepository
 {
+    public function __construct(
+        private readonly \App\Repositories\CatalogoRepository $catalogos = new \App\Repositories\CatalogoRepository(),
+    ) {
+        parent::__construct();
+    }
+
     public function paginate(int $page = 1, ?int $vehiculoId = null): array
     {
         return $this->paginateGrouped($page, $vehiculoId);
@@ -77,13 +83,7 @@ final class DocumentoService extends BaseRepository
             }
         }
 
-        $vehiculosFiltro = $this->fetchAll(
-            'SELECT DISTINCT v.id, v.numero_economico, v.placas
-             FROM vehiculos v
-             INNER JOIN documentos d ON d.vehiculo_id = v.id AND d.activo = 1
-             WHERE v.deleted_at IS NULL
-             ORDER BY v.numero_economico'
-        );
+        $vehiculosFiltro = $this->catalogos->getVehiculosCatalogo();
 
         return [
             'grupos' => $grupos,
@@ -105,9 +105,7 @@ final class DocumentoService extends BaseRepository
     public function getFormData(): array
     {
         return [
-            'vehiculos' => $this->fetchAll(
-                'SELECT id, numero_economico, placas FROM vehiculos WHERE deleted_at IS NULL ORDER BY numero_economico'
-            ),
+            'vehiculos' => $this->catalogos->getVehiculosCatalogo(),
         ];
     }
 

@@ -6,10 +6,16 @@ namespace App\Services;
 
 use App\Helpers\FileUploader;
 use App\Repositories\BaseRepository;
+use App\Repositories\CatalogoRepository;
 use App\Services\AuditService;
 
 final class DanioService extends BaseRepository
 {
+    public function __construct(
+        private readonly CatalogoRepository $catalogos = new CatalogoRepository(),
+    ) {
+        parent::__construct();
+    }
     public function paginate(int $page = 1, ?string $estado = null): array
     {
         $perPage = 15;
@@ -56,9 +62,7 @@ final class DanioService extends BaseRepository
     public function getFormData(): array
     {
         return [
-            'vehiculos' => $this->fetchAll(
-                'SELECT id, numero_economico, placas FROM vehiculos WHERE deleted_at IS NULL ORDER BY numero_economico'
-            ),
+            'vehiculos' => $this->catalogos->getVehiculosCatalogo(),
         ];
     }
 
