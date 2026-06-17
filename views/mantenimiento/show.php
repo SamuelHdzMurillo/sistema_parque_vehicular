@@ -9,7 +9,18 @@ $m = $mantenimiento ?? [];
         <p class="page-subtitle"><span class="badge badge-secondary"><?= e(str_replace('_', ' ', $m['estado'] ?? '')) ?></span></p>
     </div>
     <div class="page-actions">
-        <a href="<?= url('formatos/mantenimiento/' . $m['id']) ?>" class="btn btn-secondary" target="_blank">Descargar PDF / Imprimir</a>
+        <?php
+        $pdfCacheV = (string) ($m['id'] ?? '0');
+        if (!empty($m['factura_ruta'])) {
+            $facturaFile = storage_path('uploads/' . ltrim((string) $m['factura_ruta'], '/'));
+            if (is_file($facturaFile)) {
+                $pdfCacheV .= '_' . (string) filemtime($facturaFile);
+            }
+        } else {
+            $pdfCacheV .= '_' . (string) strtotime((string) ($m['updated_at'] ?? $m['created_at'] ?? 'now'));
+        }
+        ?>
+        <a href="<?= url('formatos/mantenimiento/' . $m['id']) ?>?v=<?= e($pdfCacheV) ?>" class="btn btn-secondary" target="_blank">Descargar PDF / Imprimir</a>
         <?php if (can('mantenimiento.update')): ?>
         <a href="<?= url('mantenimiento/' . $m['id'] . '/edit') ?>" class="btn btn-secondary">Editar</a>
         <?php endif; ?>
@@ -33,6 +44,63 @@ $m = $mantenimiento ?? [];
         <?php endif; ?>
     </div>
 </div>
+
+<?php if (!empty($m['proveedor_id'])): ?>
+<div class="card mb-2">
+    <div class="card-header"><h3>Datos del proveedor</h3></div>
+    <div class="card-body">
+        <div class="meta-grid">
+            <div class="meta-item"><label>Razón social</label><span><?= e($m['proveedor_nombre'] ?? '—') ?></span></div>
+            <div class="meta-item"><label>RFC</label><span><?= e($m['proveedor_rfc'] ?? '—') ?></span></div>
+            <div class="meta-item"><label>Teléfono</label><span><?= e($m['proveedor_telefono'] ?? '—') ?></span></div>
+            <div class="meta-item"><label>Email</label><span><?= e($m['proveedor_email'] ?? '—') ?></span></div>
+            <div class="meta-item"><label>Dirección</label><span><?= e($m['proveedor_direccion'] ?? '—') ?></span></div>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+
+<?php
+$tieneFactura = !empty($m['factura_folio']) || !empty($m['factura_uuid']) || !empty($m['factura_total'])
+    || !empty($m['factura_ruta']) || !empty($m['xml_ruta']);
+?>
+<?php if ($tieneFactura): ?>
+<div class="card mb-2">
+    <div class="card-header"><h3>Factura</h3></div>
+    <div class="card-body">
+        <div class="meta-grid">
+            <div class="meta-item"><label>Folio / serie</label><span><?= e($m['factura_folio'] ?? '—') ?></span></div>
+            <div class="meta-item"><label>Fecha</label><span><?= !empty($m['factura_fecha']) ? format_date($m['factura_fecha']) : '—' ?></span></div>
+            <div class="meta-item"><label>Folio fiscal (UUID)</label><span><?= e($m['factura_uuid'] ?? '—') ?></span></div>
+            <div class="meta-item"><label>Subtotal</label><span><?= isset($m['factura_subtotal']) && $m['factura_subtotal'] !== null ? format_money($m['factura_subtotal']) : '—' ?></span></div>
+            <div class="meta-item"><label>IVA</label><span><?= isset($m['factura_iva']) && $m['factura_iva'] !== null ? format_money($m['factura_iva']) : '—' ?></span></div>
+            <div class="meta-item"><label>Total</label><span><?= isset($m['factura_total']) && $m['factura_total'] !== null ? format_money($m['factura_total']) : '—' ?></span></div>
+        </div>
+        <?php
+        $facturaUrl = !empty($m['factura_ruta']) ? url('storage/uploads/' . ltrim((string) $m['factura_ruta'], '/')) : '';
+        $facturaExt = !empty($m['factura_ruta']) ? strtolower((string) pathinfo((string) $m['factura_ruta'], PATHINFO_EXTENSION)) : '';
+        $facturaEsImagen = in_array($facturaExt, ['jpg', 'jpeg', 'png', 'webp', 'gif'], true);
+        ?>
+        <?php if ($facturaUrl !== '' && $facturaEsImagen): ?>
+        <div class="mt-2">
+            <a href="<?= e($facturaUrl) ?>" target="_blank">
+                <img src="<?= e($facturaUrl) ?>" alt="Factura" style="max-width:100%;max-height:480px;border:1px solid var(--border-color);border-radius:var(--radius);">
+            </a>
+        </div>
+        <?php endif; ?>
+        <?php if (!empty($m['factura_ruta']) || !empty($m['xml_ruta'])): ?>
+        <div class="d-flex gap-1 mt-2">
+            <?php if (!empty($m['factura_ruta'])): ?>
+            <a href="<?= e($facturaUrl) ?>" class="btn btn-sm btn-secondary" target="_blank"><?= $facturaEsImagen ? 'Ver factura en grande' : 'Ver archivo de factura' ?></a>
+            <?php endif; ?>
+            <?php if (!empty($m['xml_ruta'])): ?>
+            <a href="<?= url('storage/uploads/' . ltrim((string) $m['xml_ruta'], '/')) ?>" class="btn btn-sm btn-secondary" target="_blank">Descargar XML (CFDI)</a>
+            <?php endif; ?>
+        </div>
+        <?php endif; ?>
+    </div>
+</div>
+<?php endif; ?>
 
 <?php if (($m['estado'] ?? '') === 'pendiente' && can('mantenimiento.authorize')): ?>
 <div class="card mb-2">

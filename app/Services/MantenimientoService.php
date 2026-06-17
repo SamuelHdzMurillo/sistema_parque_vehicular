@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Helpers\FileUploader;
 use App\Repositories\CatalogoRepository;
 use App\Repositories\MantenimientoRepository;
 use App\Repositories\VehiculoRepository;
@@ -26,7 +27,7 @@ final class MantenimientoService
     {
         return [
             'vehiculos' => $this->catalogos->getVehiculosDisponibles(),
-            'proveedores' => $this->catalogos->getProveedores('mantenimiento'),
+            'proveedores' => $this->catalogos->getProveedores(),
             'responsables' => $this->catalogos->getUsersForSelect(),
             'tipos' => ['preventivo', 'correctivo', 'predictivo'],
             'estados' => ['pendiente', 'programado', 'autorizado', 'en_proceso', 'finalizado', 'cancelado'],
@@ -40,11 +41,21 @@ final class MantenimientoService
 
     public function create(array $data, int $userId): int
     {
+        $files = $this->extractFiles($data);
         $data['folio'] = $this->repo->generateFolio();
         $data['created_by'] = $userId;
         $data['responsable_id'] = (int) ($data['responsable_id'] ?? $userId);
         $data['estado'] = $data['estado'] ?? 'pendiente';
         $id = $this->repo->create($data);
+
+        $rutas = $this->storeFacturaFiles($id, $files);
+        if ($rutas !== []) {
+            $mant = $this->repo->findById($id);
+            if ($mant !== null) {
+                $this->repo->update($id, array_merge($mant, $rutas));
+            }
+        }
+
         AuditService::log('CREATE', 'mantenimientos', $id, null, $data);
         return $id;
     }
@@ -55,11 +66,55 @@ final class MantenimientoService
         if ($before === null) {
             return false;
         }
-        $result = $this->repo->update($id, array_merge($before, $data));
+        $files = $this->extractFiles($data);
+        $rutas = $this->storeFacturaFiles($id, $files);
+        $result = $this->repo->update($id, array_merge($before, $data, $rutas));
         if ($result) {
-            AuditService::log('UPDATE', 'mantenimientos', $id, $before, $data);
+            AuditService::log('UPDATE', 'mantenimientos', $id, $before, array_merge($data, $rutas));
         }
         return $result;
+    }
+
+    /**
+     * Separa los archivos subidos del resto de datos del formulario.
+     *
+     * @return array{factura?: array, xml?: array}
+     */
+    private function extractFiles(array &$data): array
+    {
+        $files = [];
+        foreach (['factura', 'xml'] as $key) {
+            $file = $data['archivo_' . $key] ?? null;
+            unset($data['archivo_' . $key]);
+            if (is_array($file) && ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK) {
+                $files[$key] = $file;
+            }
+        }
+        return $files;
+    }
+
+    /**
+     * Sube los archivos de factura (PDF/XML) y devuelve las rutas a persistir.
+     *
+     * @param array{factura?: array, xml?: array} $files
+     * @return array{factura_ruta?: string, xml_ruta?: string}
+     */
+    private function storeFacturaFiles(int $id, array $files): array
+    {
+        $rutas = [];
+        if (isset($files['factura'])) {
+            $ruta = FileUploader::uploadDocument($files['factura'], 'mantenimientos/' . $id);
+            if ($ruta !== null) {
+                $rutas['factura_ruta'] = $ruta;
+            }
+        }
+        if (isset($files['xml'])) {
+            $ruta = FileUploader::uploadDocument($files['xml'], 'mantenimientos/' . $id);
+            if ($ruta !== null) {
+                $rutas['xml_ruta'] = $ruta;
+            }
+        }
+        return $rutas;
     }
 
     public function autorizar(int $id, int $userId): ?string

@@ -15,6 +15,7 @@ use App\Controllers\FormularioController;
 use App\Controllers\HerramientaController;
 use App\Controllers\InspeccionController;
 use App\Controllers\MantenimientoController;
+use App\Controllers\ProveedorController;
 use App\Controllers\ReporteController;
 use App\Controllers\UsuarioController;
 use App\Controllers\VehiculoController;
@@ -97,6 +98,14 @@ $router->get('mantenimiento/{id}/edit', [MantenimientoController::class, 'edit']
 $router->post('mantenimiento/{id}', [MantenimientoController::class, 'update'], $perm('mantenimiento.update'));
 $router->post('mantenimiento/{id}/autorizar', [MantenimientoController::class, 'autorizar'], $perm('mantenimiento.authorize'));
 $router->post('mantenimiento/{id}/finalizar', [MantenimientoController::class, 'finalizar'], $perm('mantenimiento.update'));
+
+// ——— Proveedores ———
+$router->get('proveedores', [ProveedorController::class, 'index'], $perm('proveedores.read'));
+$router->get('proveedores/create', [ProveedorController::class, 'create'], $perm('proveedores.create'));
+$router->post('proveedores', [ProveedorController::class, 'store'], $perm('proveedores.create'));
+$router->get('proveedores/{id}/edit', [ProveedorController::class, 'edit'], $perm('proveedores.update'));
+$router->post('proveedores/{id}', [ProveedorController::class, 'update'], $perm('proveedores.update'));
+$router->post('proveedores/{id}/toggle', [ProveedorController::class, 'toggle'], $perm('proveedores.update'));
 
 // ——— Combustible ———
 $router->get('combustible', [CombustibleController::class, 'index'], $perm('combustible.read'));

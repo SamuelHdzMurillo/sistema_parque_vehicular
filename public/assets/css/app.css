@@ -991,6 +991,22 @@ a:hover { color: var(--color-primary-hover); text-decoration: underline; }
     gap: 1rem;
 }
 
+.form-fieldset {
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem 1.25rem;
+    margin: 0;
+}
+
+.form-fieldset > legend {
+    padding: 0 .5rem;
+    font-size: .85rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: .03em;
+}
+
 .form-check {
     display: flex;
     align-items: center;
@@ -1588,6 +1604,7 @@ input[type="number"] {
 .mb-0 { margin-bottom: 0; }
 .mb-2 { margin-bottom: 1rem; }
 .d-flex { display: flex; }
+.d-inline { display: inline-block; }
 .gap-1 { gap: .5rem; }
 .gap-2 { gap: 1rem; }
 .flex-wrap { flex-wrap: wrap; }

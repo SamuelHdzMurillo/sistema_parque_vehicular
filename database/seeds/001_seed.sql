@@ -33,6 +33,9 @@ INSERT INTO permissions (slug, modulo, accion, descripcion) VALUES
 ('mantenimiento.create', 'mantenimiento', 'create', 'Crear mantenimiento'),
 ('mantenimiento.update', 'mantenimiento', 'update', 'Editar mantenimiento'),
 ('mantenimiento.authorize', 'mantenimiento', 'authorize', 'Autorizar mantenimiento'),
+('proveedores.read', 'proveedores', 'read', 'Ver proveedores'),
+('proveedores.create', 'proveedores', 'create', 'Crear proveedores'),
+('proveedores.update', 'proveedores', 'update', 'Editar proveedores'),
 ('combustible.read', 'combustible', 'read', 'Ver combustible'),
 ('combustible.create', 'combustible', 'create', 'Registrar cargas'),
 ('combustible.update', 'combustible', 'update', 'Editar cargas'),
@@ -67,6 +70,7 @@ SELECT 4, id FROM permissions WHERE slug IN (
     'inspecciones.read','inspecciones.create','inspecciones.update',
     'danios.read','danios.create','danios.update',
     'mantenimiento.read','combustible.read','combustible.create','combustible.update',
+    'proveedores.read',
     'herramientas.read','herramientas.update','documentos.read',
     'alertas.read','dashboard.read','reportes.export'
 );

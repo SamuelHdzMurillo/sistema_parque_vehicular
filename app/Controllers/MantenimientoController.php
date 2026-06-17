@@ -37,6 +37,8 @@ final class MantenimientoController extends BaseController
 
         $data = $request->all();
         $data['responsable_id'] = $data['responsable_id'] ?? $userId;
+        $data['archivo_factura'] = $request->file('archivo_factura');
+        $data['archivo_xml'] = $request->file('archivo_xml');
         $id = $this->mantenimientos->create($data, $userId);
         flash('success', 'Mantenimiento registrado correctamente.');
         $this->redirect('mantenimiento/' . $id);
@@ -65,7 +67,10 @@ final class MantenimientoController extends BaseController
     public function update(Request $request, string $id): never
     {
         $this->validateCsrf($request);
-        if (!$this->mantenimientos->update((int) $id, $request->all())) {
+        $data = $request->all();
+        $data['archivo_factura'] = $request->file('archivo_factura');
+        $data['archivo_xml'] = $request->file('archivo_xml');
+        if (!$this->mantenimientos->update((int) $id, $data)) {
             flash('error', 'No se pudo actualizar el mantenimiento.');
             $this->redirect('mantenimiento/' . $id . '/edit');
         }

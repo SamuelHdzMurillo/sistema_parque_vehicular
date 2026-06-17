@@ -5,6 +5,10 @@ $m = $mantenimiento ?? null;
 $pdfTitle = 'Orden de Servicio — Mantenimiento';
 $pdfSubtitle = $m ? ('Folio: ' . ($m['folio'] ?? '')) : 'Formato en blanco';
 
+$facturaRuta = isset($m['factura_ruta']) ? (string) $m['factura_ruta'] : '';
+$facturaEmbed = pdf_prepare_factura($facturaRuta !== '' ? $facturaRuta : null);
+$facturaEsPdf = pdf_factura_is_pdf($facturaRuta !== '' ? $facturaRuta : null);
+
 ob_start();
 ?>
 <div class="section">
@@ -23,10 +27,47 @@ ob_start();
         ['label' => 'Responsable', 'value' => pdf_val($m['responsable_nombre'] ?? null, '')],
     ]);
     ?>
-    <p style="margin:6px 0 2px;font-size:8px;color:#64748b;text-transform:uppercase;">Descripción del trabajo</p>
+    <p style="margin:4px 0 2px;font-size:7.5px;color:#64748b;text-transform:uppercase;">Descripción del trabajo</p>
     <div class="text-block"><?= e(pdf_val($m['descripcion'] ?? null)) ?: '&nbsp;' ?></div>
-    <p style="margin:6px 0 2px;font-size:8px;color:#64748b;text-transform:uppercase;">Observaciones</p>
-    <div class="text-block"><?= e(pdf_val($m['observaciones'] ?? null)) ?: '&nbsp;' ?></div>
+    <?php if (!empty($m['observaciones'])): ?>
+    <p style="margin:4px 0 2px;font-size:7.5px;color:#64748b;text-transform:uppercase;">Observaciones</p>
+    <div class="text-block"><?= e(pdf_val($m['observaciones'] ?? null)) ?></div>
+    <?php endif; ?>
+</div>
+
+<?php if ($facturaEmbed !== null): ?>
+<table style="page-break-before:always;width:100%;border-collapse:collapse;">
+    <tr>
+        <td style="text-align:center;vertical-align:middle;padding:0;">
+            <img src="<?= $facturaEmbed['src'] ?>" width="<?= $facturaEmbed['width_mm'] ?>mm" height="<?= $facturaEmbed['height_mm'] ?>mm" alt="Factura">
+        </td>
+    </tr>
+</table>
+<?php $pdfSkipFooter = true; ?>
+<?php elseif ($facturaEsPdf): ?>
+<table style="page-break-before:always;width:100%;">
+    <tr><td><p class="factura-note">La factura se cargó en PDF. Vuelva a subirla como imagen JPG/PNG para imprimirla aquí.</p></td></tr>
+</table>
+<?php elseif ($m === null): ?>
+<table style="page-break-before:always;width:100%;">
+    <tr><td><div class="factura-box">&nbsp;</div></td></tr>
+</table>
+<?php endif; ?>
+
+<div class="section">
+    <div class="section-title">Datos de factura</div>
+    <?php
+    pdf_render_fields([
+        ['label' => 'RFC proveedor', 'value' => pdf_val($m['proveedor_rfc'] ?? null, '')],
+        ['label' => 'Teléfono proveedor', 'value' => pdf_val($m['proveedor_telefono'] ?? null, '')],
+        ['label' => 'Folio / serie', 'value' => pdf_val($m['factura_folio'] ?? null, '')],
+        ['label' => 'Fecha factura', 'value' => pdf_date($m['factura_fecha'] ?? null)],
+        ['label' => 'Folio fiscal (UUID)', 'value' => pdf_val($m['factura_uuid'] ?? null, '')],
+        ['label' => 'Subtotal', 'value' => isset($m['factura_subtotal']) && $m['factura_subtotal'] !== null ? pdf_money($m['factura_subtotal']) : ''],
+        ['label' => 'IVA', 'value' => isset($m['factura_iva']) && $m['factura_iva'] !== null ? pdf_money($m['factura_iva']) : ''],
+        ['label' => 'Total', 'value' => isset($m['factura_total']) && $m['factura_total'] !== null ? pdf_money($m['factura_total']) : ''],
+    ]);
+    ?>
 </div>
 
 <div class="section">

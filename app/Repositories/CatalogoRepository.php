@@ -27,7 +27,7 @@ final class CatalogoRepository extends BaseRepository
             $where[] = '(tipo = ? OR tipo = "ambos")';
             $params[] = $tipo;
         }
-        $sql = 'SELECT id, razon_social, rfc, telefono, tipo FROM proveedores';
+        $sql = 'SELECT id, razon_social, rfc, telefono, email, direccion, tipo FROM proveedores';
         if ($where !== []) {
             $sql .= ' WHERE ' . implode(' AND ', $where);
         }

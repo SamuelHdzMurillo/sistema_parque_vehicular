@@ -47,7 +47,7 @@ $isActive = static function (string $segment) use ($currentPath): bool {
         <?php endif; ?>
         <?php endif; ?>
 
-        <?php if (can('danios.read') || can('mantenimiento.read') || can('combustible.read')): ?>
+        <?php if (can('danios.read') || can('mantenimiento.read') || can('combustible.read') || can('proveedores.read')): ?>
         <div class="nav-section">Operaciones</div>
         <?php if (can('danios.read')): ?>
         <a href="<?= url('danios') ?>" class="nav-link <?= $isActive('danios') ? 'active' : '' ?>">
@@ -71,6 +71,12 @@ $isActive = static function (string $segment) use ($currentPath): bool {
         <a href="<?= url('documentos') ?>" class="nav-link <?= $isActive('documentos') ? 'active' : '' ?>">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M13 2v7h7"/></svg>
             Documentos
+        </a>
+        <?php endif; ?>
+        <?php if (can('proveedores.read')): ?>
+        <a href="<?= url('proveedores') ?>" class="nav-link <?= $isActive('proveedores') ? 'active' : '' ?>">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l1-5h16l1 5"/><path d="M4 9h16v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="M9 21v-6h6v6"/></svg>
+            Proveedores
         </a>
         <?php endif; ?>
         <?php endif; ?>

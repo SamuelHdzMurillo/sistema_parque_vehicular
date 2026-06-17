@@ -11,6 +11,10 @@ final class MantenimientoRepository extends BaseRepository
         return $this->fetchOne(
             'SELECT m.*, v.numero_economico, v.placas,
                     p.razon_social AS proveedor_nombre,
+                    p.rfc AS proveedor_rfc,
+                    p.telefono AS proveedor_telefono,
+                    p.email AS proveedor_email,
+                    p.direccion AS proveedor_direccion,
                     CONCAT(u.nombre, " ", u.apellido_paterno) AS responsable_nombre,
                     CONCAT(au.nombre, " ", au.apellido_paterno) AS autorizado_por_nombre
              FROM mantenimientos m
@@ -28,17 +32,24 @@ final class MantenimientoRepository extends BaseRepository
         $this->execute(
             'INSERT INTO mantenimientos (
                 folio, vehiculo_id, tipo, fecha, kilometraje, proveedor_id, descripcion, costo,
+                factura_folio, factura_uuid, factura_fecha, factura_subtotal, factura_iva, factura_total,
                 factura_ruta, xml_ruta, pdf_ruta, responsable_id, observaciones, estado, created_by
-             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
             [
                 $data['folio'],
                 (int) $data['vehiculo_id'],
                 $data['tipo'],
                 $data['fecha'],
                 (int) $data['kilometraje'],
-                $data['proveedor_id'] ?? null,
+                $this->nullableInt($data['proveedor_id'] ?? null),
                 $data['descripcion'],
                 (float) ($data['costo'] ?? 0),
+                $this->nullableStr($data['factura_folio'] ?? null),
+                $this->nullableStr($data['factura_uuid'] ?? null),
+                $this->nullableStr($data['factura_fecha'] ?? null),
+                $this->nullableDecimal($data['factura_subtotal'] ?? null),
+                $this->nullableDecimal($data['factura_iva'] ?? null),
+                $this->nullableDecimal($data['factura_total'] ?? null),
                 $data['factura_ruta'] ?? null,
                 $data['xml_ruta'] ?? null,
                 $data['pdf_ruta'] ?? null,
@@ -57,6 +68,8 @@ final class MantenimientoRepository extends BaseRepository
         return $this->execute(
             'UPDATE mantenimientos SET
                 tipo = ?, fecha = ?, kilometraje = ?, proveedor_id = ?, descripcion = ?, costo = ?,
+                factura_folio = ?, factura_uuid = ?, factura_fecha = ?,
+                factura_subtotal = ?, factura_iva = ?, factura_total = ?,
                 factura_ruta = ?, xml_ruta = ?, pdf_ruta = ?, responsable_id = ?,
                 observaciones = ?, estado = ?, updated_at = NOW()
              WHERE id = ?',
@@ -64,9 +77,15 @@ final class MantenimientoRepository extends BaseRepository
                 $data['tipo'],
                 $data['fecha'],
                 (int) $data['kilometraje'],
-                $data['proveedor_id'] ?? null,
+                $this->nullableInt($data['proveedor_id'] ?? null),
                 $data['descripcion'],
                 (float) ($data['costo'] ?? 0),
+                $this->nullableStr($data['factura_folio'] ?? null),
+                $this->nullableStr($data['factura_uuid'] ?? null),
+                $this->nullableStr($data['factura_fecha'] ?? null),
+                $this->nullableDecimal($data['factura_subtotal'] ?? null),
+                $this->nullableDecimal($data['factura_iva'] ?? null),
+                $this->nullableDecimal($data['factura_total'] ?? null),
                 $data['factura_ruta'] ?? null,
                 $data['xml_ruta'] ?? null,
                 $data['pdf_ruta'] ?? null,
@@ -76,6 +95,31 @@ final class MantenimientoRepository extends BaseRepository
                 $id,
             ]
         );
+    }
+
+    private function nullableStr(mixed $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+        $value = trim((string) $value);
+        return $value === '' ? null : $value;
+    }
+
+    private function nullableInt(mixed $value): ?int
+    {
+        if ($value === null || $value === '' || (int) $value === 0) {
+            return null;
+        }
+        return (int) $value;
+    }
+
+    private function nullableDecimal(mixed $value): ?float
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+        return (float) $value;
     }
 
     public function delete(int $id): bool
