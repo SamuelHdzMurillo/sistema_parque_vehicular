@@ -26,16 +26,45 @@ $estados = ['reportado','en_evaluacion','en_reparacion','reparado','cerrado_sin_
     </div>
 </div>
 
-<?php if (!empty($fotos)): ?>
+<?php $puedeEditar = can('danios.update'); ?>
 <div class="card mb-2">
-    <div class="card-header"><h3>Fotografías</h3></div>
-    <div class="card-body d-flex gap-2 flex-wrap">
-        <?php foreach ($fotos as $f): ?>
-        <img src="<?= e(url('storage/uploads/' . ltrim($f['ruta'], '/'))) ?>" alt="Daño" style="max-width:200px;border-radius:8px;border:1px solid var(--border-color)">
-        <?php endforeach; ?>
+    <div class="card-header"><h3>Fotografías<?= !empty($fotos) ? ' (' . count($fotos) . ')' : '' ?></h3></div>
+    <div class="card-body">
+        <?php if ($puedeEditar): ?>
+        <form action="<?= url('danios/' . $d['id'] . '/fotos') ?>" method="post" enctype="multipart/form-data" class="danio-fotos-upload">
+            <?= csrf_field() ?>
+            <div class="form-group mb-0">
+                <label class="form-label" for="fotos">Agregar fotografías</label>
+                <input type="file" id="fotos" name="fotos[]" class="form-control" accept="image/jpeg,image/png,image/webp" multiple required>
+                <p class="form-hint">Seleccione una o varias imágenes (Ctrl o Shift para elegir varias).</p>
+            </div>
+            <button type="submit" class="btn btn-secondary">Subir</button>
+        </form>
+        <?php endif; ?>
+
+        <?php if (!empty($fotos)): ?>
+        <div class="danio-fotos-grid" data-lightbox-gallery>
+            <?php foreach ($fotos as $f): ?>
+            <?php $fUrl = url('storage/uploads/' . ltrim((string) $f['ruta'], '/')); ?>
+            <div class="danio-foto-card">
+                <a href="<?= e($fUrl) ?>" class="danio-foto-link" data-lightbox>
+                    <img src="<?= e($fUrl) ?>" alt="Fotografía del daño" loading="lazy">
+                </a>
+                <?php if ($puedeEditar): ?>
+                <form action="<?= url('danios/' . $d['id'] . '/fotos/' . $f['id'] . '/delete') ?>" method="post" class="danio-foto-delete"
+                      onsubmit="return confirm('¿Eliminar esta fotografía?')">
+                    <?= csrf_field() ?>
+                    <button type="submit" class="btn btn-sm btn-danger" title="Eliminar">×</button>
+                </form>
+                <?php endif; ?>
+            </div>
+            <?php endforeach; ?>
+        </div>
+        <?php else: ?>
+        <p class="text-muted mb-0">No hay fotografías registradas para este daño.</p>
+        <?php endif; ?>
     </div>
 </div>
-<?php endif; ?>
 
 <?php if (!empty($seguimiento)): ?>
 <div class="card mb-2">

@@ -70,15 +70,73 @@ final class DanioService extends BaseRepository
             [(int) $data['vehiculo_id'], $data['tipo_dano'], $data['ubicacion'], $data['descripcion'], $userId]
         );
         $id = (int) $this->lastInsertId();
-        $file = $data['foto'] ?? null;
-        if (is_array($file)) {
-            $ruta = FileUploader::uploadImage($file, 'danios/' . $id);
-            if ($ruta !== null) {
-                $this->execute('INSERT INTO danio_fotos (danio_id, ruta) VALUES (?, ?)', [$id, $ruta]);
-            }
-        }
+        $files = $this->normalizeFiles($data);
+        $this->storeFotos($id, $files);
         AuditService::log('INSERT', 'danios', $id, null, $data);
         return $id;
+    }
+
+    /** @param list<array> $files */
+    private function storeFotos(int $id, array $files): int
+    {
+        $subidas = 0;
+        foreach ($files as $file) {
+            if (!is_array($file)) {
+                continue;
+            }
+            $ruta = FileUploader::uploadImage($file, 'danios/' . $id);
+            if ($ruta === null) {
+                continue;
+            }
+            $this->execute('INSERT INTO danio_fotos (danio_id, ruta) VALUES (?, ?)', [$id, $ruta]);
+            $subidas++;
+        }
+        return $subidas;
+    }
+
+    /** @return list<array> */
+    private function normalizeFiles(array $data): array
+    {
+        $files = $data['fotos'] ?? null;
+        if (is_array($files) && isset($files[0])) {
+            return $files;
+        }
+        $single = $data['foto'] ?? null;
+        if (is_array($single) && isset($single['tmp_name'])) {
+            return [$single];
+        }
+        return [];
+    }
+
+    /** @param list<array> $files */
+    public function addFotos(int $id, array $files): int
+    {
+        if ($this->fetchOne('SELECT id FROM danios WHERE id = ?', [$id]) === null) {
+            throw new \RuntimeException('Daño no encontrado.');
+        }
+        if ($files === []) {
+            throw new \RuntimeException('Seleccione al menos una imagen.');
+        }
+        $count = $this->storeFotos($id, $files);
+        if ($count === 0) {
+            throw new \RuntimeException('No se pudo cargar ninguna imagen.');
+        }
+        AuditService::log('INSERT', 'danio_fotos', $id, null, ['fotos' => $count]);
+        return $count;
+    }
+
+    public function deleteFoto(int $danioId, int $fotoId): void
+    {
+        $foto = $this->fetchOne('SELECT * FROM danio_fotos WHERE id = ? AND danio_id = ?', [$fotoId, $danioId]);
+        if ($foto === null) {
+            throw new \RuntimeException('Fotografía no encontrada.');
+        }
+        $this->execute('DELETE FROM danio_fotos WHERE id = ?', [$fotoId]);
+        $path = storage_path('uploads/' . ltrim((string) $foto['ruta'], '/'));
+        if (is_file($path)) {
+            unlink($path);
+        }
+        AuditService::log('DELETE', 'danio_fotos', $fotoId, $foto, null);
     }
 
     public function updateEstado(int $id, string $estado, int $userId, ?string $comentario = null): ?string

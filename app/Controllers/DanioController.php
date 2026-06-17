@@ -36,9 +36,47 @@ final class DanioController extends BaseController
         }
 
         $data = $request->all();
-        $data['foto'] = $request->file('foto');
+        $files = $request->files('fotos');
+        if ($files === []) {
+            $single = $request->file('foto');
+            if ($single !== null) {
+                $files = [$single];
+            }
+        }
+        $data['fotos'] = $files;
         $id = $this->danios->create($data, $userId);
         flash('success', 'Daño reportado correctamente.');
+        $this->redirect('danios/' . $id);
+    }
+
+    public function uploadFotos(Request $request, string $id): never
+    {
+        $this->validateCsrf($request);
+        $files = $request->files('fotos');
+        if ($files === []) {
+            $single = $request->file('foto');
+            if ($single !== null) {
+                $files = [$single];
+            }
+        }
+        try {
+            $count = $this->danios->addFotos((int) $id, $files);
+            flash('success', $count === 1 ? 'Fotografía agregada.' : "{$count} fotografías agregadas.");
+        } catch (\RuntimeException $e) {
+            flash('error', $e->getMessage());
+        }
+        $this->redirect('danios/' . $id);
+    }
+
+    public function deleteFoto(Request $request, string $id, string $fotoId): never
+    {
+        $this->validateCsrf($request);
+        try {
+            $this->danios->deleteFoto((int) $id, (int) $fotoId);
+            flash('success', 'Fotografía eliminada.');
+        } catch (\RuntimeException $e) {
+            flash('error', $e->getMessage());
+        }
         $this->redirect('danios/' . $id);
     }
 

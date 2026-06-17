@@ -92,7 +92,14 @@ final class FormularioPdfService
             http_response_code(404);
             exit('Daño no encontrado.');
         }
-        $this->stream('pdf.danio', ['danio' => $data], 'danio_' . ($data['id'] ?? 'formato'), 'portrait');
+        $fotos = $data !== null ? $this->danios->getFotos((int) $data['id']) : [];
+        $seguimiento = $data !== null ? $this->danios->getSeguimiento((int) $data['id']) : [];
+        $this->stream(
+            'pdf.danio',
+            ['danio' => $data, 'fotos' => $fotos, 'seguimiento' => $seguimiento],
+            'danio_' . ($data['id'] ?? 'formato'),
+            'portrait'
+        );
     }
 
     public function combustible(?int $id = null): never

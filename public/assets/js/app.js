@@ -318,6 +318,100 @@
         });
     }
 
+    /* ——— Lightbox de galerías ——— */
+    function initLightbox() {
+        const links = Array.prototype.slice.call(document.querySelectorAll('[data-lightbox]'));
+        if (links.length === 0) {
+            return;
+        }
+
+        const overlay = document.createElement('div');
+        overlay.className = 'lightbox-overlay';
+        overlay.innerHTML =
+            '<button type="button" class="lightbox-btn lightbox-close" aria-label="Cerrar">&times;</button>' +
+            '<button type="button" class="lightbox-btn lightbox-prev" aria-label="Anterior">&#8249;</button>' +
+            '<img alt="Imagen ampliada">' +
+            '<button type="button" class="lightbox-btn lightbox-next" aria-label="Siguiente">&#8250;</button>' +
+            '<span class="lightbox-counter"></span>';
+        document.body.appendChild(overlay);
+
+        const img = overlay.querySelector('img');
+        const counter = overlay.querySelector('.lightbox-counter');
+        const btnPrev = overlay.querySelector('.lightbox-prev');
+        const btnNext = overlay.querySelector('.lightbox-next');
+        let current = 0;
+
+        function render() {
+            const href = links[current].getAttribute('href');
+            img.setAttribute('src', href);
+            counter.textContent = (current + 1) + ' / ' + links.length;
+            const multiple = links.length > 1;
+            btnPrev.style.display = multiple ? '' : 'none';
+            btnNext.style.display = multiple ? '' : 'none';
+            counter.style.display = multiple ? '' : 'none';
+        }
+
+        function open(index) {
+            current = index;
+            render();
+            overlay.classList.add('open');
+        }
+
+        function close() {
+            overlay.classList.remove('open');
+        }
+
+        function go(step) {
+            current = (current + step + links.length) % links.length;
+            render();
+        }
+
+        links.forEach(function (link, index) {
+            link.addEventListener('click', function (e) {
+                e.preventDefault();
+                open(index);
+            });
+        });
+
+        overlay.querySelector('.lightbox-close').addEventListener('click', close);
+        btnPrev.addEventListener('click', function () { go(-1); });
+        btnNext.addEventListener('click', function () { go(1); });
+        overlay.addEventListener('click', function (e) {
+            if (e.target === overlay) {
+                close();
+            }
+        });
+        document.addEventListener('keydown', function (e) {
+            if (!overlay.classList.contains('open')) {
+                return;
+            }
+            if (e.key === 'Escape') { close(); }
+            else if (e.key === 'ArrowLeft') { go(-1); }
+            else if (e.key === 'ArrowRight') { go(1); }
+        });
+    }
+
+    /* ——— Previsualización de imágenes antes de subir ——— */
+    function initImagePreview() {
+        const input = document.getElementById('fotos');
+        const preview = document.getElementById('fotos-preview');
+        if (!input || !preview) {
+            return;
+        }
+        input.addEventListener('change', function () {
+            preview.innerHTML = '';
+            Array.prototype.slice.call(input.files).forEach(function (file) {
+                if (!file.type.startsWith('image/')) {
+                    return;
+                }
+                const image = document.createElement('img');
+                image.src = URL.createObjectURL(file);
+                image.onload = function () { URL.revokeObjectURL(image.src); };
+                preview.appendChild(image);
+            });
+        });
+    }
+
     /* ——— Init ——— */
     document.addEventListener('DOMContentLoaded', function () {
         initTheme();
@@ -329,6 +423,8 @@
         initConfirm();
         initDashLights();
         initKmAutofill();
+        initLightbox();
+        initImagePreview();
         window.SICV.initSignaturePads();
 
         document.querySelectorAll('[data-theme-toggle]').forEach(function (btn) {

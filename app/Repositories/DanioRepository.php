@@ -87,6 +87,14 @@ final class DanioRepository extends BaseRepository
         );
     }
 
+    public function getFotos(int $danioId): array
+    {
+        return $this->fetchAll(
+            'SELECT id, ruta, created_at FROM danio_fotos WHERE danio_id = ? ORDER BY id ASC',
+            [$danioId]
+        );
+    }
+
     public function getSeguimiento(int $danioId): array
     {
         return $this->fetchAll(

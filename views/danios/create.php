@@ -27,7 +27,7 @@ $preVehiculo = $_GET['vehiculo_id'] ?? old('vehiculo_id');
             <div class="form-group">
                 <label class="form-label" for="tipo_dano">Tipo de daño <span class="required">*</span></label>
                 <select id="tipo_dano" name="tipo_dano" class="form-select" required>
-                    <?php foreach (['golpe','rayon','cristal','mecanico','electrico','otro'] as $t): ?>
+                    <?php foreach (['golpe','rayon','cristal','defensa','faro','interior','llanta'] as $t): ?>
                     <option value="<?= e($t) ?>" <?= old('tipo_dano') === $t ? 'selected' : '' ?>><?= e(ucfirst($t)) ?></option>
                     <?php endforeach; ?>
                 </select>
@@ -43,8 +43,10 @@ $preVehiculo = $_GET['vehiculo_id'] ?? old('vehiculo_id');
             <textarea id="descripcion" name="descripcion" class="form-textarea" required><?= e((string) old('descripcion')) ?></textarea>
         </div>
         <div class="form-group">
-            <label class="form-label" for="foto">Fotografía del daño</label>
-            <input type="file" id="foto" name="foto" class="form-control" accept="image/jpeg,image/png,image/webp">
+            <label class="form-label" for="fotos">Fotografías del daño</label>
+            <input type="file" id="fotos" name="fotos[]" class="form-control" accept="image/jpeg,image/png,image/webp" multiple>
+            <p class="form-hint">Puede seleccionar varias imágenes a la vez (mantenga Ctrl o Shift para elegir varias).</p>
+            <div id="fotos-preview" class="danio-fotos-preview"></div>
         </div>
         <div class="d-flex gap-1">
             <button type="submit" class="btn btn-primary">Enviar reporte</button>

@@ -25,16 +25,51 @@ ob_start();
     <div class="text-block"><?= e(pdf_val($d['descripcion'] ?? null)) ?: '&nbsp;' ?></div>
 </div>
 
+<?php $fotos = $fotos ?? []; $seguimiento = $seguimiento ?? []; ?>
 <div class="section">
-    <div class="section-title">Evidencia y seguimiento</div>
+    <div class="section-title">Evidencia fotográfica</div>
+    <?php if (!empty($fotos)): ?>
+    <table style="width:100%;border-collapse:collapse;">
+        <tr>
+        <?php foreach ($fotos as $i => $f): ?>
+            <?php
+            $uri = pdf_image_file_to_data_uri(storage_path('uploads/' . ltrim((string) $f['ruta'], '/')));
+            ?>
+            <td style="width:25%;padding:3px;vertical-align:top;text-align:center;">
+                <?php if ($uri !== ''): ?>
+                <img src="<?= $uri ?>" style="width:100%;height:90px;object-fit:cover;border:1px solid #cbd5e1;border-radius:3px;">
+                <?php endif; ?>
+            </td>
+            <?php if (($i + 1) % 4 === 0): ?></tr><tr><?php endif; ?>
+        <?php endforeach; ?>
+        </tr>
+    </table>
+    <?php else: ?>
     <p style="font-size:9px;color:#64748b;margin:0 0 6px;">
-        Adjunte fotografías del daño al entregar este formato. En sistema digital las fotos quedan registradas en el expediente.
+        Sin fotografías registradas. Adjunte fotografías del daño al entregar este formato.
     </p>
+    <?php endif; ?>
+</div>
+
+<div class="section">
+    <div class="section-title">Seguimiento del daño</div>
     <table class="data">
-        <thead><tr><th>Fecha</th><th>Estado anterior</th><th>Estado nuevo</th><th>Comentario</th></tr></thead>
+        <thead><tr><th>Fecha</th><th>Estado anterior</th><th>Estado nuevo</th><th>Comentario</th><th>Registró</th></tr></thead>
         <tbody>
-            <tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
-            <tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+            <?php if (!empty($seguimiento)): ?>
+                <?php foreach ($seguimiento as $s): ?>
+                <tr>
+                    <td><?= e(format_datetime($s['created_at'] ?? null)) ?></td>
+                    <td><?= e(ucfirst(str_replace('_', ' ', (string) ($s['estado_anterior'] ?? '')))) ?></td>
+                    <td><?= e(ucfirst(str_replace('_', ' ', (string) ($s['estado_nuevo'] ?? '')))) ?></td>
+                    <td><?= e(pdf_val($s['comentario'] ?? null)) ?: '&nbsp;' ?></td>
+                    <td><?= e(pdf_val($s['usuario_nombre'] ?? null)) ?: '&nbsp;' ?></td>
+                </tr>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+                <tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+            <?php endif; ?>
         </tbody>
     </table>
 </div>
