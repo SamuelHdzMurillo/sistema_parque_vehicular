@@ -370,3 +370,195 @@ function rol_nivel_label(string $slug): string
         default => '',
     };
 }
+
+/** @return array<string, string> */
+function auditoria_modulos(): array
+{
+    return [
+        'vehiculos' => 'Vehículos',
+        'comisiones' => 'Comisiones',
+        'inspecciones' => 'Inspecciones',
+        'danios' => 'Daños',
+        'danio_fotos' => 'Daños (evidencia fotográfica)',
+        'mantenimientos' => 'Mantenimiento',
+        'combustible_cargas' => 'Combustible',
+        'proveedores' => 'Proveedores',
+        'documentos' => 'Documentos',
+        'alertas' => 'Alertas',
+        'herramientas_vehiculo' => 'Herramientas del vehículo',
+        'users' => 'Usuarios del sistema',
+        'reportes' => 'Reportes',
+        'formatos_pdf' => 'Formatos PDF',
+    ];
+}
+
+function auditoria_modulo_label(string $tabla): string
+{
+    return auditoria_modulos()[$tabla] ?? ucfirst(str_replace('_', ' ', $tabla));
+}
+
+/** @return array<string, string> */
+function auditoria_acciones(): array
+{
+    return [
+        'CREATE' => 'Registro nuevo',
+        'INSERT' => 'Registro nuevo',
+        'UPDATE' => 'Modificación',
+        'DELETE' => 'Eliminación',
+        'EXPORT' => 'Exportación / descarga',
+    ];
+}
+
+/** @return array<string, string> */
+function auditoria_filtros_accion(): array
+{
+    return [
+        'nuevo' => 'Registro nuevo',
+        'UPDATE' => 'Modificación',
+        'DELETE' => 'Eliminación',
+        'EXPORT' => 'Exportación / descarga',
+    ];
+}
+
+function auditoria_accion_label(string $accion): string
+{
+    $key = strtoupper($accion);
+    return auditoria_acciones()[$key] ?? ucfirst(strtolower($accion));
+}
+
+function auditoria_accion_badge(string $accion): string
+{
+    return match (strtoupper($accion)) {
+        'CREATE', 'INSERT' => 'badge-success',
+        'UPDATE' => 'badge-warning',
+        'DELETE' => 'badge-danger',
+        'EXPORT' => 'badge-info',
+        default => 'badge-secondary',
+    };
+}
+
+function auditoria_campo_label(string $campo): string
+{
+    return match ($campo) {
+        'email' => 'Correo electrónico',
+        'estado' => 'Estado',
+        'vehiculo_id' => 'Vehículo',
+        'password_changed' => 'Contraseña',
+        'activo' => 'Activo',
+        'atendida' => 'Atendida',
+        'motivo' => 'Motivo',
+        'fotos' => 'Fotos',
+        'tipo' => 'Tipo',
+        'formato' => 'Formato',
+        'fecha_inicio' => 'Fecha de inicio',
+        'fecha_fin' => 'Fecha de fin',
+        default => ucfirst(str_replace('_', ' ', $campo)),
+    };
+}
+
+/** @param mixed $valor */
+function auditoria_valor_legible(string $campo, $valor): string
+{
+    if ($valor === null || $valor === '') {
+        return '—';
+    }
+    if (is_bool($valor)) {
+        return $valor ? 'Sí' : 'No';
+    }
+    if ($campo === 'password_changed' && $valor) {
+        return 'Se actualizó la contraseña';
+    }
+    if ($campo === 'estado') {
+        return ucfirst(str_replace('_', ' ', (string) $valor));
+    }
+    if (is_array($valor)) {
+        return json_encode($valor, JSON_UNESCAPED_UNICODE) ?: '—';
+    }
+    return (string) $valor;
+}
+
+/** @param array<string, mixed>|null $datos */
+function auditoria_formatear_datos(?array $datos, int $maxItems = 4): string
+{
+    if ($datos === null || $datos === []) {
+        return '';
+    }
+    $partes = [];
+    foreach (array_slice($datos, 0, $maxItems, true) as $campo => $valor) {
+        $partes[] = auditoria_campo_label((string) $campo) . ': ' . auditoria_valor_legible((string) $campo, $valor);
+    }
+    if (count($datos) > $maxItems) {
+        $partes[] = '… y ' . (count($datos) - $maxItems) . ' más';
+    }
+    return implode(' · ', $partes);
+}
+
+/** @param array<string, mixed> $log */
+function auditoria_resumen(array $log): string
+{
+    $accion = strtoupper((string) ($log['accion'] ?? ''));
+    $modulo = auditoria_modulo_label((string) ($log['tabla_afectada'] ?? ''));
+    $registroId = $log['registro_id'] ?? null;
+    $before = auditoria_decodificar_json($log['valores_anteriores'] ?? null);
+    $after = auditoria_decodificar_json($log['valores_nuevos'] ?? null);
+    $ref = $registroId ? ' (referencia #' . $registroId . ')' : '';
+
+    return match ($accion) {
+        'EXPORT' => 'Se exportó o descargó información de ' . mb_strtolower($modulo)
+            . ($after !== null && $after !== [] ? ': ' . auditoria_formatear_datos($after) : ''),
+        'DELETE' => 'Se eliminó un registro en ' . mb_strtolower($modulo) . $ref
+            . ($before !== null && $before !== [] ? ': ' . auditoria_formatear_datos($before) : ''),
+        'INSERT', 'CREATE' => 'Se creó un registro en ' . mb_strtolower($modulo) . $ref
+            . ($after !== null && $after !== [] ? ': ' . auditoria_formatear_datos($after) : ''),
+        'UPDATE' => auditoria_resumen_cambio($modulo, $before, $after, $ref),
+        default => 'Se registró una acción en ' . mb_strtolower($modulo) . $ref,
+    };
+}
+
+/** @return array<string, mixed>|null */
+function auditoria_decodificar_json(mixed $valor): ?array
+{
+    if ($valor === null || $valor === '') {
+        return null;
+    }
+    if (is_array($valor)) {
+        return $valor;
+    }
+    if (!is_string($valor)) {
+        return null;
+    }
+    $decoded = json_decode($valor, true);
+    return is_array($decoded) ? $decoded : null;
+}
+
+/** @param array<string, mixed>|null $before @param array<string, mixed>|null $after */
+function auditoria_resumen_cambio(string $modulo, ?array $before, ?array $after, string $ref = ''): string
+{
+    $cambios = [];
+    $keys = array_unique(array_merge(array_keys($before ?? []), array_keys($after ?? [])));
+    foreach ($keys as $campo) {
+        $anterior = $before[$campo] ?? null;
+        $nuevo = $after[$campo] ?? null;
+        if ($anterior == $nuevo) {
+            continue;
+        }
+        $etiqueta = auditoria_campo_label((string) $campo);
+        if ($anterior === null) {
+            $cambios[] = $etiqueta . ' → ' . auditoria_valor_legible((string) $campo, $nuevo);
+        } elseif ($nuevo === null) {
+            $cambios[] = $etiqueta . ' eliminado (antes: ' . auditoria_valor_legible((string) $campo, $anterior) . ')';
+        } else {
+            $cambios[] = $etiqueta . ': ' . auditoria_valor_legible((string) $campo, $anterior)
+                . ' → ' . auditoria_valor_legible((string) $campo, $nuevo);
+        }
+        if (count($cambios) >= 3) {
+            break;
+        }
+    }
+
+    $base = 'Se modificó un registro en ' . mb_strtolower($modulo) . $ref;
+    if ($cambios === []) {
+        return $base;
+    }
+    return $base . ': ' . implode(' · ', $cambios);
+}

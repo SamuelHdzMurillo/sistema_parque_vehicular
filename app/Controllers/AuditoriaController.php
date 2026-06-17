@@ -17,7 +17,16 @@ final class AuditoriaController extends BaseController
     public function index(Request $request): never
     {
         $page = max(1, (int) $request->input('page', 1));
-        $result = $this->auditoria->paginate($page);
+        $modulo = trim((string) $request->input('modulo', ''));
+        $accion = trim((string) $request->input('accion', ''));
+        $result = $this->auditoria->paginate(
+            $page,
+            30,
+            $modulo !== '' ? $modulo : null,
+            $accion !== '' ? $accion : null
+        );
+        $result['filtro_modulo'] = $modulo;
+        $result['filtro_accion'] = $accion;
         $this->render('auditoria.index', $result);
     }
 }

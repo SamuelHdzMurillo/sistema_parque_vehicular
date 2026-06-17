@@ -35,16 +35,37 @@ final class AuditService extends BaseRepository
         ]);
     }
 
-    public function paginate(int $page = 1, int $perPage = 30): array
+    /** @return array{data: list<array<string, mixed>>, total: int, page: int, per_page: int} */
+    public function paginate(int $page = 1, int $perPage = 30, ?string $modulo = null, ?string $accion = null): array
     {
+        $page = max(1, $page);
         $offset = ($page - 1) * $perPage;
-        $total = (int) ($this->fetchOne('SELECT COUNT(*) AS c FROM auditoria')['c'] ?? 0);
+        $where = [];
+        $params = [];
+
+        if ($modulo !== null && $modulo !== '') {
+            $where[] = 'a.tabla_afectada = ?';
+            $params[] = $modulo;
+        }
+        if ($accion !== null && $accion !== '') {
+            if (strtoupper($accion) === 'NUEVO') {
+                $where[] = 'UPPER(a.accion) IN ("CREATE", "INSERT")';
+            } else {
+                $where[] = 'UPPER(a.accion) = ?';
+                $params[] = strtoupper($accion);
+            }
+        }
+
+        $sqlWhere = $where === [] ? '' : ' WHERE ' . implode(' AND ', $where);
+        $total = (int) ($this->fetchOne('SELECT COUNT(*) AS c FROM auditoria a' . $sqlWhere, $params)['c'] ?? 0);
         $rows = $this->fetchAll(
             'SELECT a.*, CONCAT(u.nombre, " ", u.apellido_paterno) AS usuario
-             FROM auditoria a LEFT JOIN users u ON u.id = a.user_id
-             ORDER BY a.created_at DESC LIMIT ? OFFSET ?',
-            [$perPage, $offset]
+             FROM auditoria a LEFT JOIN users u ON u.id = a.user_id'
+            . $sqlWhere
+            . ' ORDER BY a.created_at DESC LIMIT ? OFFSET ?',
+            array_merge($params, [$perPage, $offset])
         );
-        return ['data' => $rows, 'total' => $total, 'page' => $page];
+
+        return ['data' => $rows, 'total' => $total, 'page' => $page, 'per_page' => $perPage];
     }
 }
