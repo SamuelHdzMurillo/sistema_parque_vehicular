@@ -214,6 +214,79 @@ function format_money(float|int|string|null $amount): string
     return '$' . number_format((float) $amount, 2, '.', ',');
 }
 
+function format_tiempo_restante(?string $fechaVencimiento, ?int $diasRestantes = null): string
+{
+    if ($fechaVencimiento === null || $fechaVencimiento === '') {
+        return 'Sin vencimiento';
+    }
+
+    $dias = $diasRestantes;
+    if ($dias === null) {
+        $vence = DateTimeImmutable::createFromFormat('Y-m-d', substr($fechaVencimiento, 0, 10));
+        if ($vence === false) {
+            return '—';
+        }
+        $hoy = new DateTimeImmutable('today');
+        $dias = (int) $hoy->diff($vence)->format('%r%a');
+    }
+
+    if ($dias < 0) {
+        $abs = abs($dias);
+        if ($abs >= 60) {
+            $meses = intdiv($abs, 30);
+            $resto = $abs % 30;
+            $texto = $meses . ' mes' . ($meses !== 1 ? 'es' : '');
+            if ($resto > 0) {
+                $texto .= ', ' . $resto . ' día' . ($resto !== 1 ? 's' : '');
+            }
+            return 'Vencido hace ' . $texto;
+        }
+        return 'Vencido hace ' . $abs . ' día' . ($abs !== 1 ? 's' : '');
+    }
+
+    if ($dias === 0) {
+        return 'Vence hoy';
+    }
+
+    if ($dias >= 60) {
+        $meses = intdiv($dias, 30);
+        $resto = $dias % 30;
+        $texto = $meses . ' mes' . ($meses !== 1 ? 'es' : '');
+        if ($resto > 0) {
+            $texto .= ', ' . $resto . ' día' . ($resto !== 1 ? 's' : '');
+        }
+        return $texto;
+    }
+
+    return $dias . ' día' . ($dias !== 1 ? 's' : '');
+}
+
+function vencimiento_badge_class(?string $fechaVencimiento, ?int $diasRestantes = null): string
+{
+    if ($fechaVencimiento === null || $fechaVencimiento === '') {
+        return 'badge-secondary';
+    }
+
+    $dias = $diasRestantes;
+    if ($dias === null) {
+        $vence = DateTimeImmutable::createFromFormat('Y-m-d', substr($fechaVencimiento, 0, 10));
+        if ($vence === false) {
+            return 'badge-secondary';
+        }
+        $hoy = new DateTimeImmutable('today');
+        $dias = (int) $hoy->diff($vence)->format('%r%a');
+    }
+
+    if ($dias < 0) {
+        return 'badge-danger';
+    }
+    if ($dias <= 30) {
+        return 'badge-warning';
+    }
+
+    return 'badge-success';
+}
+
 function csrf_field(): string
 {
     return App\Core\Csrf::field();

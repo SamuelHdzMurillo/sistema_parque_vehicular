@@ -1541,6 +1541,45 @@ input[type="number"] {
     opacity: .4;
 }
 
+/* ——— Documentos por vehículo ——— */
+.doc-vehiculo-group {
+    border-top: 1px solid var(--border-color);
+    padding: 1rem 1.25rem;
+}
+
+.doc-vehiculo-group:first-of-type {
+    border-top: none;
+}
+
+.doc-vehiculo-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: .75rem;
+}
+
+.doc-vehiculo-title {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+}
+
+.doc-vehiculo-title a {
+    color: var(--text-primary);
+    text-decoration: none;
+}
+
+.doc-vehiculo-title a:hover {
+    color: var(--color-primary);
+}
+
+.doc-vehiculo-meta {
+    margin: .25rem 0 0;
+    font-size: .85rem;
+    color: var(--text-secondary);
+}
+
 /* ——— Search results ——— */
 .search-results-group { margin-bottom: 1.5rem; }
 
