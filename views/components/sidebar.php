@@ -10,10 +10,6 @@ $isActive = static function (string $segment) use ($currentPath): bool {
 <aside class="sidebar" id="sidebar">
     <div class="sidebar-brand">
         <?= brand_logo_img('sidebar-brand-logo') ?>
-        <div class="sidebar-brand-text">
-            <strong>Control Vehicular</strong>
-            <small><?= e((string) config('app', 'institution')) ?></small>
-        </div>
     </div>
 
     <nav class="sidebar-nav">
