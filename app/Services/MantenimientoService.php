@@ -26,7 +26,7 @@ final class MantenimientoService
     public function getFormData(): array
     {
         return [
-            'vehiculos' => $this->catalogos->getVehiculosDisponibles(),
+            'vehiculos' => $this->catalogos->getVehiculosOperativos(),
             'proveedores' => $this->catalogos->getProveedores(),
             'responsables' => $this->catalogos->getUsersForSelect(),
             'tipos' => ['preventivo', 'correctivo', 'predictivo'],

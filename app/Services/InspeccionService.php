@@ -28,7 +28,7 @@ final class InspeccionService
     public function getFormData(): array
     {
         return [
-            'vehiculos' => $this->catalogos->getVehiculosDisponibles(),
+            'vehiculos' => $this->catalogos->getVehiculosOperativos(),
             'items' => InspeccionRepository::INSPECCION_ITEMS,
             'luces_tablero' => InspeccionRepository::LUCES_TABLERO,
         ];

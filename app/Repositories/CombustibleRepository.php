@@ -25,8 +25,8 @@ final class CombustibleRepository extends BaseRepository
         $this->execute(
             'INSERT INTO combustible_cargas (
                 vehiculo_id, proveedor_id, fecha, litros, importe, kilometraje,
-                factura_ruta, rendimiento, costo_por_km, registrado_por
-             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                folio_ticket, factura_ruta, observaciones, rendimiento, costo_por_km, registrado_por
+             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
             [
                 (int) $data['vehiculo_id'],
                 $data['proveedor_id'] ?? null,
@@ -34,7 +34,9 @@ final class CombustibleRepository extends BaseRepository
                 (float) $data['litros'],
                 (float) $data['importe'],
                 (int) $data['kilometraje'],
+                $data['folio_ticket'] ?? null,
                 $data['factura_ruta'] ?? null,
+                $data['observaciones'] ?? null,
                 $data['rendimiento'] ?? null,
                 $data['costo_por_km'] ?? null,
                 (int) $data['registrado_por'],
@@ -49,7 +51,8 @@ final class CombustibleRepository extends BaseRepository
         return $this->execute(
             'UPDATE combustible_cargas SET
                 proveedor_id = ?, fecha = ?, litros = ?, importe = ?, kilometraje = ?,
-                factura_ruta = ?, rendimiento = ?, costo_por_km = ?
+                folio_ticket = ?, factura_ruta = ?, observaciones = ?,
+                rendimiento = ?, costo_por_km = ?
              WHERE id = ?',
             [
                 $data['proveedor_id'] ?? null,
@@ -57,7 +60,9 @@ final class CombustibleRepository extends BaseRepository
                 (float) $data['litros'],
                 (float) $data['importe'],
                 (int) $data['kilometraje'],
+                $data['folio_ticket'] ?? null,
                 $data['factura_ruta'] ?? null,
+                $data['observaciones'] ?? null,
                 $data['rendimiento'] ?? null,
                 $data['costo_por_km'] ?? null,
                 $id,
@@ -97,6 +102,7 @@ final class CombustibleRepository extends BaseRepository
         $queryParams = array_merge($params, [$perPage, $offset]);
         $rows = $this->fetchAll(
             "SELECT c.id, c.fecha, c.litros, c.importe, c.kilometraje, c.rendimiento, c.costo_por_km,
+                    c.folio_ticket, c.factura_ruta,
                     v.numero_economico
              FROM combustible_cargas c
              JOIN vehiculos v ON v.id = c.vehiculo_id

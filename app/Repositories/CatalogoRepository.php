@@ -96,4 +96,15 @@ final class CatalogoRepository extends BaseRepository
              ORDER BY v.numero_economico ASC"
         );
     }
+
+    /** Vehículos en operación (excluye baja y fuera de servicio). */
+    public function getVehiculosOperativos(): array
+    {
+        return $this->fetchAll(
+            "SELECT v.id, v.numero_economico, v.marca, v.modelo, v.placas, v.kilometraje_actual, v.estado
+             FROM vehiculos v
+             WHERE v.deleted_at IS NULL AND v.estado NOT IN ('baja', 'fuera_servicio')
+             ORDER BY v.numero_economico ASC"
+        );
+    }
 }

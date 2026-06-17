@@ -21,7 +21,7 @@ $kilometrajeInicial = $kilometrajeInicial ?? '';
     </div>
 </div>
 <div class="card">
-    <form action="<?= url('combustible') ?>" method="post" class="card-body">
+    <form action="<?= url('combustible') ?>" method="post" enctype="multipart/form-data" class="card-body">
         <?= csrf_field() ?>
         <div class="form-row">
             <div class="form-group">
@@ -29,7 +29,7 @@ $kilometrajeInicial = $kilometrajeInicial ?? '';
                 <select id="vehiculo_id" name="vehiculo_id" class="form-select" required>
                     <option value="">Seleccione…</option>
                     <?php foreach ($vehiculos as $v): ?>
-                    <option value="<?= (int) $v['id'] ?>" data-km="<?= (int) ($v['kilometraje_actual'] ?? 0) ?>" <?= (string) $preVehiculo === (string) $v['id'] ? 'selected' : '' ?>><?= e($v['numero_economico']) ?> (<?= number_format((int) ($v['kilometraje_actual'] ?? 0)) ?> km)</option>
+                    <option value="<?= (int) $v['id'] ?>" data-km="<?= (int) ($v['kilometraje_actual'] ?? 0) ?>" <?= (string) $preVehiculo === (string) $v['id'] ? 'selected' : '' ?>><?= e($v['numero_economico']) ?> (<?= number_format((int) ($v['kilometraje_actual'] ?? 0)) ?> km<?php if (!empty($v['estado']) && !in_array($v['estado'], ['activo', 'disponible'], true)): ?> — <?= e(str_replace('_', ' ', $v['estado'])) ?><?php endif; ?>)</option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -62,6 +62,11 @@ $kilometrajeInicial = $kilometrajeInicial ?? '';
             <div class="form-group">
                 <label class="form-label" for="folio_ticket">Folio ticket</label>
                 <input type="text" id="folio_ticket" name="folio_ticket" class="form-control" value="<?= e((string) old('folio_ticket')) ?>">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="archivo_ticket">Archivo del ticket</label>
+                <input type="file" id="archivo_ticket" name="archivo_ticket" class="form-control" accept="application/pdf,image/jpeg,image/png">
+                <p class="form-hint">Suba la foto del ticket (JPG o PNG) para que aparezca al imprimir el PDF. También acepta PDF, pero ese formato no se incrusta en el documento impreso.</p>
             </div>
         </div>
         <div class="form-group">

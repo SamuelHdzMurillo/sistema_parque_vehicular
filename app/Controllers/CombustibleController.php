@@ -40,7 +40,9 @@ final class CombustibleController extends BaseController
         }
 
         try {
-            $this->combustible->create($request->all(), $userId);
+            $data = $request->all();
+            $data['archivo_ticket'] = $request->file('archivo_ticket');
+            $this->combustible->create($data, $userId);
             flash('success', 'Carga de combustible registrada correctamente.');
             $this->redirect('combustible');
         } catch (RuntimeException $e) {

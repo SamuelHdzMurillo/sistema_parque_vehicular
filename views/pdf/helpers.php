@@ -73,19 +73,42 @@ function pdf_firma_data_uri(?string $path): string
  *
  * @return array{src: string, width_mm: float, height_mm: float}|null
  */
-function pdf_prepare_factura(?string $relativePath): ?array
+function pdf_resolve_ticket_image_path(string $relativePath): ?string
 {
-    if ($relativePath === null || trim($relativePath) === '') {
-        return null;
-    }
-
     $full = storage_path('uploads/' . ltrim($relativePath, '/'));
     if (!is_file($full)) {
         return null;
     }
 
     $ext = strtolower((string) pathinfo($full, PATHINFO_EXTENSION));
+    if ($ext === 'pdf') {
+        $preview = preg_replace('/\.pdf$/i', '_preview.jpg', $full);
+        return is_file($preview) ? $preview : null;
+    }
+
     if (!in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif'], true)) {
+        return null;
+    }
+
+    $preview = preg_replace('/\.[^.]+$/i', '_preview.jpg', $full);
+    if (is_file($preview)) {
+        return $preview;
+    }
+
+    return $full;
+}
+
+/**
+ * @return array{src: string, width_mm: float, height_mm: float}|null
+ */
+function pdf_prepare_factura(?string $relativePath, bool $fitCompleto = false): ?array
+{
+    if ($relativePath === null || trim($relativePath) === '') {
+        return null;
+    }
+
+    $full = pdf_resolve_ticket_image_path($relativePath);
+    if ($full === null) {
         return null;
     }
 
@@ -102,6 +125,7 @@ function pdf_prepare_factura(?string $relativePath): ?array
         return null;
     }
 
+    $srcImg = flatten_image_on_white($srcImg);
     $srcW = imagesx($srcImg);
     $srcH = imagesy($srcImg);
     if ($srcW <= 0 || $srcH <= 0) {
@@ -111,25 +135,41 @@ function pdf_prepare_factura(?string $relativePath): ?array
 
     $pageW = 1500;
     $pageH = 1974;
-    $srcRatio = $srcW / $srcH;
-    $pageRatio = $pageW / $pageH;
-
-    if ($srcRatio >= $pageRatio) {
-        $cropH = $srcH;
-        $cropW = (int) round($srcH * $pageRatio);
-        $cropX = (int) (($srcW - $cropW) / 2);
-        $cropY = 0;
-    } else {
-        $cropW = $srcW;
-        $cropH = (int) round($srcW / $pageRatio);
-        $cropX = 0;
-        $cropY = (int) (($srcH - $cropH) / 2);
-    }
 
     $dst = imagecreatetruecolor($pageW, $pageH);
     $white = imagecolorallocate($dst, 255, 255, 255);
     imagefill($dst, 0, 0, $white);
-    imagecopyresampled($dst, $srcImg, 0, 0, $cropX, $cropY, $pageW, $pageH, $cropW, $cropH);
+
+    if ($fitCompleto) {
+        $scale = min($pageW / $srcW, $pageH / $srcH);
+        $dstW = max(1, (int) round($srcW * $scale));
+        $dstH = max(1, (int) round($srcH * $scale));
+        $offsetX = (int) (($pageW - $dstW) / 2);
+        $offsetY = (int) (($pageH - $dstH) / 2);
+        imagecopyresampled($dst, $srcImg, $offsetX, $offsetY, 0, 0, $dstW, $dstH, $srcW, $srcH);
+        $widthMm = round(190.0 * ($dstW / $pageW), 1);
+        $heightMm = round(277.0 * ($dstH / $pageH), 1);
+    } else {
+        $srcRatio = $srcW / $srcH;
+        $pageRatio = $pageW / $pageH;
+
+        if ($srcRatio >= $pageRatio) {
+            $cropH = $srcH;
+            $cropW = (int) round($srcH * $pageRatio);
+            $cropX = (int) (($srcW - $cropW) / 2);
+            $cropY = 0;
+        } else {
+            $cropW = $srcW;
+            $cropH = (int) round($srcW / $pageRatio);
+            $cropX = 0;
+            $cropY = (int) (($srcH - $cropH) / 2);
+        }
+
+        imagecopyresampled($dst, $srcImg, 0, 0, $cropX, $cropY, $pageW, $pageH, $cropW, $cropH);
+        $widthMm = 190.0;
+        $heightMm = 250.0;
+    }
+
     imagedestroy($srcImg);
 
     ob_start();
@@ -143,8 +183,8 @@ function pdf_prepare_factura(?string $relativePath): ?array
 
     return [
         'src' => 'data:image/jpeg;base64,' . base64_encode($jpeg),
-        'width_mm' => 190.0,
-        'height_mm' => 250.0,
+        'width_mm' => $widthMm,
+        'height_mm' => $heightMm,
     ];
 }
 
