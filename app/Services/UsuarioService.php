@@ -16,7 +16,10 @@ final class UsuarioService
 
     public function paginate(int $page = 1, ?string $search = null): array
     {
-        return $this->users->paginate($page, 15, $search);
+        return array_merge(
+            $this->users->paginate($page, 15, $search),
+            ['roles' => $this->users->getRoles()]
+        );
     }
 
     public function find(int $id): ?array

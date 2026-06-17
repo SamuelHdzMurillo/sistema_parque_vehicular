@@ -346,3 +346,27 @@ function vehiculo_identificador_placeholder(): string
 {
     return 'Ej. Patrulla 01, Unidad Norte, Camión 3…';
 }
+
+function rol_badge_class(string $slug): string
+{
+    return match ($slug) {
+        'admin_general' => 'badge-primary',
+        'admin_transporte' => 'badge-success',
+        'supervisor' => 'badge-info',
+        'responsable_vehiculo' => 'badge-warning',
+        'consulta' => 'badge-secondary',
+        default => 'badge-secondary',
+    };
+}
+
+function rol_nivel_label(string $slug): string
+{
+    return match ($slug) {
+        'admin_general' => 'Acceso total',
+        'admin_transporte' => 'Operación del parque',
+        'supervisor' => 'Supervisión y autorización',
+        'responsable_vehiculo' => 'Operación en campo',
+        'consulta' => 'Solo consulta',
+        default => '',
+    };
+}

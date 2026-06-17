@@ -1,4 +1,4 @@
-<?php $pageTitle = 'Usuarios'; $data = $data ?? []; ?>
+<?php $pageTitle = 'Usuarios'; $data = $data ?? []; $roles = $roles ?? []; ?>
 <div class="page-header">
     <div>
         <h1 class="page-title">Usuarios del sistema</h1>
@@ -9,6 +9,7 @@
     <?php endif; ?>
 </div>
 <div class="card">
+    <?php App\Core\View::component('roles-guia', ['roles' => $roles]); ?>
     <form class="filters-bar" method="get">
         <div class="form-group">
             <label class="form-label" for="q">Buscar</label>
@@ -26,7 +27,10 @@
                 <tr>
                     <td><strong><?= e(trim(($u['nombre'] ?? '') . ' ' . ($u['apellido_paterno'] ?? ''))) ?></strong></td>
                     <td><?= e($u['email']) ?></td>
-                    <td><?= e($u['rol'] ?? '—') ?></td>
+                    <td>
+                        <?php $roleSlug = (string) ($u['role_slug'] ?? ''); ?>
+                        <span class="badge <?= rol_badge_class($roleSlug) ?>" title="<?= e((string) ($u['rol_descripcion'] ?? '')) ?>"><?= e($u['rol'] ?? '—') ?></span>
+                    </td>
                     <td><?= e($u['area'] ?? '—') ?></td>
                     <td>
                         <?php if (!empty($u['activo'])): ?>

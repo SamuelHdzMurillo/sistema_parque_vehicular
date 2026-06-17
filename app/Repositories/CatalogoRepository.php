@@ -37,11 +37,11 @@ final class CatalogoRepository extends BaseRepository
 
     public function getRoles(bool $soloActivos = true): array
     {
-        $sql = 'SELECT id, slug, nombre FROM roles';
+        $sql = 'SELECT id, slug, nombre, descripcion FROM roles';
         if ($soloActivos) {
             $sql .= ' WHERE activo = 1';
         }
-        $sql .= ' ORDER BY nombre ASC';
+        $sql .= ' ORDER BY id ASC';
         return $this->fetchAll($sql);
     }
 

@@ -138,7 +138,8 @@ final class UserRepository extends BaseRepository
         $params[] = $perPage;
         $params[] = $offset;
         $rows = $this->fetchAll(
-            "SELECT u.id, u.nombre, u.apellido_paterno, u.email, u.activo, r.nombre AS rol, a.nombre AS area
+            "SELECT u.id, u.nombre, u.apellido_paterno, u.email, u.activo,
+                    r.slug AS role_slug, r.nombre AS rol, r.descripcion AS rol_descripcion, a.nombre AS area
              FROM users u
              JOIN roles r ON r.id = u.role_id
              LEFT JOIN areas a ON a.id = u.area_id
@@ -168,7 +169,9 @@ final class UserRepository extends BaseRepository
 
     public function getRoles(): array
     {
-        return $this->fetchAll('SELECT id, nombre FROM roles WHERE activo = 1 ORDER BY nombre');
+        return $this->fetchAll(
+            'SELECT id, slug, nombre, descripcion FROM roles WHERE activo = 1 ORDER BY id ASC'
+        );
     }
 
     public function getAreas(): array

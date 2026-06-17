@@ -40,9 +40,10 @@ $u = $usuario;
                 <label class="form-label" for="role_id">Rol</label>
                 <select id="role_id" name="role_id" class="form-select" required>
                     <?php foreach ($roles as $r): ?>
-                    <option value="<?= (int) $r['id'] ?>" <?= (int) ($u['role_id'] ?? 0) === (int) $r['id'] ? 'selected' : '' ?>><?= e($r['nombre']) ?></option>
+                    <option value="<?= (int) $r['id'] ?>" data-slug="<?= e((string) ($r['slug'] ?? '')) ?>" data-descripcion="<?= e((string) ($r['descripcion'] ?? '')) ?>" <?= (int) ($u['role_id'] ?? 0) === (int) $r['id'] ? 'selected' : '' ?>><?= e($r['nombre']) ?></option>
                     <?php endforeach; ?>
                 </select>
+                <?php App\Core\View::component('rol-ayuda-select'); ?>
             </div>
             <div class="form-group">
                 <label class="form-label" for="area_id">Área</label>

@@ -2,11 +2,11 @@
 USE sicv_cecyte_bcs;
 
 INSERT INTO roles (slug, nombre, descripcion) VALUES
-('admin_general', 'Administrador General', 'Control total del sistema'),
-('admin_transporte', 'Administrador de Transporte', 'Gestión operativa del parque'),
-('supervisor', 'Supervisor', 'Supervisión y autorización'),
-('responsable_vehiculo', 'Responsable de Vehículo', 'Operación diaria de unidades'),
-('consulta', 'Consulta', 'Solo lectura');
+('admin_general', 'Administrador General', 'Acceso completo al sistema. Puede crear, editar y eliminar usuarios; consultar la auditoría de cambios; y gestionar todos los módulos: vehículos, comisiones, inspecciones, daños, mantenimiento, combustible, proveedores, herramientas, documentos, alertas y reportes. Rol de más alto nivel, destinado a dirección general o responsable de TI.'),
+('admin_transporte', 'Administrador de Transporte', 'Gestión operativa integral del parque vehicular. Puede administrar vehículos, comisiones, inspecciones, daños, mantenimiento, combustible, proveedores, herramientas y documentación; configurar alertas y exportar reportes. No puede crear, modificar ni eliminar usuarios del sistema ni consultar la auditoría de cuentas.'),
+('supervisor', 'Supervisor', 'Supervisa y autoriza la operación del parque. Puede consultar y actualizar información en la mayoría de módulos, autorizar comisiones y mantenimientos, y exportar reportes. No crea ni elimina registros operativos ni gestiona usuarios. Ideal para jefes de área o coordinadores de transporte.'),
+('responsable_vehiculo', 'Responsable de Vehículo', 'Operación diaria de las unidades asignadas. Puede registrar comisiones, inspecciones, reportes de daños y cargas de combustible; actualizar el estado de sus vehículos y herramientas; y consultar expedientes, alertas y reportes de sus unidades. No autoriza comisiones ni mantenimientos ni accede a la configuración del sistema.'),
+('consulta', 'Consulta', 'Acceso de solo lectura. Puede consultar vehículos, expedientes, comisiones, inspecciones, mantenimiento, combustible y alertas; ver el panel principal y exportar reportes informativos. No puede crear, editar ni eliminar ningún registro. Pensado para personal administrativo o consulta externa.');
 
 INSERT INTO permissions (slug, modulo, accion, descripcion) VALUES
 ('usuarios.read', 'usuarios', 'read', 'Ver usuarios'),

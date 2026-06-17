@@ -31,6 +31,9 @@ final class Database
                 $config['password'],
                 $config['options']
             );
+            $this->connection->exec(
+                'SET NAMES ' . $config['charset'] . ' COLLATE ' . $config['collation']
+            );
         } catch (PDOException $e) {
             throw new RuntimeException('Error de conexión a base de datos: ' . $e->getMessage());
         }

@@ -38,9 +38,10 @@ $areas = $areas ?? [];
                 <select id="role_id" name="role_id" class="form-select" required>
                     <option value="">Seleccione…</option>
                     <?php foreach ($roles as $r): ?>
-                    <option value="<?= (int) $r['id'] ?>" <?= (string) old('role_id') === (string) $r['id'] ? 'selected' : '' ?>><?= e($r['nombre']) ?></option>
+                    <option value="<?= (int) $r['id'] ?>" data-slug="<?= e((string) ($r['slug'] ?? '')) ?>" data-descripcion="<?= e((string) ($r['descripcion'] ?? '')) ?>" <?= (string) old('role_id') === (string) $r['id'] ? 'selected' : '' ?>><?= e($r['nombre']) ?></option>
                     <?php endforeach; ?>
                 </select>
+                <?php App\Core\View::component('rol-ayuda-select'); ?>
             </div>
             <div class="form-group">
                 <label class="form-label" for="area_id">Área</label>
