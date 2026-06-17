@@ -44,7 +44,7 @@ final class ReporteService
     {
         $internal = $tipo === 'vehiculos' ? 'inventario' : $tipo;
         [, $headers, $rows] = $this->buildReportData($internal, []);
-        return ['headers' => $headers, 'rows' => $rows];
+        return ['headers' => $headers, 'data' => $rows];
     }
 
     public function export(string $tipo, string $format, array $filters = []): never

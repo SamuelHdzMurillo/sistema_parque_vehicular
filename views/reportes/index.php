@@ -12,7 +12,7 @@ $tipos = $tipos ?? [
 ];
 $tipo = $tipo ?? 'inventario';
 $data = $data ?? [];
-$rows = is_array($data) && isset($data['data']) ? $data['data'] : (is_array($data) && !isset($data['headers']) ? $data : []);
+$rows = $data['data'] ?? $data['rows'] ?? [];
 $headers = $data['headers'] ?? ( !empty($rows) && is_array($rows[0] ?? null) ? array_keys($rows[0]) : [] );
 ?>
 <div class="page-header">
