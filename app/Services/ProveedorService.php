@@ -30,9 +30,12 @@ final class ProveedorService
         return self::TIPOS;
     }
 
-    public function create(array $data): int
+    public function create(array $data): int|string
     {
         $clean = $this->sanitize($data);
+        if (is_string($clean)) {
+            return $clean;
+        }
         $id = $this->repo->create($clean);
         AuditService::log('CREATE', 'proveedores', $id, null, $clean);
         return $id;
@@ -65,14 +68,18 @@ final class ProveedorService
         return $result;
     }
 
-    private function sanitize(array $data): array
+    private function sanitize(array $data): array|string
     {
+        $razonSocial = trim((string) ($data['razon_social'] ?? ''));
+        if ($razonSocial === '') {
+            return 'La razón social es obligatoria.';
+        }
         $tipo = $data['tipo'] ?? 'ambos';
         if (!in_array($tipo, self::TIPOS, true)) {
             $tipo = 'ambos';
         }
         return [
-            'razon_social' => trim((string) ($data['razon_social'] ?? '')),
+            'razon_social' => $razonSocial,
             'rfc' => $data['rfc'] ?? null,
             'telefono' => $data['telefono'] ?? null,
             'email' => $data['email'] ?? null,

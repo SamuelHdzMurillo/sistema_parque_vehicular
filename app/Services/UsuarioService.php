@@ -60,6 +60,50 @@ final class UsuarioService
         return null;
     }
 
+    public function createQuick(array $data): int|string
+    {
+        $nombre = trim((string) ($data['nombre'] ?? ''));
+        $apellidoPaterno = trim((string) ($data['apellido_paterno'] ?? ''));
+        $email = trim((string) ($data['email'] ?? ''));
+
+        if ($nombre === '') {
+            return 'El nombre es obligatorio.';
+        }
+        if ($apellidoPaterno === '') {
+            return 'El apellido paterno es obligatorio.';
+        }
+        if ($email === '' || filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+            return 'Ingrese un correo electrónico válido.';
+        }
+        if ($this->users->findByEmail($email) !== null) {
+            return 'El correo electrónico ya está registrado.';
+        }
+
+        $roleId = $this->users->findRoleIdBySlug('responsable_vehiculo');
+        if ($roleId === null) {
+            return 'No se encontró el rol de responsable de vehículo.';
+        }
+
+        $areaId = (int) ($data['area_id'] ?? 0);
+        $telefono = trim((string) ($data['telefono'] ?? ''));
+        $password = bin2hex(random_bytes(8));
+
+        $id = $this->users->create([
+            'role_id' => $roleId,
+            'area_id' => $areaId > 0 ? $areaId : null,
+            'nombre' => $nombre,
+            'apellido_paterno' => $apellidoPaterno,
+            'apellido_materno' => trim((string) ($data['apellido_materno'] ?? '')) ?: null,
+            'email' => $email,
+            'telefono' => $telefono !== '' ? $telefono : null,
+            'password_hash' => password_hash($password, PASSWORD_DEFAULT),
+        ]);
+
+        AuditService::log('INSERT', 'users', $id, null, ['email' => $email, 'quick' => true]);
+
+        return $id;
+    }
+
     public function update(int $id, array $data): ?string
     {
         $before = $this->users->findById($id);

@@ -28,6 +28,12 @@ final class AlertaService
         return $result;
     }
 
+    /** Genera o actualiza alertas pendientes según documentos y kilometraje. */
+    public function sincronizar(): void
+    {
+        $this->runDailyCron();
+    }
+
     public function atender(int $id, int $userId, ?string $comentario): ?string
     {
         try {
@@ -47,6 +53,10 @@ final class AlertaService
 
     public function paginate(int $page = 1, bool $soloPendientes = true): array
     {
+        if ($soloPendientes) {
+            $this->sincronizar();
+        }
+
         $filters = $soloPendientes ? ['atendida' => 0] : [];
         return $this->repo->paginate($page, 15, $filters);
     }

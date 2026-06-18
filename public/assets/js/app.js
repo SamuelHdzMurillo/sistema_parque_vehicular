@@ -533,7 +533,9 @@
         const endpoints = {
             planteles: 'catalogos/api/planteles',
             areas: 'catalogos/api/areas',
-            conductores: 'catalogos/api/conductores'
+            conductores: 'catalogos/api/conductores',
+            proveedores: 'catalogos/api/proveedores',
+            responsables: 'catalogos/api/responsables'
         };
         const endpoint = endpoints[type];
         if (!endpoint) {
@@ -570,7 +572,7 @@
                 }
 
                 if (type === 'areas') {
-                    document.querySelectorAll('[data-area-select], [data-conductor-area-select]').forEach(function (select) {
+                    document.querySelectorAll('[data-area-select], [data-conductor-area-select], [data-responsable-area-select]').forEach(function (select) {
                         rebuildSelect(select, items, function (item) {
                             const option = document.createElement('option');
                             option.value = String(item.id);
@@ -590,6 +592,40 @@
                             option.setAttribute('data-telefono', item.telefono);
                             return option;
                         }, options);
+                    });
+                }
+
+                if (type === 'proveedores') {
+                    document.querySelectorAll('[data-proveedor-select]').forEach(function (select) {
+                        rebuildSelect(select, items, function (item) {
+                            const option = document.createElement('option');
+                            option.value = String(item.id);
+                            option.textContent = item.label;
+                            option.setAttribute('data-rfc', item.rfc || '');
+                            option.setAttribute('data-telefono', item.telefono || '');
+                            option.setAttribute('data-email', item.email || '');
+                            option.setAttribute('data-direccion', item.direccion || '');
+                            return option;
+                        }, options);
+                    });
+                }
+
+                if (type === 'responsables') {
+                    document.querySelectorAll('[data-responsable-select]').forEach(function (select) {
+                        const current = options.selectedId ? String(options.selectedId) : select.value;
+                        select.innerHTML = '';
+                        items.forEach(function (item) {
+                            const option = document.createElement('option');
+                            option.value = String(item.id);
+                            option.textContent = item.label;
+                            select.appendChild(option);
+                        });
+                        if (current && Array.prototype.some.call(select.options, function (opt) {
+                            return opt.value === current;
+                        })) {
+                            select.value = current;
+                        }
+                        select.dispatchEvent(new Event('change', { bubbles: true }));
                     });
                 }
             })
@@ -655,6 +691,9 @@
 
         function open() {
             clearError();
+            if (document.querySelector('.modal-overlay.open')) {
+                modal.classList.add('modal-overlay--stacked');
+            }
             modal.classList.add('open');
             modal.setAttribute('aria-hidden', 'false');
             lockBodyModal();
@@ -666,6 +705,7 @@
 
         function close() {
             modal.classList.remove('open');
+            modal.classList.remove('modal-overlay--stacked');
             modal.setAttribute('aria-hidden', 'true');
             unlockBodyModal();
             if (form) {
@@ -884,6 +924,158 @@
         });
     }
 
+    /* ——— Modal rápido de proveedor ——— */
+    function initProveedorQuickModal() {
+        const modal = document.querySelector('[data-proveedor-quick-modal]');
+        const openBtns = document.querySelectorAll('[data-proveedor-quick-open]');
+        if (!modal || openBtns.length === 0) return;
+
+        const form = modal.querySelector('[data-proveedor-quick-form]');
+        const errorBox = modal.querySelector('[data-proveedor-quick-error]');
+        const submitBtn = modal.querySelector('[data-proveedor-quick-submit]');
+
+        function showError(msg) {
+            if (!errorBox) return;
+            errorBox.textContent = msg;
+            errorBox.hidden = false;
+        }
+
+        function clearError() {
+            if (!errorBox) return;
+            errorBox.textContent = '';
+            errorBox.hidden = true;
+        }
+
+        function open() {
+            clearError();
+            modal.classList.add('open');
+            modal.setAttribute('aria-hidden', 'false');
+            lockBodyModal();
+            const firstInput = form ? form.querySelector('input:not([type="hidden"])') : null;
+            if (firstInput) {
+                firstInput.focus();
+            }
+        }
+
+        function close() {
+            modal.classList.remove('open');
+            modal.setAttribute('aria-hidden', 'true');
+            unlockBodyModal();
+            if (form) {
+                form.reset();
+            }
+            clearError();
+        }
+
+        openBtns.forEach(function (btn) {
+            btn.addEventListener('click', open);
+        });
+
+        modal.querySelectorAll('[data-proveedor-quick-close]').forEach(function (btn) {
+            btn.addEventListener('click', close);
+        });
+
+        modal.addEventListener('click', function (e) {
+            if (e.target === modal) {
+                close();
+            }
+        });
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && getTopModal() === modal) {
+                close();
+            }
+        });
+
+        if (!form) return;
+
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            clearError();
+            submitQuickForm(form, submitBtn, function (data) {
+                return window.SICV.refreshCatalog('proveedores', { selectedId: data.proveedor.id }).then(function () {
+                    close();
+                });
+            }, showError);
+        });
+    }
+
+    /* ——— Modal rápido de responsable ——— */
+    function initResponsableQuickModal() {
+        const modal = document.querySelector('[data-responsable-quick-modal]');
+        const openBtns = document.querySelectorAll('[data-responsable-quick-open]');
+        if (!modal || openBtns.length === 0) return;
+
+        const form = modal.querySelector('[data-responsable-quick-form]');
+        const errorBox = modal.querySelector('[data-responsable-quick-error]');
+        const submitBtn = modal.querySelector('[data-responsable-quick-submit]');
+
+        function showError(msg) {
+            if (!errorBox) return;
+            errorBox.textContent = msg;
+            errorBox.hidden = false;
+        }
+
+        function clearError() {
+            if (!errorBox) return;
+            errorBox.textContent = '';
+            errorBox.hidden = true;
+        }
+
+        function open() {
+            clearError();
+            modal.classList.add('open');
+            modal.setAttribute('aria-hidden', 'false');
+            lockBodyModal();
+            const firstInput = form ? form.querySelector('input:not([type="hidden"])') : null;
+            if (firstInput) {
+                firstInput.focus();
+            }
+        }
+
+        function close() {
+            modal.classList.remove('open');
+            modal.setAttribute('aria-hidden', 'true');
+            unlockBodyModal();
+            if (form) {
+                form.reset();
+            }
+            clearError();
+        }
+
+        openBtns.forEach(function (btn) {
+            btn.addEventListener('click', open);
+        });
+
+        modal.querySelectorAll('[data-responsable-quick-close]').forEach(function (btn) {
+            btn.addEventListener('click', close);
+        });
+
+        modal.addEventListener('click', function (e) {
+            if (e.target === modal) {
+                close();
+            }
+        });
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && getTopModal() === modal) {
+                close();
+            }
+        });
+
+        if (!form) return;
+
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            clearError();
+            submitQuickForm(form, submitBtn, function (data) {
+                return window.SICV.refreshCatalog('responsables', { selectedId: data.responsable.id }).then(function () {
+                    close();
+                });
+            }, showError);
+        });
+    }
+
     /* ——— Init ——— */
     document.addEventListener('DOMContentLoaded', function () {
         initTheme();
@@ -900,6 +1092,8 @@
         initAreaQuickModal();
         initPlantelQuickModal();
         initConductorQuickModal();
+        initProveedorQuickModal();
+        initResponsableQuickModal();
         initLightbox();
         initImagePreview();
         window.SICV.initSignaturePads();

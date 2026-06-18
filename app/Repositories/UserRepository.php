@@ -167,6 +167,16 @@ final class UserRepository extends BaseRepository
         );
     }
 
+    public function findRoleIdBySlug(string $slug): ?int
+    {
+        $row = $this->fetchOne(
+            'SELECT id FROM roles WHERE slug = ? AND activo = 1 LIMIT 1',
+            [$slug]
+        );
+
+        return $row !== null ? (int) $row['id'] : null;
+    }
+
     public function getRoles(): array
     {
         return $this->fetchAll(

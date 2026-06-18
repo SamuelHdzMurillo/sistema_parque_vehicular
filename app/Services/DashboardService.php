@@ -9,12 +9,15 @@ use App\Repositories\DashboardRepository;
 final class DashboardService
 {
     public function __construct(
-        private readonly DashboardRepository $repo = new DashboardRepository()
+        private readonly DashboardRepository $repo = new DashboardRepository(),
+        private readonly AlertaService $alertas = new AlertaService(),
     ) {
     }
 
     public function getDashboardData(): array
     {
+        $this->alertas->sincronizar();
+
         $vehiculos = $this->repo->getResumenVehiculos();
         $alertas = $this->repo->getResumenAlertas();
 

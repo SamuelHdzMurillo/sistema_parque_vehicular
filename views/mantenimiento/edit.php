@@ -4,6 +4,7 @@ $m = $mantenimiento ?? [];
 $vehiculos = $vehiculos ?? [];
 $proveedores = $proveedores ?? [];
 $responsables = $responsables ?? [];
+$areas = $areas ?? [];
 $tipos = $tipos ?? [];
 ?>
 <div class="page-header">
@@ -38,17 +39,22 @@ $tipos = $tipos ?? [];
             </div>
             <div class="form-group">
                 <label class="form-label" for="proveedor_id">Proveedor / taller</label>
-                <select id="proveedor_id" name="proveedor_id" class="form-select" data-proveedor-select>
-                    <option value="">—</option>
-                    <?php foreach ($proveedores as $p): ?>
-                    <option value="<?= (int) $p['id'] ?>"
-                        data-rfc="<?= e($p['rfc'] ?? '') ?>"
-                        data-telefono="<?= e($p['telefono'] ?? '') ?>"
-                        data-email="<?= e($p['email'] ?? '') ?>"
-                        data-direccion="<?= e($p['direccion'] ?? '') ?>"
-                        <?= (int) ($m['proveedor_id'] ?? 0) === (int) $p['id'] ? 'selected' : '' ?>><?= e($p['razon_social']) ?></option>
-                    <?php endforeach; ?>
-                </select>
+                <div class="input-group">
+                    <select id="proveedor_id" name="proveedor_id" class="form-select" data-proveedor-select>
+                        <option value="">—</option>
+                        <?php foreach ($proveedores as $p): ?>
+                        <option value="<?= (int) $p['id'] ?>"
+                            data-rfc="<?= e($p['rfc'] ?? '') ?>"
+                            data-telefono="<?= e($p['telefono'] ?? '') ?>"
+                            data-email="<?= e($p['email'] ?? '') ?>"
+                            data-direccion="<?= e($p['direccion'] ?? '') ?>"
+                            <?= (int) ($m['proveedor_id'] ?? 0) === (int) $p['id'] ? 'selected' : '' ?>><?= e($p['razon_social']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <?php if (can('proveedores.create')): ?>
+                    <button type="button" class="btn btn-accent" data-proveedor-quick-open title="Agregar proveedor" aria-label="Agregar proveedor">+</button>
+                    <?php endif; ?>
+                </div>
             </div>
             <div class="form-group">
                 <label class="form-label" for="costo">Costo</label>
@@ -123,6 +129,11 @@ $tipos = $tipos ?? [];
         </div>
     </form>
 </div>
+
+<?php if (can('proveedores.create')): ?>
+<?php App\Core\View::component('modal-proveedor-quick'); ?>
+<?php endif; ?>
+
 <script>
 (function () {
     var select = document.querySelector('[data-proveedor-select]');

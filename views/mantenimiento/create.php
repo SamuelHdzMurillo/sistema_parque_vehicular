@@ -3,8 +3,13 @@ $pageTitle = 'Nuevo mantenimiento';
 $vehiculos = $vehiculos ?? [];
 $proveedores = $proveedores ?? [];
 $responsables = $responsables ?? [];
+$areas = $areas ?? [];
+$planteles = $planteles ?? [];
 $tipos = $tipos ?? [];
+$puedeAgregarArea = can('catalogos.create');
 $preVehiculo = $_GET['vehiculo_id'] ?? old('vehiculo_id');
+$responsableActual = old('responsable_id', auth_id());
+$puedeAgregarResponsable = can('usuarios.create') || can('mantenimiento.create');
 ?>
 <div class="page-header">
     <div>
@@ -43,17 +48,22 @@ $preVehiculo = $_GET['vehiculo_id'] ?? old('vehiculo_id');
             </div>
             <div class="form-group">
                 <label class="form-label" for="proveedor_id">Proveedor / taller</label>
-                <select id="proveedor_id" name="proveedor_id" class="form-select" data-proveedor-select>
-                    <option value="">— Sin proveedor —</option>
-                    <?php foreach ($proveedores as $p): ?>
-                    <option value="<?= (int) $p['id'] ?>"
-                        data-rfc="<?= e($p['rfc'] ?? '') ?>"
-                        data-telefono="<?= e($p['telefono'] ?? '') ?>"
-                        data-email="<?= e($p['email'] ?? '') ?>"
-                        data-direccion="<?= e($p['direccion'] ?? '') ?>"
-                        <?= (string) old('proveedor_id') === (string) $p['id'] ? 'selected' : '' ?>><?= e($p['razon_social']) ?></option>
-                    <?php endforeach; ?>
-                </select>
+                <div class="input-group">
+                    <select id="proveedor_id" name="proveedor_id" class="form-select" data-proveedor-select>
+                        <option value="">— Sin proveedor —</option>
+                        <?php foreach ($proveedores as $p): ?>
+                        <option value="<?= (int) $p['id'] ?>"
+                            data-rfc="<?= e($p['rfc'] ?? '') ?>"
+                            data-telefono="<?= e($p['telefono'] ?? '') ?>"
+                            data-email="<?= e($p['email'] ?? '') ?>"
+                            data-direccion="<?= e($p['direccion'] ?? '') ?>"
+                            <?= (string) old('proveedor_id') === (string) $p['id'] ? 'selected' : '' ?>><?= e($p['razon_social']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <?php if (can('proveedores.create')): ?>
+                    <button type="button" class="btn btn-accent" data-proveedor-quick-open title="Agregar proveedor" aria-label="Agregar proveedor">+</button>
+                    <?php endif; ?>
+                </div>
             </div>
             <div class="form-group">
                 <label class="form-label" for="costo">Costo estimado</label>
@@ -61,11 +71,16 @@ $preVehiculo = $_GET['vehiculo_id'] ?? old('vehiculo_id');
             </div>
             <div class="form-group">
                 <label class="form-label" for="responsable_id">Responsable</label>
-                <select id="responsable_id" name="responsable_id" class="form-select">
-                    <?php foreach ($responsables as $u): ?>
-                    <option value="<?= (int) $u['id'] ?>"><?= e($u['nombre']) ?></option>
-                    <?php endforeach; ?>
-                </select>
+                <div class="input-group">
+                    <select id="responsable_id" name="responsable_id" class="form-select" data-responsable-select>
+                        <?php foreach ($responsables as $u): ?>
+                        <option value="<?= (int) $u['id'] ?>" <?= (string) $responsableActual === (string) $u['id'] ? 'selected' : '' ?>><?= e($u['nombre_completo'] ?? $u['nombre']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <?php if ($puedeAgregarResponsable): ?>
+                    <button type="button" class="btn btn-accent" data-responsable-quick-open title="Agregar responsable" aria-label="Agregar responsable">+</button>
+                    <?php endif; ?>
+                </div>
             </div>
         </div>
         <div class="form-group">
@@ -131,6 +146,18 @@ $preVehiculo = $_GET['vehiculo_id'] ?? old('vehiculo_id');
         </div>
     </form>
 </div>
+
+<?php if (can('proveedores.create')): ?>
+<?php App\Core\View::component('modal-proveedor-quick'); ?>
+<?php endif; ?>
+<?php if ($puedeAgregarResponsable): ?>
+<?php App\Core\View::component('modal-responsable-quick', ['areas' => $areas]); ?>
+<?php if ($puedeAgregarArea): ?>
+<?php App\Core\View::component('modal-area-quick', ['planteles' => $planteles]); ?>
+<?php App\Core\View::component('modal-plantel-quick'); ?>
+<?php endif; ?>
+<?php endif; ?>
+
 <script>
 (function () {
     var select = document.querySelector('[data-proveedor-select]');

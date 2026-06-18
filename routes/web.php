@@ -107,6 +107,7 @@ $router->post('mantenimiento/{id}/finalizar', [MantenimientoController::class, '
 $router->get('proveedores', [ProveedorController::class, 'index'], $perm('proveedores.read'));
 $router->get('proveedores/create', [ProveedorController::class, 'create'], $perm('proveedores.create'));
 $router->post('proveedores', [ProveedorController::class, 'store'], $perm('proveedores.create'));
+$router->post('proveedores/quick', [ProveedorController::class, 'quickStore'], $perm('proveedores.create'));
 $router->get('proveedores/{id}/edit', [ProveedorController::class, 'edit'], $perm('proveedores.update'));
 $router->post('proveedores/{id}', [ProveedorController::class, 'update'], $perm('proveedores.update'));
 $router->post('proveedores/{id}/toggle', [ProveedorController::class, 'toggle'], $perm('proveedores.update'));
@@ -153,6 +154,8 @@ $router->get('catalogos', [CatalogoController::class, 'index'], $perm('catalogos
 $router->get('catalogos/api/planteles', [CatalogoController::class, 'apiPlanteles'], $auth);
 $router->get('catalogos/api/areas', [CatalogoController::class, 'apiAreas'], $auth);
 $router->get('catalogos/api/conductores', [CatalogoController::class, 'apiConductores'], $auth);
+$router->get('catalogos/api/proveedores', [CatalogoController::class, 'apiProveedores'], $auth);
+$router->get('catalogos/api/responsables', [CatalogoController::class, 'apiResponsables'], $auth);
 $router->get('catalogos/planteles', [PlantelController::class, 'index'], $perm('catalogos.read'));
 $router->get('catalogos/planteles/create', [PlantelController::class, 'create'], $perm('catalogos.create'));
 $router->post('catalogos/planteles', [PlantelController::class, 'store'], $perm('catalogos.create'));
@@ -179,6 +182,7 @@ $router->post('catalogos/conductores/{id}/toggle', [ConductorController::class, 
 $router->get('usuarios', [UsuarioController::class, 'index'], $perm('usuarios.read'));
 $router->get('usuarios/create', [UsuarioController::class, 'create'], $perm('usuarios.create'));
 $router->post('usuarios', [UsuarioController::class, 'store'], $perm('usuarios.create'));
+$router->post('usuarios/quick', [UsuarioController::class, 'quickStore'], $auth);
 $router->get('usuarios/{id}/edit', [UsuarioController::class, 'edit'], $perm('usuarios.update'));
 $router->post('usuarios/{id}', [UsuarioController::class, 'update'], $perm('usuarios.update'));
 

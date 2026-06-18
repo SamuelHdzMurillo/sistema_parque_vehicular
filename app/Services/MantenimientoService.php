@@ -29,6 +29,8 @@ final class MantenimientoService
             'vehiculos' => $this->catalogos->getVehiculosOperativos(),
             'proveedores' => $this->catalogos->getProveedores(),
             'responsables' => $this->catalogos->getUsersForSelect(),
+            'areas' => $this->catalogos->getAreas(),
+            'planteles' => $this->catalogos->getPlanteles(),
             'tipos' => ['preventivo', 'correctivo', 'predictivo'],
             'estados' => ['pendiente', 'programado', 'autorizado', 'en_proceso', 'finalizado', 'cancelado'],
         ];

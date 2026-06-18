@@ -26,6 +26,7 @@ final class VehiculoService
         private readonly CatalogoRepository $catalogos = new CatalogoRepository(),
         private readonly AreaRepository $areas = new AreaRepository(),
         private readonly UserRepository $users = new UserRepository(),
+        private readonly AlertaService $alertas = new AlertaService(),
     ) {
     }
 
@@ -207,6 +208,8 @@ final class VehiculoService
 
     public function getExpediente(int $id): ?array
     {
+        $this->alertas->sincronizar();
+
         return $this->repo->getExpedienteData($id);
     }
 

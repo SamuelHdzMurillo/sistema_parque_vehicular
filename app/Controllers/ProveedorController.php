@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Core\Csrf;
 use App\Core\Request;
+use App\Core\Response;
 use App\Services\ProveedorService;
 
 final class ProveedorController extends BaseController
@@ -43,9 +45,45 @@ final class ProveedorController extends BaseController
             $this->redirect('proveedores/create');
         }
 
-        $id = $this->proveedores->create($data);
+        $result = $this->proveedores->create($data);
+        if (is_string($result)) {
+            $_SESSION['_old'] = $data;
+            flash('error', $result);
+            $this->redirect('proveedores/create');
+        }
         flash('success', 'Proveedor registrado correctamente.');
         $this->redirect('proveedores');
+    }
+
+    public function quickStore(Request $request): never
+    {
+        $token = $request->input('_token');
+        if (!Csrf::validate(is_string($token) ? $token : null)) {
+            Response::json(['ok' => false, 'error' => 'Token de seguridad inválido. Recargue la página.'], 419);
+        }
+
+        $result = $this->proveedores->create($request->all());
+        if (is_string($result)) {
+            Response::json(['ok' => false, 'error' => $result], 422);
+        }
+
+        $proveedor = $this->proveedores->find((int) $result);
+        if ($proveedor === null) {
+            Response::json(['ok' => false, 'error' => 'No se pudo recuperar el proveedor creado.'], 500);
+        }
+
+        Response::json([
+            'ok' => true,
+            'proveedor' => [
+                'id' => (int) $proveedor['id'],
+                'razon_social' => (string) $proveedor['razon_social'],
+                'rfc' => (string) ($proveedor['rfc'] ?? ''),
+                'telefono' => (string) ($proveedor['telefono'] ?? ''),
+                'email' => (string) ($proveedor['email'] ?? ''),
+                'direccion' => (string) ($proveedor['direccion'] ?? ''),
+                'label' => (string) $proveedor['razon_social'],
+            ],
+        ]);
     }
 
     public function edit(Request $request, string $id): never

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Core\Csrf;
 use App\Core\Request;
+use App\Core\Response;
 use App\Services\UsuarioService;
 
 final class UsuarioController extends BaseController
@@ -38,6 +40,39 @@ final class UsuarioController extends BaseController
         }
         flash('success', 'Usuario creado correctamente.');
         $this->redirect('usuarios');
+    }
+
+    public function quickStore(Request $request): never
+    {
+        if (!can('usuarios.create') && !can('mantenimiento.create')) {
+            Response::json(['ok' => false, 'error' => 'No tiene permiso para registrar responsables.'], 403);
+        }
+
+        $token = $request->input('_token');
+        if (!Csrf::validate(is_string($token) ? $token : null)) {
+            Response::json(['ok' => false, 'error' => 'Token de seguridad inválido. Recargue la página.'], 419);
+        }
+
+        $result = $this->usuarios->createQuick($request->all());
+        if (is_string($result)) {
+            Response::json(['ok' => false, 'error' => $result], 422);
+        }
+
+        $usuario = $this->usuarios->find((int) $result);
+        if ($usuario === null) {
+            Response::json(['ok' => false, 'error' => 'No se pudo recuperar el responsable creado.'], 500);
+        }
+
+        $nombre = trim((string) $usuario['nombre'] . ' ' . (string) $usuario['apellido_paterno']);
+
+        Response::json([
+            'ok' => true,
+            'responsable' => [
+                'id' => (int) $usuario['id'],
+                'nombre' => $nombre,
+                'label' => $nombre,
+            ],
+        ]);
     }
 
     public function edit(Request $request, string $id): never

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-require dirname(__DIR__) . '/vendor/autoload.php';
+define('BASE_PATH', dirname(__DIR__, 2));
 
-define('BASE_PATH', dirname(__DIR__));
+require BASE_PATH . '/vendor/autoload.php';
 
 $dotenv = BASE_PATH . '/.env';
 if (is_file($dotenv)) {

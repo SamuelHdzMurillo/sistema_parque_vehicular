@@ -75,4 +75,38 @@ final class CatalogoController extends BaseController
 
         Response::json(['ok' => true, 'items' => $mapped]);
     }
+
+    public function apiProveedores(Request $request): never
+    {
+        $items = (new CatalogoRepository())->getProveedores();
+        $mapped = array_map(static function (array $p): array {
+            return [
+                'id' => (int) $p['id'],
+                'razon_social' => (string) $p['razon_social'],
+                'rfc' => (string) ($p['rfc'] ?? ''),
+                'telefono' => (string) ($p['telefono'] ?? ''),
+                'email' => (string) ($p['email'] ?? ''),
+                'direccion' => (string) ($p['direccion'] ?? ''),
+                'label' => (string) $p['razon_social'],
+            ];
+        }, $items);
+
+        Response::json(['ok' => true, 'items' => $mapped]);
+    }
+
+    public function apiResponsables(Request $request): never
+    {
+        $items = (new CatalogoRepository())->getUsersForSelect();
+        $mapped = array_map(static function (array $u): array {
+            $nombre = trim((string) ($u['nombre_completo'] ?? $u['nombre'] ?? ''));
+
+            return [
+                'id' => (int) $u['id'],
+                'nombre' => $nombre,
+                'label' => $nombre,
+            ];
+        }, $items);
+
+        Response::json(['ok' => true, 'items' => $mapped]);
+    }
 }
