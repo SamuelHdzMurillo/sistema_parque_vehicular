@@ -13,7 +13,8 @@ $estados = ['borrador' => 'Borrador', 'en_curso' => 'En curso', 'finalizada' => 
 $minKmRegreso = max((int) ($c['km_salida'] ?? 0), (int) ($c['kilometraje_actual'] ?? 0));
 
 $showAcciones = ($c['estado'] === 'borrador' && can('comisiones.update'))
-    || (in_array($c['estado'], ['borrador', 'en_curso'], true) && can('comisiones.delete'));
+    || (in_array($c['estado'], ['borrador', 'en_curso'], true) && can('comisiones.delete'))
+    || can('comisiones.delete');
 
 $defaultTab = 'resumen';
 if ($c['estado'] === 'en_curso' && can('comisiones.update')) {
@@ -72,7 +73,7 @@ $renderLuces = static function (array $codigos) use ($lucesById): string {
         <a href="<?= url('formatos/comision/' . $c['id'] . '?parte=salida') ?>" class="btn btn-secondary" target="_blank">Imprimir salida</a>
         <a href="<?= url('formatos/comision/' . $c['id'] . '?parte=regreso') ?>" class="btn btn-secondary" target="_blank">Imprimir regreso</a>
         <a href="<?= url('formatos/comision/' . $c['id']) ?>" class="btn btn-secondary" target="_blank">Imprimir completo</a>
-        <?php if (can('comisiones.update') && in_array($c['estado'], ['borrador', 'en_curso'], true)): ?>
+        <?php if (can('comisiones.update') && in_array($c['estado'], ['borrador', 'en_curso', 'finalizada'], true)): ?>
         <a href="<?= url('comisiones/' . $c['id'] . '/edit') ?>" class="btn btn-secondary">Editar</a>
         <?php endif; ?>
     </div>
@@ -392,9 +393,10 @@ $renderLuces = static function (array $codigos) use ($lucesById): string {
             <?php endif; ?>
 
             <?php if (in_array($c['estado'], ['borrador', 'en_curso'], true) && can('comisiones.delete')): ?>
-            <div class="card" style="border:1px solid var(--border-color)">
+            <div class="card mb-2" style="border:1px solid var(--border-color)">
                 <div class="card-header"><h3 style="margin:0;font-size:.95rem">Cancelar comisión</h3></div>
                 <div class="card-body">
+                    <p class="text-muted">La comisión quedará marcada como cancelada pero seguirá en el historial.</p>
                     <form action="<?= url('comisiones/' . $c['id'] . '/cancelar') ?>" method="post">
                         <?= csrf_field() ?>
                         <div class="form-group">
@@ -402,6 +404,26 @@ $renderLuces = static function (array $codigos) use ($lucesById): string {
                             <textarea id="motivo_cancel" name="motivo" class="form-textarea" required></textarea>
                         </div>
                         <button type="submit" class="btn btn-danger" data-confirm="¿Confirma cancelar esta comisión?">Cancelar comisión</button>
+                    </form>
+                </div>
+            </div>
+            <?php endif; ?>
+
+            <?php if (can('comisiones.delete')): ?>
+            <div class="card" style="border:1px solid var(--border-color)">
+                <div class="card-header"><h3 style="margin:0;font-size:.95rem">Eliminar comisión</h3></div>
+                <div class="card-body">
+                    <p class="text-muted">
+                        Elimina por completo el registro del sistema.
+                        <?php if ($c['estado'] === 'finalizada'): ?>
+                        Si la comisión ya finalizó, se revertirán los kilómetros aplicados al vehículo (de <?= number_format((int) ($c['km_regreso'] ?? 0)) ?> km a <?= number_format((int) ($c['km_salida'] ?? 0)) ?> km), siempre que no existan registros posteriores.
+                        <?php elseif ($c['estado'] === 'en_curso'): ?>
+                        El vehículo volverá a estado disponible.
+                        <?php endif; ?>
+                    </p>
+                    <form action="<?= url('comisiones/' . $c['id'] . '/eliminar') ?>" method="post">
+                        <?= csrf_field() ?>
+                        <button type="submit" class="btn btn-danger" data-confirm="¿Confirma eliminar definitivamente esta comisión? Esta acción no se puede deshacer.">Eliminar definitivamente</button>
                     </form>
                 </div>
             </div>

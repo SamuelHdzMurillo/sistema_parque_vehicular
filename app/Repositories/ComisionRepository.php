@@ -158,7 +158,7 @@ final class ComisionRepository extends BaseRepository
     {
         return $this->execute(
             'UPDATE comisiones SET
-                area_solicitante_id = ?, responsable_id = ?, conductor_nombre = ?, conductor_id = ?,
+                vehiculo_id = ?, area_solicitante_id = ?, responsable_id = ?, conductor_nombre = ?, conductor_id = ?,
                 responsable_regreso_nombre = ?, responsable_regreso_id = ?,
                 destino = ?, motivo = ?, fecha = ?, hora_salida = ?, hora_regreso = ?,
                 km_salida = ?, km_regreso = ?, combustible_salida = ?, combustible_regreso = ?,
@@ -166,6 +166,7 @@ final class ComisionRepository extends BaseRepository
                 observaciones = ?, firma_digital = ?, estado = ?, updated_at = NOW()
              WHERE id = ?',
             [
+                (int) $data['vehiculo_id'],
                 (int) $data['area_solicitante_id'],
                 (int) $data['responsable_id'],
                 $data['conductor_nombre'],
@@ -194,7 +195,7 @@ final class ComisionRepository extends BaseRepository
 
     public function delete(int $id): bool
     {
-        return $this->execute('DELETE FROM comisiones WHERE id = ? AND estado = "borrador"', [$id]);
+        return $this->execute('DELETE FROM comisiones WHERE id = ?', [$id]);
     }
 
     public function paginate(int $page = 1, int $perPage = 15, array $filters = []): array

@@ -168,6 +168,21 @@ final class VehiculoRepository extends BaseRepository
         ) !== null;
     }
 
+    /** Ajuste administrativo del odómetro (permite aumentar o disminuir). */
+    public function setKilometraje(int $id, int $kilometraje, ?int $userId = null): bool
+    {
+        $this->execute(
+            'UPDATE vehiculos SET kilometraje_actual = ?, updated_by = ?, updated_at = NOW()
+             WHERE id = ? AND deleted_at IS NULL',
+            [$kilometraje, $userId, $id]
+        );
+
+        return $this->fetchOne(
+            'SELECT id FROM vehiculos WHERE id = ? AND deleted_at IS NULL AND kilometraje_actual = ?',
+            [$id, $kilometraje]
+        ) !== null;
+    }
+
     public function paginate(int $page = 1, int $perPage = 15, array $filters = []): array
     {
         $offset = ($page - 1) * $perPage;

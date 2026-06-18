@@ -93,13 +93,14 @@ final class ComisionController extends BaseController
     {
         $this->validateCsrf($request);
         try {
-            $updated = $this->comisiones->update((int) $id, $request->all());
+            $error = $this->comisiones->update((int) $id, $request->all());
         } catch (\InvalidArgumentException $e) {
             flash('error', $e->getMessage());
             $this->redirect('comisiones/' . $id . '/edit');
         }
-        if (!$updated) {
-            flash('error', 'No se pudo actualizar la comisión. Solo se pueden editar comisiones en estado borrador o en curso.');
+        if ($error !== null) {
+            $_SESSION['_old'] = $request->all();
+            flash('error', $error);
             $this->redirect('comisiones/' . $id . '/edit');
         }
         flash('success', 'Comisión actualizada correctamente.');
@@ -133,6 +134,14 @@ final class ComisionController extends BaseController
         $this->validateCsrf($request);
         $error = $this->comisiones->cancelar((int) $id, (string) $request->input('motivo', ''));
         flash($error ? 'error' : 'success', $error ?? 'Comisión cancelada.');
+        $this->redirect('comisiones');
+    }
+
+    public function eliminar(Request $request, string $id): never
+    {
+        $this->validateCsrf($request);
+        $error = $this->comisiones->eliminar((int) $id);
+        flash($error ? 'error' : 'success', $error ?? 'Comisión eliminada definitivamente.');
         $this->redirect('comisiones');
     }
 }

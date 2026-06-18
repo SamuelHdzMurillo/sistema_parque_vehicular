@@ -7,6 +7,7 @@ $planteles = $planteles ?? [];
 $conductores = $conductores ?? [];
 $usuarios = $usuarios ?? [];
 $c = array_merge($comision, array_intersect_key($_SESSION['_old'] ?? [], array_flip(array_keys($comision))));
+$esFinalizada = ($c['estado'] ?? '') === 'finalizada';
 $respRegresoSeleccionado = 0;
 $nombreRegreso = trim((string) ($c['responsable_regreso_nombre'] ?? ''));
 if ($nombreRegreso !== '') {
@@ -26,6 +27,9 @@ if ($nombreRegreso !== '') {
             <li>/ Editar</li>
         </ul>
         <h1 class="page-title">Editar comisión <?= e($c['folio']) ?></h1>
+        <?php if ($esFinalizada): ?>
+        <p class="page-subtitle text-muted">Comisión finalizada — al cambiar vehículo o kilómetros se actualizará el odómetro correspondiente.</p>
+        <?php endif; ?>
     </div>
 </div>
 
@@ -196,6 +200,85 @@ if ($nombreRegreso !== '') {
                 <?php endforeach; ?>
             </div>
         </div>
+
+        <?php if ($esFinalizada): ?>
+        <hr style="margin:1.5rem 0;border:none;border-top:1px solid var(--border-color)">
+        <h3 style="margin:0 0 1rem;font-size:1rem">Datos de regreso</h3>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label" for="hora_regreso">Hora regreso</label>
+                <input type="time" id="hora_regreso" name="hora_regreso" class="form-control" required value="<?= e(substr((string) ($c['hora_regreso'] ?? ''), 0, 5)) ?>">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="km_regreso">Km regreso</label>
+                <input type="number" id="km_regreso" name="km_regreso" class="form-control" required min="<?= (int) ($c['km_salida'] ?? 0) ?>" value="<?= e((string) ($c['km_regreso'] ?? '')) ?>">
+            </div>
+            <div class="form-group">
+                <?php App\Core\View::component('combustible-fraccion-select', [
+                    'id' => 'combustible_regreso',
+                    'name' => 'combustible_regreso',
+                    'label' => 'Combustible regreso',
+                    'valuePorcentaje' => $c['combustible_regreso'] ?? null,
+                    'required' => true,
+                ]); ?>
+            </div>
+        </div>
+
+        <?php
+        $lucesRegreso = $c['luces_regreso'] ?? [];
+        if (!is_array($lucesRegreso)) {
+            $lucesRegreso = [];
+        }
+        ?>
+        <div class="form-group">
+            <label class="form-label">Luces del tablero encendidas (al regreso)</label>
+            <div class="dash-lights-grid" data-dash-lights>
+                <?php foreach ($lucesTablero as $luz): ?>
+                <?php $codigo = $luz['codigo']; $isOn = in_array($codigo, $lucesRegreso, true); ?>
+                <label class="dash-light-card<?= $isOn ? ' is-on' : '' ?>">
+                    <input type="checkbox" name="luces_regreso[]" value="<?= e($codigo) ?>" <?= $isOn ? 'checked' : '' ?>>
+                    <span class="dash-light-icon" aria-hidden="true">
+                        <img src="<?= e(asset('images/luces-tablero/' . $luz['icon'])) ?>" alt="" width="48" height="48">
+                    </span>
+                    <span class="dash-light-name"><?= e($luz['nombre']) ?></span>
+                    <span class="dash-light-status"><?= $isOn ? 'Encendida' : 'Apagada' ?></span>
+                </label>
+                <?php endforeach; ?>
+            </div>
+        </div>
+
+        <?php
+        $nivelesRegreso = $c['niveles_regreso'] ?? [];
+        if (!is_array($nivelesRegreso)) {
+            $nivelesRegreso = [];
+        }
+        ?>
+        <div class="form-group">
+            <label class="form-label">Niveles de líquidos (al regreso)</label>
+            <div class="checklist-grid">
+                <?php foreach ($liquidos as $liq): ?>
+                <?php $cod = $liq['codigo']; $sel = (string) ($nivelesRegreso[$cod] ?? 'lleno'); ?>
+                <div class="checklist-item">
+                    <div class="checklist-item-name"><?= e($liq['nombre']) ?></div>
+                    <div class="rating-group">
+                        <label class="rating-bueno">
+                            <input type="radio" name="niveles_regreso[<?= e($cod) ?>]" value="lleno" <?= $sel === 'lleno' ? 'checked' : '' ?>>
+                            <span>Lleno</span>
+                        </label>
+                        <label class="rating-regular">
+                            <input type="radio" name="niveles_regreso[<?= e($cod) ?>]" value="medio" <?= $sel === 'medio' ? 'checked' : '' ?>>
+                            <span>Medio</span>
+                        </label>
+                        <label class="rating-malo">
+                            <input type="radio" name="niveles_regreso[<?= e($cod) ?>]" value="bajo" <?= $sel === 'bajo' ? 'checked' : '' ?>>
+                            <span>Bajo</span>
+                        </label>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php endif; ?>
 
         <div class="d-flex gap-1">
             <button type="submit" class="btn btn-primary">Guardar</button>
