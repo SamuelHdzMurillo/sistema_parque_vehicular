@@ -135,7 +135,7 @@ final class ComisionService
             AuditService::log('UPDATE', 'comisiones', $id, null, ['documento_' . $tipo => $ruta]);
             return null;
         } catch (\Throwable $e) {
-            return $e->getMessage();
+            return user_facing_error($e, 'No se pudo cargar el documento.');
         }
     }
 
@@ -198,6 +198,32 @@ final class ComisionService
         return $data;
     }
 
+    private function parseCombustibleField(array $data, string $field): ?float
+    {
+        if (!array_key_exists($field, $data)) {
+            return null;
+        }
+
+        $raw = $data[$field];
+        if (is_array($raw)) {
+            return null;
+        }
+
+        $raw = trim((string) $raw);
+        if ($raw === '') {
+            return null;
+        }
+
+        $porcentaje = combustible_fraccion_a_porcentaje($raw);
+        if ($porcentaje === null) {
+            throw new \InvalidArgumentException(
+                'El combustible debe indicarse en cuartos: 0/4, 1/4, 1/2, 3/4 o 4/4.'
+            );
+        }
+
+        return $porcentaje;
+    }
+
     private function normalizeCombustible(array $data): array
     {
         foreach (['combustible_salida', 'combustible_regreso'] as $campo) {
@@ -257,7 +283,7 @@ final class ComisionService
             AuditService::log('UPDATE', 'comisiones', $id, ['estado' => 'borrador'], ['estado' => 'en_curso']);
             return null;
         } catch (\Throwable $e) {
-            return $e->getMessage();
+            return user_facing_error($e, 'No se pudo iniciar la comisión.');
         }
     }
 
@@ -265,30 +291,99 @@ final class ComisionService
     {
         try {
             $comision = $this->repo->findById($id);
-            if ($comision === null || $comision['estado'] !== 'en_curso') {
-                return 'Comisión no válida para finalizar.';
+            if ($comision === null) {
+                return 'Comisión no encontrada.';
             }
+            if ($comision['estado'] !== 'en_curso') {
+                return 'Solo se puede registrar el regreso de comisiones en estado «En curso». Estado actual: '
+                    . ($comision['estado'] ?? 'desconocido') . '.';
+            }
+
+            $combustibleRegreso = $this->parseCombustibleField($data, 'combustible_regreso');
+            if ($combustibleRegreso === null) {
+                return 'Indique el nivel de combustible al regreso.';
+            }
+
             $merged = array_merge($comision, $data);
-            $merged = $this->normalizeCombustible($merged);
-            if (empty($merged['hora_regreso']) || empty($merged['km_regreso']) || $merged['combustible_regreso'] === '' || $merged['combustible_regreso'] === null) {
-                return 'Complete hora regreso, km regreso y combustible regreso.';
+            $merged['combustible_regreso'] = $combustibleRegreso;
+
+            if (empty($merged['hora_regreso'])) {
+                return 'Indique la hora de regreso.';
             }
-            if (!empty($data['firma_data'])) {
-                $merged['firma_digital'] = FileUploader::saveBase64Signature((string) $data['firma_data'], 'firmas/comisiones');
+
+            $kmSalida = (int) $comision['km_salida'];
+            $kmRegreso = isset($merged['km_regreso']) ? (int) $merged['km_regreso'] : 0;
+            if ($kmRegreso <= 0) {
+                return 'Indique el kilometraje de regreso.';
             }
+            if ($kmRegreso < $kmSalida) {
+                return sprintf(
+                    'El km de regreso (%s) no puede ser menor al km de salida (%s).',
+                    number_format($kmRegreso),
+                    number_format($kmSalida)
+                );
+            }
+
             $vehiculo = $this->vehiculos->findById((int) $comision['vehiculo_id']);
+            if ($vehiculo === null) {
+                return 'Vehículo de la comisión no encontrado.';
+            }
+
+            $kmActualVehiculo = (int) ($vehiculo['kilometraje_actual'] ?? 0);
+            if ($kmRegreso < $kmActualVehiculo) {
+                return sprintf(
+                    'El km de regreso (%s) no puede ser menor al kilometraje actual del vehículo (%s). '
+                    . 'El odómetro pudo haberse actualizado por otra operación mientras el vehículo estaba en comisión.',
+                    number_format($kmRegreso),
+                    number_format($kmActualVehiculo)
+                );
+            }
+
+            if (!empty($data['firma_data'])) {
+                $firma = FileUploader::saveBase64Signature((string) $data['firma_data'], 'firmas/comisiones');
+                if ($firma === null) {
+                    return 'La firma digital no es válida. Dibuje la firma en el recuadro o déjelo vacío.';
+                }
+                $merged['firma_digital'] = $firma;
+            }
+
             $capacidad = (float) ($vehiculo['capacidad_tanque'] ?? 80);
             $metricas = $this->repo->calcularMetricas($merged, $capacidad);
             $merged = array_merge($merged, $metricas, ['estado' => 'finalizada']);
-            $this->repo->update($id, $merged);
+
+            $this->repo->beginTransaction();
+
+            if (!$this->repo->update($id, $merged)) {
+                throw new \RuntimeException('No se pudo guardar los datos de regreso en la comisión.');
+            }
+
             $this->repo->saveLuces($id, 'regreso', $this->parseLuces($data, 'luces_regreso'));
             $this->repo->saveNiveles($id, 'regreso', $this->parseNiveles($data, 'niveles_regreso'));
-            $this->vehiculos->updateKilometraje((int) $comision['vehiculo_id'], (int) $merged['km_regreso'], auth_id());
-            $this->vehiculos->updateEstado((int) $comision['vehiculo_id'], 'disponible', 'Fin comisión ' . $comision['folio'], auth_id());
+
+            if (!$this->vehiculos->updateKilometraje((int) $comision['vehiculo_id'], $kmRegreso, auth_id())) {
+                throw new \RuntimeException(sprintf(
+                    'No se pudo actualizar el kilometraje del vehículo. Verifique que el km de regreso (%s) '
+                    . 'sea mayor o igual al registrado (%s).',
+                    number_format($kmRegreso),
+                    number_format($kmActualVehiculo)
+                ));
+            }
+
+            if (!$this->vehiculos->updateEstado(
+                (int) $comision['vehiculo_id'],
+                'disponible',
+                'Fin comisión ' . $comision['folio'],
+                auth_id()
+            )) {
+                throw new \RuntimeException('No se pudo cambiar el estado del vehículo a disponible.');
+            }
+
+            $this->repo->commit();
             AuditService::log('UPDATE', 'comisiones', $id, ['estado' => 'en_curso'], ['estado' => 'finalizada']);
             return null;
         } catch (\Throwable $e) {
-            return $e->getMessage();
+            $this->repo->rollBack();
+            return user_facing_error($e, 'No se pudo finalizar la comisión.');
         }
     }
 
@@ -308,7 +403,7 @@ final class ComisionService
             }
             return null;
         } catch (\Throwable $e) {
-            return $e->getMessage();
+            return user_facing_error($e, 'No se pudo cancelar la comisión.');
         }
     }
 

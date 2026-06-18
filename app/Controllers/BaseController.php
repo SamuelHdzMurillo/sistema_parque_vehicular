@@ -26,6 +26,11 @@ abstract class BaseController
         exit;
     }
 
+    protected function flashThrowable(\Throwable $e, string $fallback): void
+    {
+        flash('error', user_facing_error($e, $fallback));
+    }
+
     protected function validateCsrf(Request $request): void
     {
         $token = $request->input('_token');

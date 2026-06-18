@@ -35,12 +35,15 @@ final class Application
 
             $this->router->dispatch($this->request);
         } catch (Throwable $e) {
+            log_app_error($e);
             if (config('app', 'debug')) {
                 http_response_code(500);
                 echo '<h1>Error del sistema</h1><pre>' . e($e->getMessage()) . "\n" . e($e->getTraceAsString()) . '</pre>';
             } else {
                 http_response_code(500);
-                View::make('errors.500', [], 'layouts.guest');
+                View::make('errors.500', [
+                    'errorMessage' => user_facing_error($e, 'Ocurrió un problema inesperado.'),
+                ], 'layouts.guest');
             }
         }
     }

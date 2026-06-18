@@ -1,0 +1,6 @@
+[2026-06-18 21:19:32] PDOException: There is already an active transaction |   | user:1
+#0 C:\xampp\htdocs\sistema_parque_vehicular\app\Repositories\VehiculoRepository.php(128): PDO->beginTransaction()
+#1 C:\xampp\htdocs\sistema_parque_vehicular\app\Services\ComisionService.php(344): App\Repositories\VehiculoRepository->updateEstado(1, 'disponible', 'Fin comisi\xC3\xB3n C...', 1)
+#2 C:\xampp\htdocs\sistema_parque_vehicular\tmp_test_comb.php(24): App\Services\ComisionService->finalizar(1, Array)
+#3 {main}
+---

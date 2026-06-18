@@ -60,7 +60,7 @@ final class VehiculoController extends BaseController
             $this->redirect('vehiculos/create');
         } catch (PDOException $e) {
             $_SESSION['_old'] = $request->all();
-            flash('error', 'Error de base de datos al registrar el vehículo. Intente de nuevo.');
+            flash('error', user_facing_error($e, 'Error de base de datos al registrar el vehículo.'));
             $this->redirect('vehiculos/create');
         }
     }
@@ -107,7 +107,7 @@ final class VehiculoController extends BaseController
             $this->redirect('vehiculos/' . $id . '/edit');
         } catch (PDOException $e) {
             $_SESSION['_old'] = $request->all();
-            flash('error', 'Error de base de datos al actualizar el vehículo. Intente de nuevo.');
+            flash('error', user_facing_error($e, 'Error de base de datos al actualizar el vehículo.'));
             $this->redirect('vehiculos/' . $id . '/edit');
         }
     }

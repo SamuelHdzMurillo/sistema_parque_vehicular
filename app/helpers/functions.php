@@ -193,6 +193,64 @@ function flash(string $key, mixed $value = null): mixed
     return $val;
 }
 
+/** Registra un error en storage/logs/app.log para diagnóstico. */
+function log_app_error(\Throwable $e, array $context = []): void
+{
+    $dir = storage_path('logs');
+    if (!is_dir($dir)) {
+        mkdir($dir, 0755, true);
+    }
+
+    $requestUri = $_SERVER['REQUEST_URI'] ?? '';
+    $method = $_SERVER['REQUEST_METHOD'] ?? '';
+    $userId = auth_id();
+
+    $line = sprintf(
+        "[%s] %s: %s | %s %s | user:%s\n%s\n---\n",
+        date('Y-m-d H:i:s'),
+        get_class($e),
+        $e->getMessage(),
+        $method,
+        $requestUri,
+        $userId ?? 'guest',
+        $e->getTraceAsString()
+    );
+
+    if ($context !== []) {
+        $line = str_replace("\n---\n", ' | ' . json_encode($context, JSON_UNESCAPED_UNICODE) . "\n---\n", $line);
+    }
+
+    file_put_contents($dir . '/app.log', $line, FILE_APPEND | LOCK_EX);
+}
+
+/** Mensaje de error legible para el usuario; registra el detalle técnico en el log. */
+function user_facing_error(\Throwable $e, string $fallback = 'Ocurrió un error inesperado.'): string
+{
+    log_app_error($e);
+
+    if ($e instanceof \App\Exceptions\ValidationException) {
+        $errors = $e->getErrors();
+        return $errors !== [] ? implode(' ', $errors) : $fallback;
+    }
+
+    if ($e instanceof \InvalidArgumentException || $e instanceof \RuntimeException) {
+        return $e->getMessage() !== '' ? $e->getMessage() : $fallback;
+    }
+
+    if ($e instanceof \PDOException) {
+        if (config('app', 'debug')) {
+            return 'Error de base de datos: ' . $e->getMessage();
+        }
+        return $fallback . ' Revise storage/logs/app.log para más detalle.';
+    }
+
+    if (config('app', 'debug')) {
+        return $e->getMessage() !== '' ? $e->getMessage() : $fallback;
+    }
+
+    return $fallback . ' Revise storage/logs/app.log para más detalle.';
+}
+
 /** @return array<string, string> */
 function field_errors(): array
 {
@@ -445,6 +503,21 @@ function combustible_porcentaje_a_valor_formulario(mixed $porcentaje): string
     }
 
     return combustible_porcentaje_a_fraccion($porcentaje);
+}
+
+/** Normaliza un valor de formulario (fracción, porcentaje o legado) a fracción 0/4–4/4. */
+function combustible_input_a_fraccion(mixed $valor): string
+{
+    if ($valor === null || $valor === '' || is_array($valor)) {
+        return '';
+    }
+
+    $porcentaje = combustible_fraccion_a_porcentaje($valor);
+    if ($porcentaje !== null) {
+        return combustible_porcentaje_a_fraccion($porcentaje);
+    }
+
+    return trim((string) $valor);
 }
 
 /** Convierte fracción (1/4, 1/2, 3/4, 4/4) o porcentaje legado a valor 0–100. */

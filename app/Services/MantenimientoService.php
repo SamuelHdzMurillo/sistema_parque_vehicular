@@ -130,7 +130,7 @@ final class MantenimientoService
             $this->repo->authorize($id, $userId);
             return null;
         } catch (\Throwable $e) {
-            return $e->getMessage();
+            return user_facing_error($e, 'No se pudo autorizar el mantenimiento.');
         }
     }
 
@@ -150,7 +150,7 @@ final class MantenimientoService
             $this->vehiculos->updateEstado($vehiculoId, 'disponible', 'Fin mantenimiento ' . $mant['folio'], auth_id());
             return null;
         } catch (\Throwable $e) {
-            return $e->getMessage();
+            return user_facing_error($e, 'No se pudo finalizar el mantenimiento.');
         }
     }
 }

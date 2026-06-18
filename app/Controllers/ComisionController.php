@@ -94,7 +94,7 @@ final class ComisionController extends BaseController
             $this->redirect('comisiones/' . $id . '/edit');
         }
         if (!$updated) {
-            flash('error', 'No se pudo actualizar la comisión.');
+            flash('error', 'No se pudo actualizar la comisión. Solo se pueden editar comisiones en estado borrador o en curso.');
             $this->redirect('comisiones/' . $id . '/edit');
         }
         flash('success', 'Comisión actualizada correctamente.');
@@ -113,7 +113,13 @@ final class ComisionController extends BaseController
     {
         $this->validateCsrf($request);
         $error = $this->comisiones->finalizar((int) $id, $request->all());
-        flash($error ? 'error' : 'success', $error ?? 'Comisión finalizada correctamente.');
+        if ($error !== null) {
+            $_SESSION['_old'] = $request->all();
+            flash('error', $error);
+        } else {
+            unset($_SESSION['_old']);
+            flash('success', 'Comisión finalizada correctamente.');
+        }
         $this->redirect('comisiones/' . $id . '#regreso');
     }
 

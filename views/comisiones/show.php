@@ -10,6 +10,7 @@ foreach ($lucesTablero as $luz) {
 $liquidos = $liquidos ?? [];
 $nivelOpciones = $nivel_opciones ?? [];
 $estados = ['borrador' => 'Borrador', 'en_curso' => 'En curso', 'finalizada' => 'Finalizada', 'cancelada' => 'Cancelada'];
+$minKmRegreso = max((int) ($c['km_salida'] ?? 0), (int) ($c['kilometraje_actual'] ?? 0));
 
 $showAcciones = ($c['estado'] === 'borrador' && can('comisiones.update'))
     || (in_array($c['estado'], ['borrador', 'en_curso'], true) && can('comisiones.delete'));
@@ -185,11 +186,12 @@ $renderLuces = static function (array $codigos) use ($lucesById): string {
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label" for="hora_regreso">Hora regreso <span class="required">*</span></label>
-                        <input type="time" id="hora_regreso" name="hora_regreso" class="form-control" required value="<?= e(date('H:i')) ?>">
+                        <input type="time" id="hora_regreso" name="hora_regreso" class="form-control" required value="<?= e((string) old('hora_regreso', date('H:i'))) ?>">
                     </div>
                     <div class="form-group">
                         <label class="form-label" for="km_regreso">Km regreso <span class="required">*</span></label>
-                        <input type="number" id="km_regreso" name="km_regreso" class="form-control" required min="<?= (int) $c['km_salida'] ?>">
+                        <input type="number" id="km_regreso" name="km_regreso" class="form-control" required min="<?= $minKmRegreso ?>" value="<?= e((string) old('km_regreso', '')) ?>">
+                        <small class="form-hint text-muted">Mínimo: <?= number_format($minKmRegreso) ?> km (salida: <?= number_format((int) $c['km_salida']) ?>, odómetro actual: <?= number_format((int) ($c['kilometraje_actual'] ?? 0)) ?>).</small>
                     </div>
                     <div class="form-group">
                         <?php App\Core\View::component('combustible-fraccion-select', [
@@ -202,7 +204,7 @@ $renderLuces = static function (array $codigos) use ($lucesById): string {
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="observaciones_fin">Observaciones de regreso</label>
-                    <textarea id="observaciones_fin" name="observaciones" class="form-textarea"></textarea>
+                    <textarea id="observaciones_fin" name="observaciones" class="form-textarea"><?= e((string) old('observaciones', '')) ?></textarea>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Luces del tablero encendidas (al regreso)</label>

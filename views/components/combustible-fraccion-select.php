@@ -4,7 +4,11 @@ $name = $name ?? $id;
 $label = $label ?? 'Combustible';
 $valuePorcentaje = $valuePorcentaje ?? null;
 $required = !empty($required);
-$selected = (string) old($name, combustible_porcentaje_a_valor_formulario($valuePorcentaje));
+$source = old($name, null);
+if ($source === null || $source === '') {
+    $source = $valuePorcentaje;
+}
+$selected = combustible_input_a_fraccion($source);
 if ($selected === '' && $required) {
     $selected = '4/4';
 }

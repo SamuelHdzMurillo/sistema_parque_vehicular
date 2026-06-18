@@ -34,7 +34,29 @@ abstract class BaseRepository
     protected function execute(string $sql, array $params = []): bool
     {
         $stmt = $this->db->prepare($sql);
-        return $stmt->execute($params);
+        if (!$stmt->execute($params)) {
+            $info = $stmt->errorInfo();
+            throw new \PDOException(
+                ($info[2] ?? 'Error al ejecutar la consulta.') . ' [SQL: ' . preg_replace('/\s+/', ' ', trim($sql)) . ']',
+                (int) ($info[0] ?? 0)
+            );
+        }
+        return true;
+    }
+
+    public function beginTransaction(): bool
+    {
+        return $this->db->beginTransaction();
+    }
+
+    public function commit(): bool
+    {
+        return $this->db->commit();
+    }
+
+    public function rollBack(): bool
+    {
+        return $this->db->inTransaction() ? $this->db->rollBack() : false;
     }
 
     protected function lastInsertId(): string

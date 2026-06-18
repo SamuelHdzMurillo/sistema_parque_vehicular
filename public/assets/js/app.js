@@ -114,6 +114,11 @@
                 if (alert) alert.remove();
             });
         });
+
+        const errorAlert = document.querySelector('.alert-error');
+        if (errorAlert) {
+            errorAlert.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
     }
 
     /* ——— Tabs ——— */

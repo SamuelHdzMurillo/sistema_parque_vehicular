@@ -125,7 +125,10 @@ final class VehiculoRepository extends BaseRepository
             return false;
         }
 
-        $this->db->beginTransaction();
+        $ownsTransaction = !$this->db->inTransaction();
+        if ($ownsTransaction) {
+            $this->db->beginTransaction();
+        }
         try {
             $this->execute(
                 'UPDATE vehiculos SET estado = ?, updated_by = ?, updated_at = NOW() WHERE id = ?',
@@ -139,21 +142,30 @@ final class VehiculoRepository extends BaseRepository
             if ($estado === 'baja') {
                 $this->execute('UPDATE vehiculos SET deleted_at = NOW() WHERE id = ?', [$id]);
             }
-            $this->db->commit();
+            if ($ownsTransaction) {
+                $this->db->commit();
+            }
             return true;
         } catch (\Throwable $e) {
-            $this->db->rollBack();
+            if ($ownsTransaction && $this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
             throw $e;
         }
     }
 
     public function updateKilometraje(int $id, int $kilometraje, ?int $userId = null): bool
     {
-        return $this->execute(
+        $this->execute(
             'UPDATE vehiculos SET kilometraje_actual = ?, updated_by = ?, updated_at = NOW()
              WHERE id = ? AND deleted_at IS NULL AND kilometraje_actual <= ?',
             [$kilometraje, $userId, $id, $kilometraje]
         );
+
+        return $this->fetchOne(
+            'SELECT id FROM vehiculos WHERE id = ? AND deleted_at IS NULL AND kilometraje_actual = ?',
+            [$id, $kilometraje]
+        ) !== null;
     }
 
     public function paginate(int $page = 1, int $perPage = 15, array $filters = []): array

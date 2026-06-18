@@ -26,7 +26,8 @@ final class ComisionRepository extends BaseRepository
     public function findById(int $id): ?array
     {
         return $this->fetchOne(
-            'SELECT c.*, v.numero_economico, v.placas, v.capacidad_tanque, v.marca, v.modelo,
+            'SELECT c.*, v.numero_economico, v.placas, v.capacidad_tanque, v.kilometraje_actual,
+                    v.marca, v.modelo,
                     CONCAT(a.nombre, IF(p.clave IS NOT NULL, CONCAT(" - ", p.clave), "")) AS area_solicitante_nombre,
                     cond.telefono AS conductor_telefono,
                     CONCAT(u.nombre, " ", u.apellido_paterno) AS responsable_nombre
