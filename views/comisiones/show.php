@@ -269,54 +269,108 @@ $renderLuces = static function (array $codigos) use ($lucesById): string {
         </div>
 
         <!-- Documentos -->
+        <?php
+        $tieneSalida = !empty($c['doc_salida_ruta']);
+        $tieneRegreso = !empty($c['doc_regreso_ruta']);
+        $docsCompletos = $tieneSalida && $tieneRegreso;
+        ?>
         <div id="tab-documentos" class="tab-panel<?= $defaultTab === 'documentos' ? ' active' : '' ?>">
-            <p class="card-header-hint" style="margin-top:0">Cargue el PDF firmado de salida y el de regreso una vez impresos y firmados.</p>
+            <div class="comision-docs">
+                <p class="card-header-hint" style="margin:0">Cargue el PDF firmado de salida y el de regreso una vez impresos y firmados.</p>
 
-            <?php if (!empty($c['doc_salida_ruta']) && !empty($c['doc_regreso_ruta'])): ?>
-            <div class="card mb-2" style="border:1px solid var(--border-color);background:var(--surface-alt, #f8fafc)">
-                <div class="card-header"><h3 style="margin:0;font-size:.95rem">Documento completo (salida + regreso)</h3></div>
-                <div class="card-body">
-                    <p class="text-muted mb-2" style="margin-top:0">Ambos PDF están cargados. Puede verlos juntos en un solo archivo.</p>
+                <div class="comision-docs-summary">
+                    <span class="comision-docs-summary-label">Estado:</span>
+                    <span class="badge <?= $tieneSalida ? 'badge-success' : 'badge-secondary' ?>">Salida <?= $tieneSalida ? 'cargada' : 'pendiente' ?></span>
+                    <span class="badge <?= $tieneRegreso ? 'badge-success' : 'badge-secondary' ?>">Regreso <?= $tieneRegreso ? 'cargado' : 'pendiente' ?></span>
+                    <?php if ($docsCompletos): ?>
+                    <span class="badge badge-primary">Expediente completo</span>
+                    <?php endif; ?>
+                </div>
+
+                <?php if ($docsCompletos): ?>
+                <div class="comision-docs-combined">
+                    <div class="comision-docs-combined-text">
+                        <h3>Documento completo (salida + regreso)</h3>
+                        <p>Ambos PDF están cargados. Puede consultarlos juntos en un solo archivo.</p>
+                    </div>
                     <a href="<?= e(url('comisiones/' . $c['id'] . '/documentos/combinado')) ?>" target="_blank" class="btn btn-primary">Ver PDF combinado</a>
                 </div>
-            </div>
-            <?php endif; ?>
+                <?php endif; ?>
 
-            <div class="card mb-2" style="border:1px solid var(--border-color)">
-                <div class="card-header"><h3 style="margin:0;font-size:.95rem">Documento de salida (PDF firmado)</h3></div>
-                <div class="card-body">
-                    <?php if (!empty($c['doc_salida_ruta'])): ?>
-                    <p class="mb-2"><a href="<?= e(url('storage/uploads/' . ltrim($c['doc_salida_ruta'], '/'))) ?>" target="_blank">Ver documento de salida cargado</a></p>
-                    <?php else: ?>
-                    <p class="text-muted mb-2">Aún no se ha cargado el documento de salida.</p>
-                    <?php endif; ?>
-                    <?php if (can('comisiones.update')): ?>
-                    <form action="<?= url('comisiones/' . $c['id'] . '/documento') ?>" method="post" enctype="multipart/form-data">
-                        <?= csrf_field() ?>
-                        <input type="hidden" name="tipo" value="salida">
-                        <input type="file" name="archivo" class="form-control mb-1" accept="application/pdf" required>
-                        <button type="submit" class="btn btn-sm btn-primary"><?= !empty($c['doc_salida_ruta']) ? 'Reemplazar salida' : 'Cargar salida' ?></button>
-                    </form>
-                    <?php endif; ?>
-                </div>
-            </div>
+                <div class="comision-docs-grid">
+                    <div class="comision-doc-panel">
+                        <div class="comision-doc-panel-head">
+                            <h3>Documento de salida</h3>
+                            <span class="badge <?= $tieneSalida ? 'badge-success' : 'badge-warning' ?>"><?= $tieneSalida ? 'Cargado' : 'Pendiente' ?></span>
+                        </div>
+                        <div class="comision-doc-panel-body">
+                            <div class="comision-doc-status<?= $tieneSalida ? ' is-loaded' : '' ?>">
+                                <div class="comision-doc-status-icon">PDF</div>
+                                <div class="comision-doc-status-text">
+                                    <?php if ($tieneSalida): ?>
+                                    <strong>Salida firmada disponible</strong>
+                                    <span>El documento ya está registrado en el expediente.</span>
+                                    <?php else: ?>
+                                    <strong>Sin documento de salida</strong>
+                                    <span>Suba el PDF firmado después de la salida del vehículo.</span>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            <?php if ($tieneSalida): ?>
+                            <div class="comision-doc-actions">
+                                <a href="<?= e(url('storage/uploads/' . ltrim($c['doc_salida_ruta'], '/'))) ?>" target="_blank" class="btn btn-sm btn-secondary">Ver PDF de salida</a>
+                            </div>
+                            <?php endif; ?>
+                            <?php if (can('comisiones.update')): ?>
+                            <form action="<?= url('comisiones/' . $c['id'] . '/documento') ?>" method="post" enctype="multipart/form-data" class="comision-doc-upload">
+                                <?= csrf_field() ?>
+                                <input type="hidden" name="tipo" value="salida">
+                                <span class="comision-doc-upload-label"><?= $tieneSalida ? 'Reemplazar archivo' : 'Cargar archivo' ?></span>
+                                <input type="file" name="archivo" class="form-control" accept="application/pdf" required>
+                                <div class="comision-doc-upload-actions">
+                                    <button type="submit" class="btn btn-sm btn-primary"><?= $tieneSalida ? 'Reemplazar salida' : 'Cargar salida' ?></button>
+                                </div>
+                            </form>
+                            <?php endif; ?>
+                        </div>
+                    </div>
 
-            <div class="card" style="border:1px solid var(--border-color)">
-                <div class="card-header"><h3 style="margin:0;font-size:.95rem">Documento de regreso (PDF firmado)</h3></div>
-                <div class="card-body">
-                    <?php if (!empty($c['doc_regreso_ruta'])): ?>
-                    <p class="mb-2"><a href="<?= e(url('storage/uploads/' . ltrim($c['doc_regreso_ruta'], '/'))) ?>" target="_blank">Ver documento de regreso cargado</a></p>
-                    <?php else: ?>
-                    <p class="text-muted mb-2">Aún no se ha cargado el documento de regreso.</p>
-                    <?php endif; ?>
-                    <?php if (can('comisiones.update')): ?>
-                    <form action="<?= url('comisiones/' . $c['id'] . '/documento') ?>" method="post" enctype="multipart/form-data">
-                        <?= csrf_field() ?>
-                        <input type="hidden" name="tipo" value="regreso">
-                        <input type="file" name="archivo" class="form-control mb-1" accept="application/pdf" required>
-                        <button type="submit" class="btn btn-sm btn-primary"><?= !empty($c['doc_regreso_ruta']) ? 'Reemplazar regreso' : 'Cargar regreso' ?></button>
-                    </form>
-                    <?php endif; ?>
+                    <div class="comision-doc-panel">
+                        <div class="comision-doc-panel-head">
+                            <h3>Documento de regreso</h3>
+                            <span class="badge <?= $tieneRegreso ? 'badge-success' : 'badge-warning' ?>"><?= $tieneRegreso ? 'Cargado' : 'Pendiente' ?></span>
+                        </div>
+                        <div class="comision-doc-panel-body">
+                            <div class="comision-doc-status<?= $tieneRegreso ? ' is-loaded' : '' ?>">
+                                <div class="comision-doc-status-icon">PDF</div>
+                                <div class="comision-doc-status-text">
+                                    <?php if ($tieneRegreso): ?>
+                                    <strong>Regreso firmado disponible</strong>
+                                    <span>El documento ya está registrado en el expediente.</span>
+                                    <?php else: ?>
+                                    <strong>Sin documento de regreso</strong>
+                                    <span>Suba el PDF firmado al concluir el viaje.</span>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            <?php if ($tieneRegreso): ?>
+                            <div class="comision-doc-actions">
+                                <a href="<?= e(url('storage/uploads/' . ltrim($c['doc_regreso_ruta'], '/'))) ?>" target="_blank" class="btn btn-sm btn-secondary">Ver PDF de regreso</a>
+                            </div>
+                            <?php endif; ?>
+                            <?php if (can('comisiones.update')): ?>
+                            <form action="<?= url('comisiones/' . $c['id'] . '/documento') ?>" method="post" enctype="multipart/form-data" class="comision-doc-upload">
+                                <?= csrf_field() ?>
+                                <input type="hidden" name="tipo" value="regreso">
+                                <span class="comision-doc-upload-label"><?= $tieneRegreso ? 'Reemplazar archivo' : 'Cargar archivo' ?></span>
+                                <input type="file" name="archivo" class="form-control" accept="application/pdf" required>
+                                <div class="comision-doc-upload-actions">
+                                    <button type="submit" class="btn btn-sm btn-primary"><?= $tieneRegreso ? 'Reemplazar regreso' : 'Cargar regreso' ?></button>
+                                </div>
+                            </form>
+                            <?php endif; ?>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
