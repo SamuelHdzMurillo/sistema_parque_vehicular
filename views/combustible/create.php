@@ -52,12 +52,22 @@ $kilometrajeInicial = $kilometrajeInicial ?? '';
             </div>
             <div class="form-group">
                 <label class="form-label" for="proveedor_id">Estación / Proveedor</label>
-                <select id="proveedor_id" name="proveedor_id" class="form-select">
-                    <option value="">— Opcional —</option>
-                    <?php foreach ($proveedores as $p): ?>
-                    <option value="<?= (int) $p['id'] ?>"><?= e($p['razon_social']) ?></option>
-                    <?php endforeach; ?>
-                </select>
+                <div class="input-group">
+                    <select id="proveedor_id" name="proveedor_id" class="form-select" data-proveedor-select data-proveedor-tipo="combustible">
+                        <option value="">— Opcional —</option>
+                        <?php foreach ($proveedores as $p): ?>
+                        <option value="<?= (int) $p['id'] ?>"
+                            data-rfc="<?= e($p['rfc'] ?? '') ?>"
+                            data-telefono="<?= e($p['telefono'] ?? '') ?>"
+                            data-email="<?= e($p['email'] ?? '') ?>"
+                            data-direccion="<?= e($p['direccion'] ?? '') ?>"
+                            <?= (string) old('proveedor_id') === (string) $p['id'] ? 'selected' : '' ?>><?= e($p['razon_social']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <?php if (can('proveedores.create')): ?>
+                    <button type="button" class="btn btn-accent" data-proveedor-quick-open title="Agregar estación / proveedor" aria-label="Agregar estación / proveedor">+</button>
+                    <?php endif; ?>
+                </div>
             </div>
             <div class="form-group">
                 <label class="form-label" for="folio_ticket">Folio ticket</label>
@@ -80,6 +90,11 @@ $kilometrajeInicial = $kilometrajeInicial ?? '';
         </div>
     </form>
 </div>
+
+<?php if (can('proveedores.create')): ?>
+<?php App\Core\View::component('modal-proveedor-quick', ['tipo' => 'combustible', 'contexto' => 'combustible']); ?>
+<?php endif; ?>
+
 <script>
 (function () {
     var select = document.getElementById('vehiculo_id');

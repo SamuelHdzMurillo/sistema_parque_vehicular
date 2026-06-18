@@ -78,7 +78,9 @@ final class CatalogoController extends BaseController
 
     public function apiProveedores(Request $request): never
     {
-        $items = (new CatalogoRepository())->getProveedores();
+        $tipo = $request->input('tipo');
+        $tipoFilter = is_string($tipo) && $tipo !== '' ? $tipo : null;
+        $items = (new CatalogoRepository())->getProveedores($tipoFilter);
         $mapped = array_map(static function (array $p): array {
             return [
                 'id' => (int) $p['id'],

@@ -542,7 +542,12 @@
             return Promise.resolve();
         }
 
-        return fetch(appFetchUrl(endpoint), {
+        let fetchUrl = appFetchUrl(endpoint);
+        if (type === 'proveedores' && options.tipo) {
+            fetchUrl += '?tipo=' + encodeURIComponent(options.tipo);
+        }
+
+        return fetch(fetchUrl, {
             headers: {
                 'Accept': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest'
@@ -597,6 +602,15 @@
 
                 if (type === 'proveedores') {
                     document.querySelectorAll('[data-proveedor-select]').forEach(function (select) {
+                        const selectTipo = select.getAttribute('data-proveedor-tipo') || '';
+                        const refreshTipo = options.tipo || '';
+                        if (selectTipo === 'combustible') {
+                            if (refreshTipo !== 'combustible') {
+                                return;
+                            }
+                        } else if (refreshTipo === 'combustible') {
+                            return;
+                        }
                         rebuildSelect(select, items, function (item) {
                             const option = document.createElement('option');
                             option.value = String(item.id);
@@ -993,7 +1007,13 @@
             e.preventDefault();
             clearError();
             submitQuickForm(form, submitBtn, function (data) {
-                return window.SICV.refreshCatalog('proveedores', { selectedId: data.proveedor.id }).then(function () {
+                const tipoInput = form.querySelector('input[name="tipo"]');
+                const tipo = tipoInput ? String(tipoInput.value || '') : '';
+                const refreshOptions = { selectedId: data.proveedor.id };
+                if (tipo === 'combustible') {
+                    refreshOptions.tipo = 'combustible';
+                }
+                return window.SICV.refreshCatalog('proveedores', refreshOptions).then(function () {
                     close();
                 });
             }, showError);

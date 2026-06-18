@@ -131,7 +131,7 @@ $tipos = $tipos ?? [];
 </div>
 
 <?php if (can('proveedores.create')): ?>
-<?php App\Core\View::component('modal-proveedor-quick'); ?>
+<?php App\Core\View::component('modal-proveedor-quick', ['tipo' => 'mantenimiento', 'contexto' => 'mantenimiento']); ?>
 <?php endif; ?>
 
 <script>

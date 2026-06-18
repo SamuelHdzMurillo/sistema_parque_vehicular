@@ -1,5 +1,6 @@
 <?php
-$tipos = $tipos ?? ['mantenimiento', 'combustible', 'ambos', 'otro'];
+$tipo = $tipo ?? 'mantenimiento';
+$contexto = $contexto ?? 'mantenimiento';
 ?>
 <div class="modal-overlay" id="modal-proveedor-quick" data-proveedor-quick-modal aria-hidden="true">
     <div class="modal-dialog" role="dialog" aria-labelledby="modal-proveedor-quick-title">
@@ -10,7 +11,7 @@ $tipos = $tipos ?? ['mantenimiento', 'combustible', 'ambos', 'otro'];
         <form data-proveedor-quick-form action="<?= e(url_path('proveedores/quick')) ?>" method="post" novalidate>
             <input type="hidden" name="_token" value="<?= e(csrf_token()) ?>">
             <div class="modal-body">
-                <p class="card-header-hint mb-2">Se agregará al catálogo y quedará disponible en mantenimiento.</p>
+                <p class="card-header-hint mb-2">Se agregará al catálogo y quedará disponible en <?= e($contexto) ?>.</p>
                 <div class="form-group">
                     <label class="form-label" for="modal-proveedor-razon">Razón social <span class="required">*</span></label>
                     <input type="text" id="modal-proveedor-razon" name="razon_social" class="form-control" required maxlength="200" placeholder="Ej. Taller Mecánico del Norte">
@@ -29,7 +30,7 @@ $tipos = $tipos ?? ['mantenimiento', 'combustible', 'ambos', 'otro'];
                     <label class="form-label" for="modal-proveedor-email">Email</label>
                     <input type="email" id="modal-proveedor-email" name="email" class="form-control" maxlength="150" placeholder="Opcional">
                 </div>
-                <input type="hidden" name="tipo" value="mantenimiento">
+                <input type="hidden" name="tipo" value="<?= e($tipo) ?>">
                 <input type="hidden" name="activo" value="1">
                 <div class="alert alert-error" data-proveedor-quick-error hidden></div>
             </div>

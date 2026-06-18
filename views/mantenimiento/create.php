@@ -148,7 +148,7 @@ $puedeAgregarResponsable = can('usuarios.create') || can('mantenimiento.create')
 </div>
 
 <?php if (can('proveedores.create')): ?>
-<?php App\Core\View::component('modal-proveedor-quick'); ?>
+<?php App\Core\View::component('modal-proveedor-quick', ['tipo' => 'mantenimiento', 'contexto' => 'mantenimiento']); ?>
 <?php endif; ?>
 <?php if ($puedeAgregarResponsable): ?>
 <?php App\Core\View::component('modal-responsable-quick', ['areas' => $areas]); ?>
