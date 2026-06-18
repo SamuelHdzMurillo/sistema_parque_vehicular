@@ -84,6 +84,7 @@ final class ComisionService
         $data['responsable_id'] = (int) ($data['responsable_id'] ?? $userId);
         $data = $this->normalizeResponsableRegreso($data);
         $data = $this->normalizeConductor($data);
+        $data = $this->normalizeCombustible($data);
         $data['folio'] = $this->repo->generateFolio();
         $data['estado'] = 'borrador';
         $id = $this->repo->create($data);
@@ -101,6 +102,7 @@ final class ComisionService
         }
         $data = $this->normalizeResponsableRegreso($data);
         $data = $this->normalizeConductor($data);
+        $data = $this->normalizeCombustible($data);
         $result = $this->repo->update($id, array_merge($before, $data));
         if ($result) {
             if (array_key_exists('luces_salida', $data)) {
@@ -196,6 +198,28 @@ final class ComisionService
         return $data;
     }
 
+    private function normalizeCombustible(array $data): array
+    {
+        foreach (['combustible_salida', 'combustible_regreso'] as $campo) {
+            if (!array_key_exists($campo, $data)) {
+                continue;
+            }
+            $raw = $data[$campo];
+            if ($raw === '' || $raw === null) {
+                continue;
+            }
+            $porcentaje = combustible_fraccion_a_porcentaje($raw);
+            if ($porcentaje === null) {
+                throw new \InvalidArgumentException(
+                    'El combustible debe indicarse en cuartos: 0/4, 1/4, 1/2, 3/4 o 4/4.'
+                );
+            }
+            $data[$campo] = $porcentaje;
+        }
+
+        return $data;
+    }
+
     private function normalizeConductor(array $data): array
     {
         if (array_key_exists('conductor_id', $data)) {
@@ -245,7 +269,8 @@ final class ComisionService
                 return 'Comisión no válida para finalizar.';
             }
             $merged = array_merge($comision, $data);
-            if (empty($merged['hora_regreso']) || empty($merged['km_regreso']) || $merged['combustible_regreso'] === '') {
+            $merged = $this->normalizeCombustible($merged);
+            if (empty($merged['hora_regreso']) || empty($merged['km_regreso']) || $merged['combustible_regreso'] === '' || $merged['combustible_regreso'] === null) {
                 return 'Complete hora regreso, km regreso y combustible regreso.';
             }
             if (!empty($data['firma_data'])) {

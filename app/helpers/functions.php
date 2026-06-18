@@ -383,6 +383,95 @@ function catalogo_vehiculo_label(array $vehiculo, bool $incluirEstado = true): s
     return $etiqueta !== '' ? $etiqueta : '—';
 }
 
+/** @return array<string, string> */
+function combustible_fracciones_opciones(): array
+{
+    return [
+        '0/4' => 'Vacío (0/4)',
+        '1/4' => '1/4',
+        '1/2' => '1/2',
+        '3/4' => '3/4',
+        '4/4' => 'Lleno (4/4)',
+    ];
+}
+
+function combustible_cuartos_a_fraccion(int $cuartos): string
+{
+    $cuartos = max(0, min(4, $cuartos));
+
+    return match ($cuartos) {
+        0 => '0/4',
+        1 => '1/4',
+        2 => '1/2',
+        3 => '3/4',
+        4 => '4/4',
+        default => $cuartos . '/4',
+    };
+}
+
+function combustible_porcentaje_a_fraccion(mixed $porcentaje): string
+{
+    if ($porcentaje === null || $porcentaje === '') {
+        return '—';
+    }
+
+    $cuartos = (int) round(((float) $porcentaje / 100) * 4);
+
+    return combustible_cuartos_a_fraccion($cuartos);
+}
+
+function combustible_porcentaje_a_valor_formulario(mixed $porcentaje): string
+{
+    if ($porcentaje === null || $porcentaje === '') {
+        return '';
+    }
+
+    return combustible_porcentaje_a_fraccion($porcentaje);
+}
+
+/** Convierte fracción (1/4, 1/2, 3/4, 4/4) o porcentaje legado a valor 0–100. */
+function combustible_fraccion_a_porcentaje(mixed $valor): ?float
+{
+    if ($valor === null || $valor === '') {
+        return null;
+    }
+
+    $s = strtolower(str_replace(' ', '', trim((string) $valor)));
+
+    if (preg_match('/^(\d+)\/(\d+)$/', $s, $m)) {
+        $num = (int) $m[1];
+        $den = (int) $m[2];
+        if ($den === 2) {
+            $num *= 2;
+            $den = 4;
+        }
+        if ($den !== 4 || $num < 0 || $num > 4) {
+            return null;
+        }
+
+        return ($num / 4) * 100;
+    }
+
+    if ($s === 'lleno' || $s === 'full') {
+        return 100.0;
+    }
+
+    if ($s === 'vacio' || $s === 'vacío' || $s === 'empty') {
+        return 0.0;
+    }
+
+    if (is_numeric($s)) {
+        $pct = (float) $s;
+        if ($pct >= 0 && $pct <= 100) {
+            $cuartos = (int) round(($pct / 100) * 4);
+
+            return ($cuartos / 4) * 100;
+        }
+    }
+
+    return null;
+}
+
 function rol_badge_class(string $slug): string
 {
     return match ($slug) {

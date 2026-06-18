@@ -90,8 +90,13 @@ if ($nombreRegreso !== '') {
                 <input type="number" id="km_salida" name="km_salida" class="form-control" value="<?= e((string) $c['km_salida']) ?>" required>
             </div>
             <div class="form-group">
-                <label class="form-label" for="combustible_salida">Combustible salida (%)</label>
-                <input type="number" id="combustible_salida" name="combustible_salida" class="form-control" step="0.01" value="<?= e((string) $c['combustible_salida']) ?>" required>
+                <?php App\Core\View::component('combustible-fraccion-select', [
+                    'id' => 'combustible_salida',
+                    'name' => 'combustible_salida',
+                    'label' => 'Combustible salida',
+                    'valuePorcentaje' => $c['combustible_salida'] ?? null,
+                    'required' => true,
+                ]); ?>
             </div>
         </div>
         <div class="form-row">

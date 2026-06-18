@@ -91,9 +91,13 @@ if ($nombreRegreso !== '') {
                 <small class="form-hint text-muted">Se toma el kilometraje actual del vehículo; puede ajustarlo si es necesario.</small>
             </div>
             <div class="form-group">
-                <label class="form-label" for="combustible_salida">Combustible salida (%) <span class="required">*</span></label>
-                <input type="number" id="combustible_salida" name="combustible_salida" class="form-control" required min="0" max="100" step="0.01"
-                       value="<?= e((string) old('combustible_salida', '100')) ?>">
+                <?php App\Core\View::component('combustible-fraccion-select', [
+                    'id' => 'combustible_salida',
+                    'name' => 'combustible_salida',
+                    'label' => 'Combustible salida',
+                    'valuePorcentaje' => 100,
+                    'required' => true,
+                ]); ?>
             </div>
         </div>
         <div class="form-row">

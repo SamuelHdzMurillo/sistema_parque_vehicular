@@ -80,8 +80,8 @@ $renderLuces = static function (array $codigos) use ($lucesById): string {
             <div class="meta-item"><label>Km salida</label><span><?= number_format((int) $c['km_salida']) ?></span></div>
             <div class="meta-item"><label>Km regreso</label><span><?= $c['km_regreso'] !== null ? number_format((int) $c['km_regreso']) : '—' ?></span></div>
             <div class="meta-item"><label>Km recorridos</label><span><?= $c['km_recorridos'] !== null ? number_format((int) $c['km_recorridos']) : '—' ?></span></div>
-            <div class="meta-item"><label>Comb. salida</label><span><?= e((string) $c['combustible_salida']) ?>%</span></div>
-            <div class="meta-item"><label>Comb. regreso</label><span><?= $c['combustible_regreso'] !== null ? e((string) $c['combustible_regreso']) . '%' : '—' ?></span></div>
+            <div class="meta-item"><label>Comb. salida</label><span><?= e(combustible_porcentaje_a_fraccion($c['combustible_salida'] ?? null)) ?></span></div>
+            <div class="meta-item"><label>Comb. regreso</label><span><?= $c['combustible_regreso'] !== null ? e(combustible_porcentaje_a_fraccion($c['combustible_regreso'])) : '—' ?></span></div>
             <div class="meta-item"><label>Rendimiento</label><span><?= $c['rendimiento'] !== null ? number_format((float) $c['rendimiento'], 2) . ' km/L' : '—' ?></span></div>
         </div>
         <p class="mt-2"><strong>Destino:</strong> <?= e($c['destino']) ?></p>
@@ -207,8 +207,12 @@ $renderLuces = static function (array $codigos) use ($lucesById): string {
                     <input type="number" id="km_regreso" name="km_regreso" class="form-control" required min="<?= (int) $c['km_salida'] ?>">
                 </div>
                 <div class="form-group">
-                    <label class="form-label" for="combustible_regreso">Combustible regreso (%) <span class="required">*</span></label>
-                    <input type="number" id="combustible_regreso" name="combustible_regreso" class="form-control" required min="0" max="100" step="0.01">
+                    <?php App\Core\View::component('combustible-fraccion-select', [
+                        'id' => 'combustible_regreso',
+                        'name' => 'combustible_regreso',
+                        'label' => 'Combustible regreso',
+                        'required' => true,
+                    ]); ?>
                 </div>
             </div>
             <div class="form-group">

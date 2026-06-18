@@ -37,7 +37,13 @@ final class ComisionController extends BaseController
 
         $data = $request->all();
         $data['responsable_id'] = $data['responsable_id'] ?? $userId;
-        $id = $this->comisiones->create($data, $userId);
+        try {
+            $id = $this->comisiones->create($data, $userId);
+        } catch (\InvalidArgumentException $e) {
+            $_SESSION['_old'] = $data;
+            flash('error', $e->getMessage());
+            $this->redirect('comisiones/create');
+        }
         flash('success', 'Comisión registrada correctamente.');
         $this->redirect('comisiones/' . $id);
     }
@@ -81,7 +87,13 @@ final class ComisionController extends BaseController
     public function update(Request $request, string $id): never
     {
         $this->validateCsrf($request);
-        if (!$this->comisiones->update((int) $id, $request->all())) {
+        try {
+            $updated = $this->comisiones->update((int) $id, $request->all());
+        } catch (\InvalidArgumentException $e) {
+            flash('error', $e->getMessage());
+            $this->redirect('comisiones/' . $id . '/edit');
+        }
+        if (!$updated) {
             flash('error', 'No se pudo actualizar la comisión.');
             $this->redirect('comisiones/' . $id . '/edit');
         }
