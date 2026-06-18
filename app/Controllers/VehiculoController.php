@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Request;
+use App\Exceptions\ValidationException;
 use App\Services\VehiculoService;
+use PDOException;
 use RuntimeException;
 
 final class VehiculoController extends BaseController
@@ -47,9 +49,18 @@ final class VehiculoController extends BaseController
             $id = $this->vehiculos->create($data, $userId);
             flash('success', 'Vehículo registrado correctamente.');
             $this->redirect('vehiculos/' . $id);
-        } catch (\Throwable $e) {
+        } catch (ValidationException $e) {
             $_SESSION['_old'] = $request->all();
-            flash('error', 'No se pudo registrar el vehículo. Verifique los datos.');
+            $_SESSION['_field_errors'] = $e->getFieldErrors();
+            flash('errors', $e->getErrors());
+            $this->redirect('vehiculos/create');
+        } catch (RuntimeException $e) {
+            $_SESSION['_old'] = $request->all();
+            flash('error', $e->getMessage());
+            $this->redirect('vehiculos/create');
+        } catch (PDOException $e) {
+            $_SESSION['_old'] = $request->all();
+            flash('error', 'Error de base de datos al registrar el vehículo. Intente de nuevo.');
             $this->redirect('vehiculos/create');
         }
     }

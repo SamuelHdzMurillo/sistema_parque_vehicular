@@ -8,11 +8,57 @@ use RuntimeException;
 
 final class FileUploader
 {
+    public static function validateImageUpload(array $file, int $index = 0): ?string
+    {
+        $error = (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE);
+        $label = $index > 0 ? ' (imagen ' . ($index + 1) . ')' : '';
+
+        if ($error === UPLOAD_ERR_NO_FILE) {
+            return null;
+        }
+
+        if ($error !== UPLOAD_ERR_OK) {
+            return match ($error) {
+                UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE => 'La imagen' . $label . ' excede el tamaño máximo permitido (' . self::formatMaxSize() . ').',
+                UPLOAD_ERR_PARTIAL => 'La imagen' . $label . ' se subió de forma incompleta. Intente de nuevo.',
+                UPLOAD_ERR_NO_TMP_DIR => 'Error del servidor: no hay carpeta temporal para subir la imagen' . $label . '.',
+                UPLOAD_ERR_CANT_WRITE => 'Error del servidor: no se pudo guardar la imagen' . $label . '.',
+                UPLOAD_ERR_EXTENSION => 'La extensión del servidor bloqueó la imagen' . $label . '.',
+                default => 'No se pudo subir la imagen' . $label . ' (código de error ' . $error . ').',
+            };
+        }
+
+        if (empty($file['tmp_name']) || !is_uploaded_file($file['tmp_name'])) {
+            return 'La imagen' . $label . ' no es válida o no se recibió correctamente.';
+        }
+
+        $allowed = config('app', 'upload.allowed_images');
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mime = finfo_file($finfo, $file['tmp_name']);
+        finfo_close($finfo);
+
+        if (!in_array($mime, $allowed, true)) {
+            return 'La imagen' . $label . ' no es un formato permitido. Use JPG, PNG o WebP.';
+        }
+
+        if (($file['size'] ?? 0) > (int) config('app', 'upload.max_size')) {
+            return 'La imagen' . $label . ' excede el tamaño máximo permitido (' . self::formatMaxSize() . ').';
+        }
+
+        return null;
+    }
+
     public static function uploadImage(array $file, string $subdir): ?string
     {
         if ($file['error'] !== UPLOAD_ERR_OK) {
             return null;
         }
+
+        $uploadError = self::validateImageUpload($file);
+        if ($uploadError !== null) {
+            throw new RuntimeException($uploadError);
+        }
+
         $allowed = config('app', 'upload.allowed_images');
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
         $mime = finfo_file($finfo, $file['tmp_name']);
@@ -98,5 +144,14 @@ final class FileUploader
         }
 
         return null;
+    }
+
+    private static function formatMaxSize(): string
+    {
+        $bytes = (int) config('app', 'upload.max_size');
+        if ($bytes >= 1048576) {
+            return round($bytes / 1048576, 1) . ' MB';
+        }
+        return round($bytes / 1024) . ' KB';
     }
 }

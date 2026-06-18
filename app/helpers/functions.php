@@ -193,6 +193,24 @@ function flash(string $key, mixed $value = null): mixed
     return $val;
 }
 
+/** @return array<string, string> */
+function field_errors(): array
+{
+    $errors = $_SESSION['_field_errors'] ?? [];
+    unset($_SESSION['_field_errors']);
+    return is_array($errors) ? $errors : [];
+}
+
+function field_error(string $field): ?string
+{
+    static $errors = null;
+    if ($errors === null) {
+        $errors = field_errors();
+    }
+    $message = $errors[$field] ?? null;
+    return is_string($message) && $message !== '' ? $message : null;
+}
+
 function e(?string $value): string
 {
     return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');

@@ -295,8 +295,23 @@ final class VehiculoRepository extends BaseRepository
 
     public function existsNumeroEconomico(string $numero, ?int $excludeId = null): bool
     {
-        $sql = 'SELECT id FROM vehiculos WHERE numero_economico = ? AND deleted_at IS NULL';
-        $params = [$numero];
+        return $this->existsField('numero_economico', $numero, $excludeId);
+    }
+
+    public function existsPlacas(string $placas, ?int $excludeId = null): bool
+    {
+        return $this->existsField('placas', $placas, $excludeId);
+    }
+
+    public function existsSerieVin(string $serieVin, ?int $excludeId = null): bool
+    {
+        return $this->existsField('serie_vin', $serieVin, $excludeId);
+    }
+
+    private function existsField(string $column, string $value, ?int $excludeId = null): bool
+    {
+        $sql = "SELECT id FROM vehiculos WHERE {$column} = ? AND deleted_at IS NULL";
+        $params = [$value];
         if ($excludeId !== null) {
             $sql .= ' AND id != ?';
             $params[] = $excludeId;
