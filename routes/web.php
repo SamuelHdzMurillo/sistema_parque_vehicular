@@ -77,6 +77,7 @@ $router->post('comisiones/{id}/iniciar', [ComisionController::class, 'iniciar'],
 $router->post('comisiones/{id}/finalizar', [ComisionController::class, 'finalizar'], $perm('comisiones.update'));
 $router->post('comisiones/{id}/cancelar', [ComisionController::class, 'cancelar'], $perm('comisiones.delete'));
 $router->post('comisiones/{id}/documento', [ComisionController::class, 'cargarDocumento'], $perm('comisiones.update'));
+$router->get('comisiones/{id}/documentos/combinado', [ComisionController::class, 'documentosCombinados'], $perm('comisiones.read'));
 
 // ——— Inspecciones ———
 $router->get('inspecciones', [InspeccionController::class, 'index'], $perm('inspecciones.read'));

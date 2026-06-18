@@ -74,6 +74,11 @@ final class ComisionController extends BaseController
         $this->redirect('comisiones/' . $id . '#documentos');
     }
 
+    public function documentosCombinados(Request $request, string $id): never
+    {
+        $this->comisiones->streamDocumentosCombinados((int) $id);
+    }
+
     public function edit(Request $request, string $id): never
     {
         $comision = $this->comisiones->find((int) $id);

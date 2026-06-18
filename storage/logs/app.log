@@ -4,3 +4,22 @@
 #2 C:\xampp\htdocs\sistema_parque_vehicular\tmp_test_comb.php(24): App\Services\ComisionService->finalizar(1, Array)
 #3 {main}
 ---
+[2026-06-18 13:21:01] Error: Call to undefined function get_magic_quotes_runtime() | GET /sistema_parque_vehicular/public/comisiones/1/documentos/combinado | user:1
+#0 C:\xampp\htdocs\sistema_parque_vehicular\vendor\setasign\fpdf\fpdf.php(77): FPDF->_dochecks()
+#1 C:\xampp\htdocs\sistema_parque_vehicular\app\Services\PdfMergeService.php(48): FPDF->__construct()
+#2 C:\xampp\htdocs\sistema_parque_vehicular\app\Services\PdfMergeService.php(20): App\Services\PdfMergeService->buildMergedPdf(Array)
+#3 C:\xampp\htdocs\sistema_parque_vehicular\app\Services\ComisionService.php(171): App\Services\PdfMergeService->mergeToFile(Array, 'C:\\xampp\\htdocs...')
+#4 C:\xampp\htdocs\sistema_parque_vehicular\app\Controllers\ComisionController.php(79): App\Services\ComisionService->streamDocumentosCombinados(1)
+#5 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(93): App\Controllers\ComisionController->documentosCombinados(Object(App\Core\Request), '1')
+#6 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(67): App\Core\Router->invokeHandler(Array, Array, Object(App\Core\Request))
+#7 C:\xampp\htdocs\sistema_parque_vehicular\app\Middlewares\PermissionMiddleware.php(24): App\Core\Router->App\Core\{closure}()
+#8 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(85): App\Middlewares\PermissionMiddleware->handle(Object(App\Core\Request), Object(Closure))
+#9 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(66): App\Core\Router->runMiddleware(Object(App\Middlewares\PermissionMiddleware), Object(App\Core\Request), Object(Closure))
+#10 C:\xampp\htdocs\sistema_parque_vehicular\app\Middlewares\AuthMiddleware.php(18): App\Core\Router->App\Core\{closure}()
+#11 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(85): App\Middlewares\AuthMiddleware->handle(Object(App\Core\Request), Object(Closure))
+#12 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(66): App\Core\Router->runMiddleware(Object(App\Middlewares\AuthMiddleware), Object(App\Core\Request), Object(Closure))
+#13 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(70): App\Core\Router->App\Core\{closure}()
+#14 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Application.php(36): App\Core\Router->dispatch(Object(App\Core\Request))
+#15 C:\xampp\htdocs\sistema_parque_vehicular\public\index.php(13): App\Core\Application->run()
+#16 {main}
+---

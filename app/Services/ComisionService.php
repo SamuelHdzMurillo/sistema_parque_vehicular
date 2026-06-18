@@ -140,6 +140,55 @@ final class ComisionService
         }
     }
 
+    public function streamDocumentosCombinados(int $id): never
+    {
+        $comision = $this->repo->findById($id);
+        if ($comision === null) {
+            http_response_code(404);
+            exit('Comisión no encontrada.');
+        }
+
+        $salida = trim((string) ($comision['doc_salida_ruta'] ?? ''));
+        $regreso = trim((string) ($comision['doc_regreso_ruta'] ?? ''));
+        if ($salida === '' || $regreso === '') {
+            http_response_code(404);
+            exit('Deben estar cargados los documentos de salida y regreso.');
+        }
+
+        $pathSalida = storage_path('uploads/' . ltrim($salida, '/'));
+        $pathRegreso = storage_path('uploads/' . ltrim($regreso, '/'));
+        if (!is_file($pathSalida) || !is_file($pathRegreso)) {
+            http_response_code(404);
+            exit('Uno o ambos archivos PDF no están disponibles en el servidor.');
+        }
+
+        $folio = (string) ($comision['folio'] ?? ('comision_' . $id));
+        $filename = 'comision_' . preg_replace('/[^A-Za-z0-9._-]+/', '_', $folio) . '_completo.pdf';
+        $exportPath = storage_path('exports/' . pathinfo($filename, PATHINFO_FILENAME) . '_' . date('Ymd_His') . '.pdf');
+
+        try {
+            $merger = new PdfMergeService();
+            $merger->mergeToFile([$pathSalida, $pathRegreso], $exportPath);
+        } catch (\Throwable $e) {
+            http_response_code(500);
+            exit(user_facing_error($e, 'No se pudo combinar los documentos PDF.'));
+        }
+
+        AuditService::log('EXPORT', 'comisiones', $id, null, [
+            'tipo' => 'documentos_combinados',
+            'archivo' => basename($exportPath),
+        ]);
+
+        header('Content-Type: application/pdf');
+        header('Content-Disposition: inline; filename="' . $filename . '"');
+        header('Content-Length: ' . filesize($exportPath));
+        header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+        readfile($exportPath);
+        exit;
+    }
+
     /** @return list<string> */
     private function parseLuces(array $data, string $campo): array
     {

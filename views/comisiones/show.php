@@ -272,6 +272,16 @@ $renderLuces = static function (array $codigos) use ($lucesById): string {
         <div id="tab-documentos" class="tab-panel<?= $defaultTab === 'documentos' ? ' active' : '' ?>">
             <p class="card-header-hint" style="margin-top:0">Cargue el PDF firmado de salida y el de regreso una vez impresos y firmados.</p>
 
+            <?php if (!empty($c['doc_salida_ruta']) && !empty($c['doc_regreso_ruta'])): ?>
+            <div class="card mb-2" style="border:1px solid var(--border-color);background:var(--surface-alt, #f8fafc)">
+                <div class="card-header"><h3 style="margin:0;font-size:.95rem">Documento completo (salida + regreso)</h3></div>
+                <div class="card-body">
+                    <p class="text-muted mb-2" style="margin-top:0">Ambos PDF están cargados. Puede verlos juntos en un solo archivo.</p>
+                    <a href="<?= e(url('comisiones/' . $c['id'] . '/documentos/combinado')) ?>" target="_blank" class="btn btn-primary">Ver PDF combinado</a>
+                </div>
+            </div>
+            <?php endif; ?>
+
             <div class="card mb-2" style="border:1px solid var(--border-color)">
                 <div class="card-header"><h3 style="margin:0;font-size:.95rem">Documento de salida (PDF firmado)</h3></div>
                 <div class="card-body">
