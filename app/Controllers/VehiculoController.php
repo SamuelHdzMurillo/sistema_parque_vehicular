@@ -82,7 +82,7 @@ final class VehiculoController extends BaseController
             flash('error', 'Vehículo no encontrado.');
             $this->redirect('vehiculos');
         }
-        $this->render('vehiculos.edit', array_merge($this->vehiculos->getFormData(), ['vehiculo' => $vehiculo]));
+        $this->render('vehiculos.edit', array_merge($this->vehiculos->getFormDataForEdit($vehiculo), ['vehiculo' => $vehiculo]));
     }
 
     public function update(Request $request, string $id): never
@@ -93,12 +93,23 @@ final class VehiculoController extends BaseController
             $this->redirect('login');
         }
 
-        if (!$this->vehiculos->update((int) $id, $request->all(), $userId)) {
-            flash('error', 'No se pudo actualizar el vehículo.');
+        try {
+            if (!$this->vehiculos->update((int) $id, $request->all(), $userId)) {
+                flash('error', 'No se pudo actualizar el vehículo.');
+                $this->redirect('vehiculos/' . $id . '/edit');
+            }
+            flash('success', 'Vehículo actualizado correctamente.');
+            $this->redirect('vehiculos/' . $id);
+        } catch (ValidationException $e) {
+            $_SESSION['_old'] = $request->all();
+            $_SESSION['_field_errors'] = $e->getFieldErrors();
+            flash('errors', $e->getErrors());
+            $this->redirect('vehiculos/' . $id . '/edit');
+        } catch (PDOException $e) {
+            $_SESSION['_old'] = $request->all();
+            flash('error', 'Error de base de datos al actualizar el vehículo. Intente de nuevo.');
             $this->redirect('vehiculos/' . $id . '/edit');
         }
-        flash('success', 'Vehículo actualizado correctamente.');
-        $this->redirect('vehiculos/' . $id);
     }
 
     public function destroy(Request $request, string $id): never

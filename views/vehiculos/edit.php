@@ -5,6 +5,8 @@ $areas = $areas ?? [];
 $responsables = $responsables ?? [];
 $tipos_combustible = $tipos_combustible ?? [];
 $estados = $estados ?? [];
+$fieldErrors = field_errors();
+$invalidClass = static fn (string $field): string => isset($fieldErrors[$field]) ? ' is-invalid' : '';
 $combustibleLabel = ['gasolina' => 'Gasolina', 'diesel' => 'Diésel', 'hibrido' => 'Híbrido', 'electrico' => 'Eléctrico', 'gnc' => 'GNC'];
 
 $campos = [
@@ -23,7 +25,7 @@ foreach ($campos as $campo) {
 }
 
 $responsableLabel = static function (array $u): string {
-    return trim($u['nombre_completo'] ?? ($u['nombre'] . ' ' . ($u['apellido_paterno'] ?? '')));
+    return trim($u['nombre_completo'] ?? (($u['nombre'] ?? '') . ' ' . ($u['apellido_paterno'] ?? '')));
 };
 ?>
 <div class="page-header">
@@ -45,17 +47,20 @@ $responsableLabel = static function (array $u): string {
         <div class="form-row">
             <div class="form-group">
                 <label class="form-label" for="numero_economico"><?= e(vehiculo_identificador_label()) ?> <span class="required">*</span></label>
-                <input type="text" id="numero_economico" name="numero_economico" class="form-control" required
+                <input type="text" id="numero_economico" name="numero_economico" class="form-control<?= $invalidClass('numero_economico') ?>" required
                        placeholder="<?= e(vehiculo_identificador_placeholder()) ?>"
                        value="<?= e($v['numero_economico']) ?>">
+                <?php if (!empty($fieldErrors['numero_economico'])): ?><span class="form-error"><?= e($fieldErrors['numero_economico']) ?></span><?php endif; ?>
             </div>
             <div class="form-group">
                 <label class="form-label" for="placas">Placas <span class="required">*</span></label>
-                <input type="text" id="placas" name="placas" class="form-control" required value="<?= e($v['placas']) ?>">
+                <input type="text" id="placas" name="placas" class="form-control<?= $invalidClass('placas') ?>" required value="<?= e($v['placas']) ?>">
+                <?php if (!empty($fieldErrors['placas'])): ?><span class="form-error"><?= e($fieldErrors['placas']) ?></span><?php endif; ?>
             </div>
             <div class="form-group">
                 <label class="form-label" for="serie_vin">Serie VIN <span class="required">*</span></label>
-                <input type="text" id="serie_vin" name="serie_vin" class="form-control" required maxlength="17" value="<?= e($v['serie_vin']) ?>">
+                <input type="text" id="serie_vin" name="serie_vin" class="form-control<?= $invalidClass('serie_vin') ?>" required maxlength="17" value="<?= e($v['serie_vin']) ?>">
+                <?php if (!empty($fieldErrors['serie_vin'])): ?><span class="form-error"><?= e($fieldErrors['serie_vin']) ?></span><?php endif; ?>
             </div>
         </div>
 
@@ -63,27 +68,33 @@ $responsableLabel = static function (array $u): string {
         <div class="form-row">
             <div class="form-group">
                 <label class="form-label" for="marca">Marca <span class="required">*</span></label>
-                <input type="text" id="marca" name="marca" class="form-control" required value="<?= e($v['marca']) ?>">
+                <input type="text" id="marca" name="marca" class="form-control<?= $invalidClass('marca') ?>" required value="<?= e($v['marca']) ?>">
+                <?php if (!empty($fieldErrors['marca'])): ?><span class="form-error"><?= e($fieldErrors['marca']) ?></span><?php endif; ?>
             </div>
             <div class="form-group">
                 <label class="form-label" for="modelo">Modelo <span class="required">*</span></label>
-                <input type="text" id="modelo" name="modelo" class="form-control" required value="<?= e($v['modelo']) ?>">
+                <input type="text" id="modelo" name="modelo" class="form-control<?= $invalidClass('modelo') ?>" required value="<?= e($v['modelo']) ?>">
+                <?php if (!empty($fieldErrors['modelo'])): ?><span class="form-error"><?= e($fieldErrors['modelo']) ?></span><?php endif; ?>
             </div>
             <div class="form-group">
                 <label class="form-label" for="version">Versión</label>
-                <input type="text" id="version" name="version" class="form-control" value="<?= e($v['version']) ?>">
+                <input type="text" id="version" name="version" class="form-control<?= $invalidClass('version') ?>" value="<?= e($v['version']) ?>">
+                <?php if (!empty($fieldErrors['version'])): ?><span class="form-error"><?= e($fieldErrors['version']) ?></span><?php endif; ?>
             </div>
             <div class="form-group">
                 <label class="form-label" for="anio">Año <span class="required">*</span></label>
-                <input type="number" id="anio" name="anio" class="form-control" required value="<?= e($v['anio']) ?>">
+                <input type="number" id="anio" name="anio" class="form-control<?= $invalidClass('anio') ?>" required value="<?= e($v['anio']) ?>">
+                <?php if (!empty($fieldErrors['anio'])): ?><span class="form-error"><?= e($fieldErrors['anio']) ?></span><?php endif; ?>
             </div>
             <div class="form-group">
                 <label class="form-label" for="color">Color <span class="required">*</span></label>
-                <input type="text" id="color" name="color" class="form-control" required value="<?= e($v['color']) ?>">
+                <input type="text" id="color" name="color" class="form-control<?= $invalidClass('color') ?>" required value="<?= e($v['color']) ?>">
+                <?php if (!empty($fieldErrors['color'])): ?><span class="form-error"><?= e($fieldErrors['color']) ?></span><?php endif; ?>
             </div>
             <div class="form-group">
                 <label class="form-label" for="motor">Motor</label>
-                <input type="text" id="motor" name="motor" class="form-control" value="<?= e($v['motor']) ?>">
+                <input type="text" id="motor" name="motor" class="form-control<?= $invalidClass('motor') ?>" value="<?= e($v['motor']) ?>">
+                <?php if (!empty($fieldErrors['motor'])): ?><span class="form-error"><?= e($fieldErrors['motor']) ?></span><?php endif; ?>
             </div>
         </div>
 
@@ -91,43 +102,49 @@ $responsableLabel = static function (array $u): string {
         <div class="form-row">
             <div class="form-group">
                 <label class="form-label" for="tipo_combustible">Combustible <span class="required">*</span></label>
-                <select id="tipo_combustible" name="tipo_combustible" class="form-select" required>
+                <select id="tipo_combustible" name="tipo_combustible" class="form-select<?= $invalidClass('tipo_combustible') ?>" required>
                     <?php foreach ($tipos_combustible as $tc): ?>
                     <option value="<?= e($tc) ?>" <?= $v['tipo_combustible'] === $tc ? 'selected' : '' ?>><?= e($combustibleLabel[$tc] ?? $tc) ?></option>
                     <?php endforeach; ?>
                 </select>
+                <?php if (!empty($fieldErrors['tipo_combustible'])): ?><span class="form-error"><?= e($fieldErrors['tipo_combustible']) ?></span><?php endif; ?>
             </div>
             <div class="form-group">
                 <label class="form-label" for="capacidad_tanque">Capacidad tanque (L) <span class="required">*</span></label>
-                <input type="number" id="capacidad_tanque" name="capacidad_tanque" class="form-control" step="0.01" required value="<?= e($v['capacidad_tanque']) ?>">
+                <input type="number" id="capacidad_tanque" name="capacidad_tanque" class="form-control<?= $invalidClass('capacidad_tanque') ?>" step="0.01" required value="<?= e($v['capacidad_tanque']) ?>">
+                <?php if (!empty($fieldErrors['capacidad_tanque'])): ?><span class="form-error"><?= e($fieldErrors['capacidad_tanque']) ?></span><?php endif; ?>
             </div>
             <div class="form-group">
                 <label class="form-label" for="kilometraje_actual">Kilometraje actual</label>
-                <input type="number" id="kilometraje_actual" name="kilometraje_actual" class="form-control" min="0" value="<?= e($v['kilometraje_actual']) ?>">
+                <input type="number" id="kilometraje_actual" name="kilometraje_actual" class="form-control<?= $invalidClass('kilometraje_actual') ?>" min="0" value="<?= e($v['kilometraje_actual']) ?>">
+                <?php if (!empty($fieldErrors['kilometraje_actual'])): ?><span class="form-error"><?= e($fieldErrors['kilometraje_actual']) ?></span><?php endif; ?>
             </div>
             <div class="form-group">
                 <label class="form-label" for="fecha_adquisicion">Fecha adquisición <span class="required">*</span></label>
-                <input type="date" id="fecha_adquisicion" name="fecha_adquisicion" class="form-control" required value="<?= e($v['fecha_adquisicion']) ?>">
+                <input type="date" id="fecha_adquisicion" name="fecha_adquisicion" class="form-control<?= $invalidClass('fecha_adquisicion') ?>" required value="<?= e($v['fecha_adquisicion']) ?>">
+                <?php if (!empty($fieldErrors['fecha_adquisicion'])): ?><span class="form-error"><?= e($fieldErrors['fecha_adquisicion']) ?></span><?php endif; ?>
             </div>
             <div class="form-group">
                 <label class="form-label" for="area_id">Área <span class="required">*</span></label>
-                <select id="area_id" name="area_id" class="form-select" required>
+                <select id="area_id" name="area_id" class="form-select<?= $invalidClass('area_id') ?>" required>
                     <?php foreach ($areas as $a): ?>
                     <option value="<?= (int) $a['id'] ?>" <?= (string) $v['area_id'] === (string) $a['id'] ? 'selected' : '' ?>><?= e(catalogo_area_label($a)) ?></option>
                     <?php endforeach; ?>
                 </select>
+                <?php if (!empty($fieldErrors['area_id'])): ?><span class="form-error"><?= e($fieldErrors['area_id']) ?></span><?php endif; ?>
             </div>
             <div class="form-group">
                 <label class="form-label" for="responsable_id">Responsable <span class="required">*</span></label>
-                <select id="responsable_id" name="responsable_id" class="form-select" required>
+                <select id="responsable_id" name="responsable_id" class="form-select<?= $invalidClass('responsable_id') ?>" required>
                     <?php foreach ($responsables as $u): ?>
                     <option value="<?= (int) $u['id'] ?>" <?= (string) $v['responsable_id'] === (string) $u['id'] ? 'selected' : '' ?>><?= e($responsableLabel($u)) ?></option>
                     <?php endforeach; ?>
                 </select>
+                <?php if (!empty($fieldErrors['responsable_id'])): ?><span class="form-error"><?= e($fieldErrors['responsable_id']) ?></span><?php endif; ?>
             </div>
             <div class="form-group">
                 <label class="form-label" for="estado">Estado</label>
-                <select id="estado" name="estado" class="form-select">
+                <select id="estado" name="estado" class="form-select<?= $invalidClass('estado') ?>">
                     <?php
                     $estadosEdit = array_unique(array_merge($estados, [$vehiculo['estado'] ?? '']));
                     foreach ($estadosEdit as $est):
@@ -138,6 +155,7 @@ $responsableLabel = static function (array $u): string {
                     <option value="<?= e($est) ?>" <?= $v['estado'] === $est ? 'selected' : '' ?>><?= e(ucfirst(str_replace('_', ' ', $est))) ?></option>
                     <?php endforeach; ?>
                 </select>
+                <?php if (!empty($fieldErrors['estado'])): ?><span class="form-error"><?= e($fieldErrors['estado']) ?></span><?php endif; ?>
             </div>
         </div>
 

@@ -53,6 +53,38 @@ final class VehiculoService
         ];
     }
 
+    /** @param array<string, mixed> $vehiculo */
+    public function getFormDataForEdit(array $vehiculo): array
+    {
+        $data = $this->getFormData();
+
+        $areaIds = array_map('intval', array_column($data['areas'], 'id'));
+        $vehiculoAreaId = (int) ($vehiculo['area_id'] ?? 0);
+        if ($vehiculoAreaId > 0 && !in_array($vehiculoAreaId, $areaIds, true)) {
+            $data['areas'][] = [
+                'id' => $vehiculoAreaId,
+                'nombre' => $vehiculo['area_nombre'] ?? ('Área #' . $vehiculoAreaId),
+                'plantel_clave' => $vehiculo['plantel_clave'] ?? '',
+                'label' => $vehiculo['area_nombre'] ?? ('Área #' . $vehiculoAreaId),
+            ];
+        }
+
+        $respIds = array_map('intval', array_column($data['responsables'], 'id'));
+        $vehiculoRespId = (int) ($vehiculo['responsable_id'] ?? 0);
+        if ($vehiculoRespId > 0 && !in_array($vehiculoRespId, $respIds, true)) {
+            $nombreCompleto = trim((string) ($vehiculo['responsable_nombre'] ?? ''));
+            $parts = preg_split('/\s+/', $nombreCompleto, 2) ?: [];
+            $data['responsables'][] = [
+                'id' => $vehiculoRespId,
+                'nombre' => $parts[0] ?? $nombreCompleto,
+                'apellido_paterno' => $parts[1] ?? '',
+                'nombre_completo' => $nombreCompleto !== '' ? $nombreCompleto : ('Usuario #' . $vehiculoRespId),
+            ];
+        }
+
+        return $data;
+    }
+
     public function create(array $data, int $userId): int
     {
         $fotos = $this->extractFotos($data);
@@ -97,14 +129,12 @@ final class VehiculoService
         if ($before === null) {
             return false;
         }
-        $this->validateUniqueFields($data, $id);
-        $data['updated_by'] = $userId;
-        $data['foto_principal'] = $data['foto_principal'] ?? $before['foto_principal'] ?? null;
-        $data['estado'] = $data['estado'] ?? $before['estado'];
-        $data['kilometraje_actual'] = $data['kilometraje_actual'] ?? $before['kilometraje_actual'];
-        $result = $this->repo->update($id, $data);
+        $clean = $this->validateForCreate($data, [], $id, $before);
+        $clean['updated_by'] = $userId;
+        $clean['foto_principal'] = $before['foto_principal'] ?? null;
+        $result = $this->repo->update($id, $clean);
         if ($result) {
-            AuditService::log('UPDATE', 'vehiculos', $id, $before, $data);
+            AuditService::log('UPDATE', 'vehiculos', $id, $before, $clean);
         }
         return $result;
     }
@@ -181,9 +211,10 @@ final class VehiculoService
     }
 
     /** @param list<array<string, mixed>> $fotos
+     *  @param array<string, mixed>|null $before
      *  @return array<string, mixed>
      */
-    private function validateForCreate(array $data, array $fotos = [], ?int $excludeId = null): array
+    private function validateForCreate(array $data, array $fotos = [], ?int $excludeId = null, ?array $before = null): array
     {
         $errors = [];
         $identificadorLabel = vehiculo_identificador_label();
@@ -312,7 +343,7 @@ final class VehiculoService
             $area = $this->areas->findById($areaId);
             if ($area === null) {
                 $errors['area_id'] = 'El área seleccionada no existe.';
-            } elseif (empty($area['activo'])) {
+            } elseif (empty($area['activo']) && !($before !== null && (int) ($before['area_id'] ?? 0) === $areaId)) {
                 $errors['area_id'] = 'El área seleccionada está inactiva.';
             }
         }
@@ -322,16 +353,23 @@ final class VehiculoService
             $errors['responsable_id'] = 'Debe seleccionar un responsable.';
         } else {
             $responsable = $this->users->findById($responsableId);
-            if ($responsable === null) {
+            $keepingCurrentResponsable = $before !== null && (int) ($before['responsable_id'] ?? 0) === $responsableId;
+            if ($responsable === null && !$keepingCurrentResponsable) {
                 $errors['responsable_id'] = 'El responsable seleccionado no existe o fue dado de baja.';
-            } elseif (empty($responsable['activo'])) {
+            } elseif ($responsable !== null && empty($responsable['activo']) && !$keepingCurrentResponsable) {
                 $errors['responsable_id'] = 'El responsable seleccionado está inactivo.';
             }
         }
 
-        $estado = (string) ($data['estado'] ?? 'disponible');
-        if (!in_array($estado, self::ESTADOS_INICIALES, true)) {
-            $errors['estado'] = 'El estado inicial seleccionado no es válido.';
+        $estado = (string) ($data['estado'] ?? ($before['estado'] ?? 'disponible'));
+        $estadosPermitidos = self::ESTADOS_INICIALES;
+        if ($before !== null && !empty($before['estado']) && !in_array($before['estado'], $estadosPermitidos, true)) {
+            $estadosPermitidos[] = $before['estado'];
+        }
+        if (!in_array($estado, $estadosPermitidos, true)) {
+            $errors['estado'] = $before === null
+                ? 'El estado inicial seleccionado no es válido.'
+                : 'El estado seleccionado no es válido.';
         }
 
         $fotoErrors = $this->collectFotoErrors($fotos);
@@ -418,26 +456,6 @@ final class VehiculoService
         unset($data['foto'], $data['fotos']);
 
         return array_values(array_filter($fotos, static fn ($foto) => is_array($foto) && (($foto['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE)));
-    }
-
-    private function validateUniqueFields(array $data, ?int $excludeId = null): void
-    {
-        $errors = [];
-        $identificadorLabel = vehiculo_identificador_label();
-
-        if (!empty($data['numero_economico']) && $this->repo->existsNumeroEconomico((string) $data['numero_economico'], $excludeId)) {
-            $errors['numero_economico'] = 'Ese ' . strtolower($identificadorLabel) . ' ya está registrado.';
-        }
-        if (!empty($data['placas']) && $this->repo->existsPlacas(strtoupper(trim((string) $data['placas'])), $excludeId)) {
-            $errors['placas'] = 'Esas placas ya están registradas.';
-        }
-        if (!empty($data['serie_vin']) && $this->repo->existsSerieVin(strtoupper(trim((string) $data['serie_vin'])), $excludeId)) {
-            $errors['serie_vin'] = 'Esa serie VIN ya está registrada.';
-        }
-
-        if ($errors !== []) {
-            throw new ValidationException(array_values($errors), $errors);
-        }
     }
 
     private function parseDuplicateKeyError(PDOException $e): string
