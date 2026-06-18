@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Core\Csrf;
 use App\Core\Request;
+use App\Core\Response;
 use App\Services\AreaService;
 
 final class AreaController extends BaseController
@@ -43,6 +45,32 @@ final class AreaController extends BaseController
         }
         flash('success', 'Área registrada correctamente.');
         $this->redirect('catalogos/areas');
+    }
+
+    public function quickStore(Request $request): never
+    {
+        $token = $request->input('_token');
+        if (!Csrf::validate(is_string($token) ? $token : null)) {
+            Response::json(['ok' => false, 'error' => 'Token de seguridad inválido. Recargue la página.'], 419);
+        }
+
+        $result = $this->areas->create($request->all());
+        if (is_string($result)) {
+            Response::json(['ok' => false, 'error' => $result], 422);
+        }
+
+        $area = $this->areas->find((int) $result);
+        if ($area === null) {
+            Response::json(['ok' => false, 'error' => 'No se pudo recuperar el área creada.'], 500);
+        }
+
+        Response::json([
+            'ok' => true,
+            'area' => [
+                'id' => (int) $area['id'],
+                'label' => catalogo_area_label($area),
+            ],
+        ]);
     }
 
     public function edit(Request $request, string $id): never

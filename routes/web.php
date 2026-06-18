@@ -150,21 +150,27 @@ $router->get('formatos/combustible/{id}', [FormularioController::class, 'combust
 
 // ——— Catálogos (áreas, conductores, planteles) ———
 $router->get('catalogos', [CatalogoController::class, 'index'], $perm('catalogos.read'));
+$router->get('catalogos/api/planteles', [CatalogoController::class, 'apiPlanteles'], $auth);
+$router->get('catalogos/api/areas', [CatalogoController::class, 'apiAreas'], $auth);
+$router->get('catalogos/api/conductores', [CatalogoController::class, 'apiConductores'], $auth);
 $router->get('catalogos/planteles', [PlantelController::class, 'index'], $perm('catalogos.read'));
 $router->get('catalogos/planteles/create', [PlantelController::class, 'create'], $perm('catalogos.create'));
 $router->post('catalogos/planteles', [PlantelController::class, 'store'], $perm('catalogos.create'));
+$router->post('catalogos/planteles/quick', [PlantelController::class, 'quickStore'], $perm('catalogos.create'));
 $router->get('catalogos/planteles/{id}/edit', [PlantelController::class, 'edit'], $perm('catalogos.update'));
 $router->post('catalogos/planteles/{id}', [PlantelController::class, 'update'], $perm('catalogos.update'));
 $router->post('catalogos/planteles/{id}/toggle', [PlantelController::class, 'toggle'], $perm('catalogos.update'));
 $router->get('catalogos/areas', [AreaController::class, 'index'], $perm('catalogos.read'));
 $router->get('catalogos/areas/create', [AreaController::class, 'create'], $perm('catalogos.create'));
 $router->post('catalogos/areas', [AreaController::class, 'store'], $perm('catalogos.create'));
+$router->post('catalogos/areas/quick', [AreaController::class, 'quickStore'], $perm('catalogos.create'));
 $router->get('catalogos/areas/{id}/edit', [AreaController::class, 'edit'], $perm('catalogos.update'));
 $router->post('catalogos/areas/{id}', [AreaController::class, 'update'], $perm('catalogos.update'));
 $router->post('catalogos/areas/{id}/toggle', [AreaController::class, 'toggle'], $perm('catalogos.update'));
 $router->get('catalogos/conductores', [ConductorController::class, 'index'], $perm('catalogos.read'));
 $router->get('catalogos/conductores/create', [ConductorController::class, 'create'], $perm('catalogos.create'));
 $router->post('catalogos/conductores', [ConductorController::class, 'store'], $perm('catalogos.create'));
+$router->post('catalogos/conductores/quick', [ConductorController::class, 'quickStore'], $perm('catalogos.create'));
 $router->get('catalogos/conductores/{id}/edit', [ConductorController::class, 'edit'], $perm('catalogos.update'));
 $router->post('catalogos/conductores/{id}', [ConductorController::class, 'update'], $perm('catalogos.update'));
 $router->post('catalogos/conductores/{id}/toggle', [ConductorController::class, 'toggle'], $perm('catalogos.update'));

@@ -440,6 +440,442 @@
         sync();
     }
 
+    /* ——— Responsable de regreso en comisiones ——— */
+    function initResponsableRegresoSelect() {
+        const select = document.querySelector('[data-responsable-regreso-select]');
+        if (!select) return;
+
+        const nombreInput = document.getElementById('responsable_regreso_nombre');
+
+        function sync() {
+            const option = select.options[select.selectedIndex];
+            if (!nombreInput) return;
+            if (!option || !option.value) {
+                nombreInput.value = '';
+                return;
+            }
+            nombreInput.value = option.getAttribute('data-nombre') || option.textContent.trim();
+        }
+
+        select.addEventListener('change', sync);
+        if (select.value) {
+            sync();
+        }
+    }
+
+    /* ——— Modales y catálogos dinámicos ——— */
+    function lockBodyModal() {
+        document.body.classList.add('modal-open');
+    }
+
+    function unlockBodyModal() {
+        if (!document.querySelector('.modal-overlay.open')) {
+            document.body.classList.remove('modal-open');
+        }
+    }
+
+    function getTopModal() {
+        const openModals = document.querySelectorAll('.modal-overlay.open');
+        if (openModals.length === 0) {
+            return null;
+        }
+        return openModals[openModals.length - 1];
+    }
+
+    function appFetchUrl(path) {
+        const base = document.body.getAttribute('data-app-base') || '';
+        const normalized = String(path || '').replace(/^\//, '');
+        if (!base) {
+            return '/' + normalized;
+        }
+        return base + '/' + normalized;
+    }
+
+    function rebuildSelect(select, items, buildOption, options) {
+        options = options || {};
+        const current = options.selectedId ? String(options.selectedId) : select.value;
+        const firstOption = select.options[0];
+        const emptyLabel = firstOption && firstOption.value === ''
+            ? firstOption.textContent
+            : 'Seleccione…';
+
+        select.innerHTML = '';
+        const empty = document.createElement('option');
+        empty.value = '';
+        empty.textContent = emptyLabel;
+        select.appendChild(empty);
+
+        items.forEach(function (item) {
+            select.appendChild(buildOption(item));
+        });
+
+        if (current && Array.prototype.some.call(select.options, function (opt) {
+            return opt.value === current;
+        })) {
+            select.value = current;
+        }
+
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    window.SICV = window.SICV || {};
+
+    window.SICV.refreshCatalog = function (type, options) {
+        options = options || {};
+        const endpoints = {
+            planteles: 'catalogos/api/planteles',
+            areas: 'catalogos/api/areas',
+            conductores: 'catalogos/api/conductores'
+        };
+        const endpoint = endpoints[type];
+        if (!endpoint) {
+            return Promise.resolve();
+        }
+
+        return fetch(appFetchUrl(endpoint), {
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+            .then(function (res) {
+                return res.json().then(function (data) {
+                    return { ok: res.ok, data: data };
+                });
+            })
+            .then(function (result) {
+                if (!result.ok || !result.data.ok) {
+                    return;
+                }
+
+                const items = result.data.items || [];
+
+                if (type === 'planteles') {
+                    document.querySelectorAll('[data-plantel-select]').forEach(function (select) {
+                        rebuildSelect(select, items, function (item) {
+                            const option = document.createElement('option');
+                            option.value = String(item.id);
+                            option.textContent = item.label;
+                            return option;
+                        }, options);
+                    });
+                }
+
+                if (type === 'areas') {
+                    document.querySelectorAll('[data-area-select], [data-conductor-area-select]').forEach(function (select) {
+                        rebuildSelect(select, items, function (item) {
+                            const option = document.createElement('option');
+                            option.value = String(item.id);
+                            option.textContent = item.label;
+                            return option;
+                        }, options);
+                    });
+                }
+
+                if (type === 'conductores') {
+                    document.querySelectorAll('[data-conductor-select], [data-responsable-regreso-select]').forEach(function (select) {
+                        rebuildSelect(select, items, function (item) {
+                            const option = document.createElement('option');
+                            option.value = String(item.id);
+                            option.textContent = item.label;
+                            option.setAttribute('data-nombre', item.nombre);
+                            option.setAttribute('data-telefono', item.telefono);
+                            return option;
+                        }, options);
+                    });
+                }
+            })
+            .catch(function () {});
+    };
+
+    function submitQuickForm(form, submitBtn, onSuccess, onError) {
+        if (submitBtn) {
+            submitBtn.disabled = true;
+        }
+
+        return fetch(form.action, {
+            method: 'POST',
+            body: new FormData(form),
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+            .then(function (res) {
+                return res.json().then(function (data) {
+                    return { ok: res.ok, data: data };
+                });
+            })
+            .then(function (result) {
+                if (!result.ok || !result.data.ok) {
+                    onError(result.data.error || 'No se pudo guardar el registro.');
+                    return;
+                }
+                return onSuccess(result.data);
+            })
+            .catch(function () {
+                onError('Error de conexión. Intente de nuevo.');
+            })
+            .finally(function () {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                }
+            });
+    }
+
+    /* ——— Modal rápido de área solicitante ——— */
+    function initAreaQuickModal() {
+        const modal = document.querySelector('[data-area-quick-modal]');
+        const openBtns = document.querySelectorAll('[data-area-quick-open]');
+        if (!modal || openBtns.length === 0) return;
+
+        const form = modal.querySelector('[data-area-quick-form]');
+        const errorBox = modal.querySelector('[data-area-quick-error]');
+        const submitBtn = modal.querySelector('[data-area-quick-submit]');
+
+        function showError(msg) {
+            if (!errorBox) return;
+            errorBox.textContent = msg;
+            errorBox.hidden = false;
+        }
+
+        function clearError() {
+            if (!errorBox) return;
+            errorBox.textContent = '';
+            errorBox.hidden = true;
+        }
+
+        function open() {
+            clearError();
+            modal.classList.add('open');
+            modal.setAttribute('aria-hidden', 'false');
+            lockBodyModal();
+            const firstInput = form ? form.querySelector('input:not([type="hidden"])') : null;
+            if (firstInput) {
+                firstInput.focus();
+            }
+        }
+
+        function close() {
+            modal.classList.remove('open');
+            modal.setAttribute('aria-hidden', 'true');
+            unlockBodyModal();
+            if (form) {
+                form.reset();
+            }
+            clearError();
+        }
+
+        openBtns.forEach(function (btn) {
+            btn.addEventListener('click', open);
+        });
+
+        modal.querySelectorAll('[data-area-quick-close]').forEach(function (btn) {
+            btn.addEventListener('click', close);
+        });
+
+        modal.addEventListener('click', function (e) {
+            if (e.target === modal) {
+                close();
+            }
+        });
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && getTopModal() === modal) {
+                close();
+            }
+        });
+
+        if (!form) return;
+
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            clearError();
+            submitQuickForm(form, submitBtn, function (data) {
+                return window.SICV.refreshCatalog('areas', { selectedId: data.area.id }).then(function () {
+                    close();
+                });
+            }, showError);
+        });
+    }
+
+    /* ——— Modal rápido de plantel ——— */
+    function initPlantelQuickModal() {
+        const modal = document.querySelector('[data-plantel-quick-modal]');
+        const openBtns = document.querySelectorAll('[data-plantel-quick-open]');
+        if (!modal || openBtns.length === 0) return;
+
+        const form = modal.querySelector('[data-plantel-quick-form]');
+        const errorBox = modal.querySelector('[data-plantel-quick-error]');
+        const submitBtn = modal.querySelector('[data-plantel-quick-submit]');
+
+        function showError(msg) {
+            if (!errorBox) return;
+            errorBox.textContent = msg;
+            errorBox.hidden = false;
+        }
+
+        function clearError() {
+            if (!errorBox) return;
+            errorBox.textContent = '';
+            errorBox.hidden = true;
+        }
+
+        function open() {
+            clearError();
+            modal.classList.add('open');
+            modal.setAttribute('aria-hidden', 'false');
+            lockBodyModal();
+            const firstInput = form ? form.querySelector('input:not([type="hidden"])') : null;
+            if (firstInput) {
+                firstInput.focus();
+            }
+        }
+
+        function close() {
+            modal.classList.remove('open');
+            modal.setAttribute('aria-hidden', 'true');
+            unlockBodyModal();
+            if (form) {
+                form.reset();
+            }
+            clearError();
+        }
+
+        openBtns.forEach(function (btn) {
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                open();
+            });
+        });
+
+        modal.querySelectorAll('[data-plantel-quick-close]').forEach(function (btn) {
+            btn.addEventListener('click', close);
+        });
+
+        modal.addEventListener('click', function (e) {
+            if (e.target === modal) {
+                close();
+            }
+        });
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && getTopModal() === modal) {
+                close();
+            }
+        });
+
+        if (!form) return;
+
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            clearError();
+            submitQuickForm(form, submitBtn, function (data) {
+                return window.SICV.refreshCatalog('planteles', { selectedId: data.plantel.id }).then(function () {
+                    close();
+                });
+            }, showError);
+        });
+    }
+
+    /* ——— Modal rápido de conductor ——— */
+    function initConductorQuickModal() {
+        const modal = document.querySelector('[data-conductor-quick-modal]');
+        const openBtns = document.querySelectorAll('[data-conductor-quick-open]');
+        if (!modal || openBtns.length === 0) return;
+
+        const form = modal.querySelector('[data-conductor-quick-form]');
+        const errorBox = modal.querySelector('[data-conductor-quick-error]');
+        const submitBtn = modal.querySelector('[data-conductor-quick-submit]');
+        const modalAreaSelect = modal.querySelector('[data-conductor-area-select]');
+        let targetSelectId = 'conductor_id';
+
+        function showError(msg) {
+            if (!errorBox) return;
+            errorBox.textContent = msg;
+            errorBox.hidden = false;
+        }
+
+        function clearError() {
+            if (!errorBox) return;
+            errorBox.textContent = '';
+            errorBox.hidden = true;
+        }
+
+        function open(btn) {
+            targetSelectId = btn.getAttribute('data-target-select') || 'conductor_id';
+            clearError();
+            modal.classList.add('open');
+            modal.setAttribute('aria-hidden', 'false');
+            lockBodyModal();
+
+            const areaSolicitante = document.getElementById('area_solicitante_id');
+            if (modalAreaSelect && areaSolicitante && areaSolicitante.value) {
+                modalAreaSelect.value = areaSolicitante.value;
+            }
+
+            const firstInput = form ? form.querySelector('input:not([type="hidden"])') : null;
+            if (firstInput) {
+                firstInput.focus();
+            }
+        }
+
+        function close() {
+            modal.classList.remove('open');
+            modal.setAttribute('aria-hidden', 'true');
+            unlockBodyModal();
+            if (form) {
+                form.reset();
+            }
+            clearError();
+        }
+
+        function applyConductor(conductor) {
+            return window.SICV.refreshCatalog('conductores').then(function () {
+                const target = document.getElementById(targetSelectId);
+                if (target) {
+                    target.value = String(conductor.id);
+                    target.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            });
+        }
+
+        openBtns.forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                open(btn);
+            });
+        });
+
+        modal.querySelectorAll('[data-conductor-quick-close]').forEach(function (btn) {
+            btn.addEventListener('click', close);
+        });
+
+        modal.addEventListener('click', function (e) {
+            if (e.target === modal) {
+                close();
+            }
+        });
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && getTopModal() === modal) {
+                close();
+            }
+        });
+
+        if (!form) return;
+
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            clearError();
+            submitQuickForm(form, submitBtn, function (data) {
+                return applyConductor(data.conductor).then(function () {
+                    close();
+                });
+            }, showError);
+        });
+    }
+
     /* ——— Init ——— */
     document.addEventListener('DOMContentLoaded', function () {
         initTheme();
@@ -452,6 +888,10 @@
         initDashLights();
         initKmAutofill();
         initConductorSelect();
+        initResponsableRegresoSelect();
+        initAreaQuickModal();
+        initPlantelQuickModal();
+        initConductorQuickModal();
         initLightbox();
         initImagePreview();
         window.SICV.initSignaturePads();

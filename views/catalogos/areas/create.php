@@ -32,14 +32,19 @@ $planteles = $planteles ?? [];
             </div>
             <div class="form-group">
                 <label class="form-label" for="plantel_id">Plantel <span class="required">*</span></label>
-                <select id="plantel_id" name="plantel_id" class="form-select" required>
-                    <option value="">Seleccione…</option>
-                    <?php foreach ($planteles as $p): ?>
-                    <option value="<?= (int) $p['id'] ?>" <?= (string) old('plantel_id') === (string) $p['id'] ? 'selected' : '' ?>>
-                        <?= e($p['clave'] . ' — ' . $p['nombre']) ?>
-                    </option>
-                    <?php endforeach; ?>
-                </select>
+                <div class="input-group">
+                    <select id="plantel_id" name="plantel_id" class="form-select" required data-plantel-select>
+                        <option value="">Seleccione…</option>
+                        <?php foreach ($planteles as $p): ?>
+                        <option value="<?= (int) $p['id'] ?>" <?= (string) old('plantel_id') === (string) $p['id'] ? 'selected' : '' ?>>
+                            <?= e($p['clave'] . ' — ' . $p['nombre']) ?>
+                        </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <?php if (can('catalogos.create')): ?>
+                    <button type="button" class="btn btn-accent" data-plantel-quick-open title="Agregar plantel" aria-label="Agregar plantel">+</button>
+                    <?php endif; ?>
+                </div>
             </div>
         </div>
         <div class="form-group">
@@ -53,3 +58,7 @@ $planteles = $planteles ?? [];
         </div>
     </form>
 </div>
+
+<?php if (can('catalogos.create')): ?>
+<?php App\Core\View::component('modal-plantel-quick'); ?>
+<?php endif; ?>

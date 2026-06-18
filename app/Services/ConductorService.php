@@ -6,12 +6,14 @@ namespace App\Services;
 
 use App\Repositories\AreaRepository;
 use App\Repositories\ConductorRepository;
+use App\Repositories\PlantelRepository;
 
 final class ConductorService
 {
     public function __construct(
         private readonly ConductorRepository $repo = new ConductorRepository(),
         private readonly AreaRepository $areas = new AreaRepository(),
+        private readonly PlantelRepository $planteles = new PlantelRepository(),
     ) {
     }
 
@@ -31,6 +33,7 @@ final class ConductorService
     {
         return [
             'areas' => $this->areas->paginate(1, 500, ['activo' => '1'])['data'],
+            'planteles' => $this->planteles->listForSelect(),
         ];
     }
 

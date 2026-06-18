@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Core\Csrf;
 use App\Core\Request;
+use App\Core\Response;
 use App\Services\ConductorService;
 
 final class ConductorController extends BaseController
@@ -43,6 +45,39 @@ final class ConductorController extends BaseController
         }
         flash('success', 'Conductor registrado correctamente.');
         $this->redirect('catalogos/conductores');
+    }
+
+    public function quickStore(Request $request): never
+    {
+        $token = $request->input('_token');
+        if (!Csrf::validate(is_string($token) ? $token : null)) {
+            Response::json(['ok' => false, 'error' => 'Token de seguridad inválido. Recargue la página.'], 419);
+        }
+
+        $result = $this->conductores->create($request->all());
+        if (is_string($result)) {
+            Response::json(['ok' => false, 'error' => $result], 422);
+        }
+
+        $conductor = $this->conductores->find((int) $result);
+        if ($conductor === null) {
+            Response::json(['ok' => false, 'error' => 'No se pudo recuperar el conductor creado.'], 500);
+        }
+
+        $areaLabel = (string) ($conductor['area_label'] ?? catalogo_area_label($conductor));
+        $nombre = (string) $conductor['nombre'];
+        $telefono = (string) $conductor['telefono'];
+
+        Response::json([
+            'ok' => true,
+            'conductor' => [
+                'id' => (int) $conductor['id'],
+                'nombre' => $nombre,
+                'telefono' => $telefono,
+                'area_label' => $areaLabel,
+                'label' => $nombre . ' — ' . $areaLabel . ' — ' . $telefono,
+            ],
+        ]);
     }
 
     public function edit(Request $request, string $id): never

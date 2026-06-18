@@ -2,9 +2,20 @@
 $pageTitle = 'Nueva comisión';
 $vehiculos = $vehiculos ?? [];
 $areas = $areas ?? [];
+$planteles = $planteles ?? [];
 $conductores = $conductores ?? [];
 $usuarios = $usuarios ?? [];
 $preVehiculo = $_GET['vehiculo_id'] ?? old('vehiculo_id');
+$respRegresoSeleccionado = 0;
+$nombreRegreso = trim((string) old('responsable_regreso_nombre', ''));
+if ($nombreRegreso !== '') {
+    foreach ($conductores as $cond) {
+        if ($cond['nombre'] === $nombreRegreso) {
+            $respRegresoSeleccionado = (int) $cond['id'];
+            break;
+        }
+    }
+}
 ?>
 <div class="page-header">
     <div>
@@ -30,12 +41,17 @@ $preVehiculo = $_GET['vehiculo_id'] ?? old('vehiculo_id');
             </div>
             <div class="form-group">
                 <label class="form-label" for="area_solicitante_id">Área solicitante <span class="required">*</span></label>
-                <select id="area_solicitante_id" name="area_solicitante_id" class="form-select" required>
-                    <option value="">Seleccione…</option>
-                    <?php foreach ($areas as $a): ?>
-                    <option value="<?= (int) $a['id'] ?>" <?= (string) old('area_solicitante_id') === (string) $a['id'] ? 'selected' : '' ?>><?= e(catalogo_area_label($a)) ?></option>
-                    <?php endforeach; ?>
-                </select>
+                <div class="input-group" data-area-select-group>
+                    <select id="area_solicitante_id" name="area_solicitante_id" class="form-select" required data-area-select>
+                        <option value="">Seleccione…</option>
+                        <?php foreach ($areas as $a): ?>
+                        <option value="<?= (int) $a['id'] ?>" <?= (string) old('area_solicitante_id') === (string) $a['id'] ? 'selected' : '' ?>><?= e(catalogo_area_label($a)) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <?php if (can('catalogos.create')): ?>
+                    <button type="button" class="btn btn-accent" data-area-quick-open title="Agregar área" aria-label="Agregar área">+</button>
+                    <?php endif; ?>
+                </div>
             </div>
             <div class="form-group">
                 <label class="form-label" for="fecha">Fecha <span class="required">*</span></label>
@@ -49,17 +65,22 @@ $preVehiculo = $_GET['vehiculo_id'] ?? old('vehiculo_id');
         <div class="form-row">
             <div class="form-group">
                 <label class="form-label" for="conductor_id">Conductor <span class="required">*</span></label>
-                <select id="conductor_id" name="conductor_id" class="form-select" required data-conductor-select>
-                    <option value="">Seleccione…</option>
-                    <?php foreach ($conductores as $c): ?>
-                    <option value="<?= (int) $c['id'] ?>"
-                            data-nombre="<?= e($c['nombre']) ?>"
-                            data-telefono="<?= e($c['telefono']) ?>"
-                            <?= (string) old('conductor_id') === (string) $c['id'] ? 'selected' : '' ?>>
-                        <?= e($c['nombre']) ?> — <?= e($c['area_label'] ?? catalogo_area_label($c)) ?> — <?= e($c['telefono']) ?>
-                    </option>
-                    <?php endforeach; ?>
-                </select>
+                <div class="input-group">
+                    <select id="conductor_id" name="conductor_id" class="form-select" required data-conductor-select>
+                        <option value="">Seleccione…</option>
+                        <?php foreach ($conductores as $c): ?>
+                        <option value="<?= (int) $c['id'] ?>"
+                                data-nombre="<?= e($c['nombre']) ?>"
+                                data-telefono="<?= e($c['telefono']) ?>"
+                                <?= (string) old('conductor_id') === (string) $c['id'] ? 'selected' : '' ?>>
+                            <?= e($c['nombre']) ?> — <?= e($c['area_label'] ?? catalogo_area_label($c)) ?> — <?= e($c['telefono']) ?>
+                        </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <?php if (can('catalogos.create')): ?>
+                    <button type="button" class="btn btn-accent" data-conductor-quick-open data-target-select="conductor_id" title="Agregar conductor" aria-label="Agregar conductor">+</button>
+                    <?php endif; ?>
+                </div>
                 <input type="hidden" id="conductor_nombre" name="conductor_nombre" value="<?= e((string) old('conductor_nombre')) ?>">
                 <small class="form-hint text-muted" data-conductor-telefono></small>
             </div>
@@ -77,25 +98,25 @@ $preVehiculo = $_GET['vehiculo_id'] ?? old('vehiculo_id');
         </div>
         <div class="form-row">
             <div class="form-group">
-                <label class="form-label" for="responsable_regreso_nombre">Responsable de regreso (quien trae el vehículo)</label>
-                <input type="text" id="responsable_regreso_nombre" name="responsable_regreso_nombre" class="form-control" list="responsables-regreso-list"
-                       placeholder="Seleccione o escriba el nombre" value="<?= e((string) old('responsable_regreso_nombre')) ?>">
-                <datalist id="responsables-regreso-list">
-                    <?php foreach ($conductores as $c): ?>
-                    <option value="<?= e($c['nombre']) ?>">
-                    <?php endforeach; ?>
-                </datalist>
-            </div>
-            <div class="form-group">
-                <label class="form-label" for="responsable_regreso_id">Responsable de regreso (usuario)</label>
-                <select id="responsable_regreso_id" name="responsable_regreso_id" class="form-select">
-                    <option value="">— Opcional —</option>
-                    <?php foreach ($usuarios as $u): ?>
-                    <option value="<?= (int) $u['id'] ?>" <?= (string) old('responsable_regreso_id') === (string) $u['id'] ? 'selected' : '' ?>>
-                        <?= e($u['nombre_completo'] ?? $u['nombre']) ?>
-                    </option>
-                    <?php endforeach; ?>
-                </select>
+                <label class="form-label" for="responsable_regreso_conductor">Responsable de regreso (quien trae el vehículo)</label>
+                <div class="input-group">
+                    <select id="responsable_regreso_conductor" class="form-select" data-responsable-regreso-select>
+                        <option value="">— Opcional —</option>
+                        <?php foreach ($conductores as $c): ?>
+                        <option value="<?= (int) $c['id'] ?>"
+                                data-nombre="<?= e($c['nombre']) ?>"
+                                data-telefono="<?= e($c['telefono']) ?>"
+                                <?= $respRegresoSeleccionado === (int) $c['id'] ? 'selected' : '' ?>>
+                            <?= e($c['nombre']) ?> — <?= e($c['area_label'] ?? catalogo_area_label($c)) ?> — <?= e($c['telefono']) ?>
+                        </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <?php if (can('catalogos.create')): ?>
+                    <button type="button" class="btn btn-accent" data-conductor-quick-open data-target-select="responsable_regreso_conductor" title="Agregar conductor" aria-label="Agregar conductor">+</button>
+                    <?php endif; ?>
+                </div>
+                <input type="hidden" id="responsable_regreso_nombre" name="responsable_regreso_nombre" value="<?= e((string) old('responsable_regreso_nombre')) ?>">
+                <input type="hidden" name="responsable_regreso_id" value="">
             </div>
         </div>
         <div class="form-group">
@@ -180,3 +201,9 @@ $preVehiculo = $_GET['vehiculo_id'] ?? old('vehiculo_id');
         </div>
     </form>
 </div>
+
+<?php if (can('catalogos.create')): ?>
+<?php App\Core\View::component('modal-area-quick', ['planteles' => $planteles]); ?>
+<?php App\Core\View::component('modal-plantel-quick'); ?>
+<?php App\Core\View::component('modal-conductor-quick', ['areas' => $areas]); ?>
+<?php endif; ?>

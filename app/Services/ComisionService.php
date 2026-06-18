@@ -34,6 +34,7 @@ final class ComisionService
         return [
             'vehiculos' => $this->catalogos->getVehiculosCatalogo(),
             'areas' => $this->catalogos->getAreas(),
+            'planteles' => $this->catalogos->getPlanteles(),
             'conductores' => $this->catalogos->getConductores(),
             'usuarios' => $this->catalogos->getUsersForSelect(),
             'luces_tablero' => InspeccionRepository::LUCES_TABLERO,

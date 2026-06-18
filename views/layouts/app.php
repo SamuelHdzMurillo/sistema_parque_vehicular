@@ -6,6 +6,7 @@ $basePath = trim(parse_url(url(''), PHP_URL_PATH), '/');
 if ($basePath !== '' && str_starts_with($currentPath, $basePath)) {
     $currentPath = trim(substr($currentPath, strlen($basePath)), '/');
 }
+$appBase = rtrim(parse_url(url(''), PHP_URL_PATH) ?: '', '/');
 ?>
 <!DOCTYPE html>
 <html lang="es" data-theme="light">
@@ -18,7 +19,7 @@ if ($basePath !== '' && str_starts_with($currentPath, $basePath)) {
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
     <script src="<?= asset('js/app.js') ?>" defer></script>
 </head>
-<body>
+<body data-app-base="<?= e($appBase) ?>">
 <div class="sidebar-overlay" id="sidebar-overlay"></div>
 <div class="app-shell">
     <?php App\Core\View::component('sidebar', ['currentPath' => $currentPath]); ?>

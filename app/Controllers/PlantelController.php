@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Core\Csrf;
 use App\Core\Request;
+use App\Core\Response;
 use App\Services\PlantelService;
 
 final class PlantelController extends BaseController
@@ -42,6 +44,37 @@ final class PlantelController extends BaseController
         }
         flash('success', 'Plantel registrado correctamente.');
         $this->redirect('catalogos/planteles');
+    }
+
+    public function quickStore(Request $request): never
+    {
+        $token = $request->input('_token');
+        if (!Csrf::validate(is_string($token) ? $token : null)) {
+            Response::json(['ok' => false, 'error' => 'Token de seguridad inválido. Recargue la página.'], 419);
+        }
+
+        $result = $this->planteles->create($request->all());
+        if (is_string($result)) {
+            Response::json(['ok' => false, 'error' => $result], 422);
+        }
+
+        $plantel = $this->planteles->find((int) $result);
+        if ($plantel === null) {
+            Response::json(['ok' => false, 'error' => 'No se pudo recuperar el plantel creado.'], 500);
+        }
+
+        $clave = (string) $plantel['clave'];
+        $nombre = (string) $plantel['nombre'];
+
+        Response::json([
+            'ok' => true,
+            'plantel' => [
+                'id' => (int) $plantel['id'],
+                'clave' => $clave,
+                'nombre' => $nombre,
+                'label' => $clave . ' — ' . $nombre,
+            ],
+        ]);
     }
 
     public function edit(Request $request, string $id): never

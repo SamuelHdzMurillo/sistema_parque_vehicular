@@ -6,6 +6,16 @@ namespace App\Repositories;
 
 final class CatalogoRepository extends BaseRepository
 {
+    public function getPlanteles(bool $soloActivos = true): array
+    {
+        $sql = 'SELECT id, clave, nombre FROM planteles';
+        if ($soloActivos) {
+            $sql .= ' WHERE activo = 1';
+        }
+        $sql .= ' ORDER BY clave ASC';
+        return $this->fetchAll($sql);
+    }
+
     public function getAreas(bool $soloActivos = true): array
     {
         $sql = 'SELECT a.id, a.clave, a.nombre, a.plantel_id,

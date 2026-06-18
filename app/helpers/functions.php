@@ -74,6 +74,13 @@ function url(string $path = ''): string
     return $base . '/' . ltrim($path, '/');
 }
 
+/** Ruta relativa al host actual (ideal para fetch/AJAX en el mismo sitio). */
+function url_path(string $path = ''): string
+{
+    $parsed = parse_url(url($path), PHP_URL_PATH);
+    return $parsed ?: '/';
+}
+
 function asset(string $path): string
 {
     $relative = 'assets/' . ltrim($path, '/');
