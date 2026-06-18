@@ -141,8 +141,11 @@
             });
 
             const hash = window.location.hash.replace('#', '');
+            const defaultTab = container.dataset.defaultTab || '';
             if (hash && container.querySelector('[data-tab="' + hash + '"]')) {
                 activate(hash);
+            } else if (defaultTab && container.querySelector('[data-tab="' + defaultTab + '"]')) {
+                activate(defaultTab);
             } else if (buttons.length) {
                 activate(buttons[0].dataset.tab);
             }

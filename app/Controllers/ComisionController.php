@@ -71,7 +71,7 @@ final class ComisionController extends BaseController
         $tipo = (string) $request->input('tipo', 'salida');
         $error = $this->comisiones->cargarDocumento((int) $id, $tipo, $request->file('archivo'));
         flash($error ? 'error' : 'success', $error ?? 'Documento firmado cargado correctamente.');
-        $this->redirect('comisiones/' . $id);
+        $this->redirect('comisiones/' . $id . '#documentos');
     }
 
     public function edit(Request $request, string $id): never
@@ -106,7 +106,7 @@ final class ComisionController extends BaseController
         $this->validateCsrf($request);
         $error = $this->comisiones->iniciar((int) $id);
         flash($error ? 'error' : 'success', $error ?? 'Comisión iniciada correctamente.');
-        $this->redirect('comisiones/' . $id);
+        $this->redirect('comisiones/' . $id . '#regreso');
     }
 
     public function finalizar(Request $request, string $id): never
@@ -114,7 +114,7 @@ final class ComisionController extends BaseController
         $this->validateCsrf($request);
         $error = $this->comisiones->finalizar((int) $id, $request->all());
         flash($error ? 'error' : 'success', $error ?? 'Comisión finalizada correctamente.');
-        $this->redirect('comisiones/' . $id);
+        $this->redirect('comisiones/' . $id . '#regreso');
     }
 
     public function cancelar(Request $request, string $id): never
