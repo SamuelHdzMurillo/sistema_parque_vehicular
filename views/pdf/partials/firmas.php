@@ -6,12 +6,13 @@
             $nombre = trim((string) ($firma['nombre'] ?? ''));
         ?>
         <td>
-            <div class="firma-linea">
+            <div class="firma-label"><?= e($firma['label']) ?></div>
+            <div class="firma-espacio">
                 <?php if ($img !== ''): ?>
                 <img src="<?= $img ?>" alt="" class="firma-img">
                 <?php endif; ?>
             </div>
-            <div class="firma-label"><?= e($firma['label']) ?></div>
+            <div class="firma-linea"></div>
             <?php if ($nombre !== ''): ?>
             <div class="firma-nombre"><?= e($nombre) ?></div>
             <?php else: ?>

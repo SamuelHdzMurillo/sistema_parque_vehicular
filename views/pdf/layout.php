@@ -69,10 +69,11 @@
         .checklist td.center { text-align: center; width: 48px; }
         .firmas-table { width: 100%; border-collapse: collapse; margin-top: 6px; }
         .firmas-table td { width: 33.33%; vertical-align: bottom; padding: 6px 10px 0; text-align: center; }
-        .firma-linea { border-top: 1px solid #333; height: 34px; margin-bottom: 3px; }
-        .firma-img { max-height: 38px; max-width: 140px; display: block; margin: 0 auto 2px; }
-        .firma-label { font-size: 8px; color: #6c757d; text-transform: uppercase; }
-        .firma-nombre { font-size: 9px; color: #6c757d; margin-top: 2px; }
+        .firma-label { font-size: 8px; color: #6c757d; text-transform: uppercase; margin-bottom: 4px; }
+        .firma-espacio { height: 44px; margin-bottom: 2px; }
+        .firma-linea { border-top: 1px solid #333; height: 0; margin: 0; }
+        .firma-img { max-height: 40px; max-width: 140px; display: block; margin: 0 auto; }
+        .firma-nombre { font-size: 9px; color: #212529; margin-top: 3px; }
         .footer-note {
             margin-top: 8px;
             font-size: 7.5px;

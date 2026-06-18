@@ -5,6 +5,7 @@ $areas = $areas ?? [];
 $planteles = $planteles ?? [];
 $conductores = $conductores ?? [];
 $usuarios = $usuarios ?? [];
+$folioSugerido = (string) old('folio', $folio_sugerido ?? '');
 $preVehiculo = $_GET['vehiculo_id'] ?? old('vehiculo_id');
 $respRegresoSeleccionado = 0;
 $nombreRegreso = trim((string) old('responsable_regreso_nombre', ''));
@@ -27,6 +28,16 @@ if ($nombreRegreso !== '') {
 <div class="card">
     <form action="<?= url('comisiones') ?>" method="post" class="card-body">
         <?= csrf_field() ?>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label" for="folio">Folio <span class="required">*</span></label>
+                <input type="text" id="folio" name="folio" class="form-control" required
+                       pattern="COM-\d{4}-\d+"
+                       title="Formato: COM-AAAA-NNNN (ejemplo: COM-2026-0001)"
+                       value="<?= e($folioSugerido) ?>">
+                <small class="form-hint text-muted">Se propone el siguiente consecutivo; puede modificarlo antes de guardar.</small>
+            </div>
+        </div>
         <div class="form-row">
             <div class="form-group">
                 <label class="form-label" for="vehiculo_id">Vehículo <span class="required">*</span></label>

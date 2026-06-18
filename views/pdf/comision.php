@@ -63,37 +63,37 @@ ob_start();
 <style>
     /* Estilos compactos para que la comisión quepa en una sola página */
     .cmp .section { margin-top: 5px; margin-bottom: 2px; }
-    .cmp .section-title { font-size: 9px; padding-bottom: 2px; margin-bottom: 2px; }
+    .cmp .section-title { font-size: 11px; padding-bottom: 2px; margin-bottom: 3px; }
     .cmp .grid { width: 100%; border-collapse: collapse; }
     .cmp .grid td {
         vertical-align: top;
-        padding: 1px 8px 3px 0;
+        padding: 2px 8px 4px 0;
         width: 33.33%;
     }
-    .cmp .lbl { display: block; font-size: 7px; color: #6c757d; text-transform: uppercase; letter-spacing: .2px; }
+    .cmp .lbl { display: block; font-size: 8.5px; color: #6c757d; text-transform: uppercase; letter-spacing: .2px; }
     .cmp .val {
-        display: block; font-size: 9.5px; min-height: 12px;
+        display: block; font-size: 11px; min-height: 14px;
         border-bottom: 1px solid #ccc; padding-bottom: 1px;
     }
     .cmp .inline-block { margin-top: 2px; }
     .cmp .inline-block .lbl { margin-bottom: 1px; }
     .cmp .inline-block .box {
-        border: 1px solid #ccc; padding: 2px 6px; min-height: 12px; font-size: 9.5px;
+        border: 1px solid #ccc; padding: 5px 6px; min-height: 14px; font-size: 11px;
     }
     .cmp .two-col td { width: 50%; vertical-align: top; padding-right: 10px; }
     .cmp .firmas-table { margin-top: 8px; }
-    .cmp .firma-linea { height: 44px; margin-bottom: 2px; }
-    .cmp .firma-img { max-height: 40px; }
-    .cmp .firma-label { font-size: 7px; }
-    .cmp .firma-nombre { font-size: 8px; margin-top: 1px; }
-    .cmp .luz-block-label { font-size: 7px; color: #6c757d; text-transform: uppercase; margin: 2px 0 0; }
-    .cmp .luz-list { font-size: 8.5px; line-height: 1.45; }
+    .cmp .firma-label { font-size: 8.5px; }
+    .cmp .firma-espacio { height: 50px; }
+    .cmp .firma-img { max-height: 46px; }
+    .cmp .firma-nombre { font-size: 10px; margin-top: 3px; }
+    .cmp .luz-block-label { font-size: 8.5px; color: #6c757d; text-transform: uppercase; margin: 3px 0 1px; }
+    .cmp .luz-list { font-size: 10px; line-height: 1.45; }
     .cmp .luz-item { white-space: nowrap; }
     .cmp .luz-item img { vertical-align: middle; }
-    .cmp .luz-none { font-size: 9px; font-style: italic; color: #555; }
+    .cmp .luz-none { font-size: 10.5px; font-style: italic; color: #555; }
     .cmp .leyenda {
         margin-top: 6px; border: 1px solid #999; background: #f8f8f8;
-        padding: 4px 8px; font-size: 8px; line-height: 1.35; text-align: justify;
+        padding: 5px 8px; font-size: 9.5px; line-height: 1.4; text-align: justify;
     }
 </style>
 
@@ -159,7 +159,7 @@ $filaCampos = static function (array $campos, callable $campo, int $cols = 3): v
             ['Kilometraje', isset($um['kilometraje']) ? number_format((int) $um['kilometraje']) . ' km' : ''],
         ], $campo); ?>
         <?php else: ?>
-        <div class="box" style="border:1px solid #ccc;padding:4px 6px;font-size:9.5px;">Sin mantenimientos finalizados registrados para este vehículo.</div>
+        <div class="box" style="border:1px solid #ccc;padding:4px 6px;font-size:11px;">Sin mantenimientos finalizados registrados para este vehículo.</div>
         <?php endif; ?>
     </div>
 

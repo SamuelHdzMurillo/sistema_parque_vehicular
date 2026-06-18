@@ -256,15 +256,28 @@ final class ComisionRepository extends BaseRepository
     {
         $year = date('Y');
         $prefix = "COM-{$year}-";
-        $last = $this->fetchOne(
-            'SELECT folio FROM comisiones WHERE folio LIKE ? ORDER BY id DESC LIMIT 1',
+        $rows = $this->fetchAll(
+            'SELECT folio FROM comisiones WHERE folio LIKE ?',
             ["{$prefix}%"]
         );
-        $seq = 1;
-        if ($last !== null && preg_match('/(\d+)$/', $last['folio'], $m)) {
-            $seq = (int) $m[1] + 1;
+        $maxSeq = 0;
+        foreach ($rows as $row) {
+            if (preg_match('/(\d+)$/', (string) $row['folio'], $m)) {
+                $maxSeq = max($maxSeq, (int) $m[1]);
+            }
         }
-        return $prefix . str_pad((string) $seq, 4, '0', STR_PAD_LEFT);
+        return $prefix . str_pad((string) ($maxSeq + 1), 4, '0', STR_PAD_LEFT);
+    }
+
+    public function folioExists(string $folio, ?int $excludeId = null): bool
+    {
+        $params = [$folio];
+        $sql = 'SELECT COUNT(*) AS c FROM comisiones WHERE folio = ?';
+        if ($excludeId !== null) {
+            $sql .= ' AND id != ?';
+            $params[] = $excludeId;
+        }
+        return ((int) ($this->fetchOne($sql, $params)['c'] ?? 0)) > 0;
     }
 
     public function calcularMetricas(array $comision, float $capacidadTanque): array
