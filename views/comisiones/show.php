@@ -202,14 +202,6 @@ $renderLuces = static function (array $codigos) use ($lucesById): string {
                                title="Debe ser al menos <?= number_format($minKmRegreso) ?> km (km de salida o kilometraje actual del vehículo).">
                         <small class="form-hint text-muted" data-km-hint data-km-value="<?= (int) ($c['kilometraje_actual'] ?? 0) ?>" data-km-regreso-static data-km-salida="<?= (int) ($c['km_salida'] ?? 0) ?>"></small>
                     </div>
-                    <div class="form-group">
-                        <?php App\Core\View::component('combustible-fraccion-select', [
-                            'id' => 'combustible_regreso',
-                            'name' => 'combustible_regreso',
-                            'label' => 'Combustible regreso',
-                            'required' => true,
-                        ]); ?>
-                    </div>
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="observaciones_fin">Observaciones de regreso</label>
@@ -272,6 +264,13 @@ $renderLuces = static function (array $codigos) use ($lucesById): string {
                         <input type="hidden" name="firma_data" value="">
                     </div>
                 </div>
+                <?php App\Core\View::component('combustible-fraccion-select', [
+                    'id' => 'combustible_regreso',
+                    'name' => 'combustible_regreso',
+                    'label' => 'Combustible regreso',
+                    'valuePorcentaje' => old_nonempty('combustible_regreso', $c['combustible_salida'] ?? 100),
+                    'required' => true,
+                ]); ?>
                 <button type="submit" class="btn btn-primary">Finalizar comisión</button>
             </form>
             <?php endif; ?>

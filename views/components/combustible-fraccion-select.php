@@ -4,39 +4,65 @@ $name = $name ?? $id;
 $label = $label ?? 'Combustible';
 $valuePorcentaje = $valuePorcentaje ?? null;
 $required = !empty($required);
-$source = old($name, null);
-if ($source === null || $source === '') {
+$source = old_nonempty($name, null);
+if ($source === null) {
     $source = $valuePorcentaje;
 }
-$selected = combustible_input_a_fraccion($source);
-if ($selected === '' && $required) {
-    $selected = '4/4';
+$porcentaje = combustible_fraccion_a_porcentaje($source);
+if ($porcentaje === null && $required) {
+    $porcentaje = 100.0;
 }
-$opciones = combustible_fracciones_opciones();
-if ($required) {
-    // Con campo obligatorio, mostrar primero el nivel lleno para evitar capturas accidentales en «Vacío».
-    $orden = ['4/4', '3/4', '1/2', '1/4', '0/4'];
-    $opcionesOrdenadas = [];
-    foreach ($orden as $clave) {
-        if (isset($opciones[$clave])) {
-            $opcionesOrdenadas[$clave] = $opciones[$clave];
-        }
-    }
-    $opciones = $opcionesOrdenadas;
+$porcentajeInt = $porcentaje !== null ? (int) round($porcentaje) : null;
+if ($porcentajeInt !== null) {
+    $porcentajeInt = max(0, min(100, (int) (round($porcentajeInt / 25) * 25)));
+} elseif ($required) {
+    $porcentajeInt = 100;
 }
-if (!array_key_exists($selected, $opciones)) {
-    $selected = $required ? (string) array_key_first($opciones) : '';
-}
+$presets = [100, 75, 50, 25, 0];
 ?>
-<div class="form-group">
+<div class="form-group" data-combustible-gauge data-combustible-name="<?= e($name) ?>">
     <label class="form-label" for="<?= e($id) ?>"><?= e($label) ?><?= $required ? ' <span class="required">*</span>' : '' ?></label>
-    <select id="<?= e($id) ?>" name="<?= e($name) ?>" class="form-select" <?= $required ? 'required' : '' ?> data-combustible-fraccion>
+    <div class="combustible-gauge">
+        <div class="combustible-gauge-visual" aria-hidden="true">
+            <div class="combustible-gauge-tank">
+                <div class="combustible-gauge-fill" data-combustible-fill style="height: <?= (int) ($porcentajeInt ?? 0) ?>%"></div>
+            </div>
+            <span class="combustible-gauge-value" data-combustible-display><?= (int) ($porcentajeInt ?? 0) ?>%</span>
+        </div>
+        <div class="combustible-gauge-controls">
+            <input type="range"
+                   class="combustible-gauge-range"
+                   min="0"
+                   max="100"
+                   step="25"
+                   value="<?= (int) ($porcentajeInt ?? ($required ? 100 : 0)) ?>"
+                   data-combustible-range
+                   aria-hidden="true"
+                   tabindex="-1">
+            <div class="combustible-gauge-marks" role="group" aria-label="Niveles rápidos del tanque">
+                <?php foreach ($presets as $pct): ?>
+                <button type="button"
+                        class="combustible-gauge-mark<?= $porcentajeInt === $pct ? ' is-active' : '' ?>"
+                        data-combustible-preset="<?= $pct ?>"
+                        aria-label="<?= $pct ?> por ciento">
+                    <?= $pct ?>%
+                </button>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    </div>
+    <label class="form-label mt-2" for="<?= e($id) ?>">Nivel en porcentaje</label>
+    <select id="<?= e($id) ?>"
+            name="<?= e($name) ?>"
+            class="form-select combustible-gauge-select"
+            data-combustible-value
+            <?= $required ? 'required' : '' ?>>
         <?php if (!$required): ?>
         <option value="">— Seleccione —</option>
         <?php endif; ?>
-        <?php foreach ($opciones as $valor => $texto): ?>
-        <option value="<?= e($valor) ?>" <?= $selected === $valor ? 'selected' : '' ?>><?= e($texto) ?></option>
+        <?php foreach ($presets as $pct): ?>
+        <option value="<?= $pct ?>" <?= $porcentajeInt === $pct ? 'selected' : '' ?>><?= $pct ?>%</option>
         <?php endforeach; ?>
     </select>
-    <small class="form-hint text-muted">Nivel del tanque en cuartos: 1/4, 1/2, 3/4 o lleno (4/4).</small>
+    <small class="form-hint text-muted">Use el medidor, los botones o la lista. Se guarda como porcentaje (0% a 100%).</small>
 </div>

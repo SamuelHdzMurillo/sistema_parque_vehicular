@@ -182,6 +182,21 @@ function old(string $key, mixed $default = ''): mixed
     return $_SESSION['_old'][$key] ?? $default;
 }
 
+/** Como old(), pero ignora cadenas vacías (útil para selects que no deben quedar en blanco tras un error). */
+function old_nonempty(string $key, mixed $default = null): mixed
+{
+    if (!array_key_exists($key, $_SESSION['_old'] ?? [])) {
+        return $default;
+    }
+
+    $value = $_SESSION['_old'][$key];
+    if ($value === '' || $value === null) {
+        return $default;
+    }
+
+    return $value;
+}
+
 function flash(string $key, mixed $value = null): mixed
 {
     if ($value !== null) {
@@ -459,6 +474,18 @@ function catalogo_vehiculo_label(array $vehiculo, bool $incluirEstado = true): s
     return $etiqueta !== '' ? $etiqueta : '—';
 }
 
+/** @return array<int, string> */
+function combustible_cuartos_opciones(): array
+{
+    return [
+        4 => 'Lleno (4/4)',
+        3 => '3/4',
+        2 => '1/2',
+        1 => '1/4',
+        0 => 'Vacío (0/4)',
+    ];
+}
+
 /** @return array<string, string> */
 function combustible_fracciones_opciones(): array
 {
@@ -502,14 +529,27 @@ function combustible_fraccion_etiqueta(mixed $valor): string
         return '—';
     }
 
-    $fraccion = combustible_input_a_fraccion($valor);
-    if ($fraccion === '') {
+    $porcentaje = combustible_fraccion_a_porcentaje($valor);
+    if ($porcentaje === null) {
         return '—';
     }
 
-    $opciones = combustible_fracciones_opciones();
+    return (int) round($porcentaje) . '%';
+}
 
-    return $opciones[$fraccion] ?? $fraccion;
+/** Convierte cualquier valor de combustible (cuartos, fracción o %) a cuartos 0–4. */
+function combustible_valor_a_cuartos(mixed $valor): ?int
+{
+    if ($valor === null || $valor === '') {
+        return null;
+    }
+
+    $porcentaje = combustible_fraccion_a_porcentaje($valor);
+    if ($porcentaje === null) {
+        return null;
+    }
+
+    return (int) round(($porcentaje / 100) * 4);
 }
 
 function combustible_porcentaje_a_valor_formulario(mixed $porcentaje): string
@@ -565,6 +605,11 @@ function combustible_fraccion_a_porcentaje(mixed $valor): ?float
 
     if ($s === 'vacio' || $s === 'vacío' || $s === 'empty') {
         return 0.0;
+    }
+
+    // Valores del formulario: 0–4 = cuartos de tanque (más fiable que "3/4" en POST).
+    if (preg_match('/^[0-4]$/', $s)) {
+        return ((int) $s / 4) * 100;
     }
 
     if (is_numeric($s)) {

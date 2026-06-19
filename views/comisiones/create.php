@@ -101,15 +101,6 @@ if ($nombreRegreso !== '') {
                        data-km-target value="<?= e((string) old('km_salida')) ?>">
                 <small class="form-hint text-muted" data-km-hint>Seleccione un vehículo para ver el kilometraje actual.</small>
             </div>
-            <div class="form-group">
-                <?php App\Core\View::component('combustible-fraccion-select', [
-                    'id' => 'combustible_salida',
-                    'name' => 'combustible_salida',
-                    'label' => 'Combustible salida',
-                    'valuePorcentaje' => 100,
-                    'required' => true,
-                ]); ?>
-            </div>
         </div>
         <div class="form-row">
             <div class="form-group">
@@ -211,7 +202,13 @@ if ($nombreRegreso !== '') {
                 <?php endforeach; ?>
             </div>
         </div>
-
+        <?php App\Core\View::component('combustible-fraccion-select', [
+            'id' => 'combustible_salida',
+            'name' => 'combustible_salida',
+            'label' => 'Combustible salida',
+            'valuePorcentaje' => 100,
+            'required' => true,
+        ]); ?>
         <div class="d-flex gap-1">
             <button type="submit" class="btn btn-primary">Guardar borrador</button>
             <a href="<?= url('formatos/comision') ?>" class="btn btn-secondary" target="_blank">Formato PDF en blanco</a>

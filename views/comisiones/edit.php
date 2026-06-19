@@ -106,13 +106,6 @@ if ($nombreRegreso !== '') {
                 <input type="number" id="km_salida" name="km_salida" class="form-control" value="<?= e((string) $c['km_salida']) ?>" required data-km-target data-km-mode="hint">
                 <small class="form-hint text-muted" data-km-hint></small>
             </div>
-            <?php App\Core\View::component('combustible-fraccion-select', [
-                'id' => 'combustible_salida',
-                'name' => 'combustible_salida',
-                'label' => 'Combustible salida',
-                'valuePorcentaje' => $c['combustible_salida'] ?? null,
-                'required' => true,
-            ]); ?>
         </div>
         <div class="form-row">
             <div class="form-group">
@@ -228,15 +221,7 @@ if ($nombreRegreso !== '') {
                 <input type="number" id="km_regreso" name="km_regreso" class="form-control" required min="<?= (int) ($c['km_salida'] ?? 0) ?>" value="<?= e((string) ($c['km_regreso'] ?? '')) ?>" data-km-target data-km-mode="hint" data-km-regreso>
                 <small class="form-hint text-muted" data-km-hint></small>
             </div>
-            <?php App\Core\View::component('combustible-fraccion-select', [
-                'id' => 'combustible_regreso',
-                'name' => 'combustible_regreso',
-                'label' => 'Combustible regreso',
-                'valuePorcentaje' => $c['combustible_regreso'] ?? null,
-                'required' => true,
-            ]); ?>
         </div>
-
         <?php
         $lucesRegreso = $c['luces_regreso'] ?? [];
         if (!is_array($lucesRegreso)) {
@@ -291,6 +276,23 @@ if ($nombreRegreso !== '') {
                 <?php endforeach; ?>
             </div>
         </div>
+        <?php endif; ?>
+
+        <?php App\Core\View::component('combustible-fraccion-select', [
+            'id' => 'combustible_salida',
+            'name' => 'combustible_salida',
+            'label' => 'Combustible salida',
+            'valuePorcentaje' => $c['combustible_salida'] ?? 100,
+            'required' => true,
+        ]); ?>
+        <?php if ($esFinalizada): ?>
+        <?php App\Core\View::component('combustible-fraccion-select', [
+            'id' => 'combustible_regreso',
+            'name' => 'combustible_regreso',
+            'label' => 'Combustible regreso',
+            'valuePorcentaje' => $c['combustible_regreso'] ?? $c['combustible_salida'] ?? 100,
+            'required' => true,
+        ]); ?>
         <?php endif; ?>
 
         <div class="d-flex gap-1">

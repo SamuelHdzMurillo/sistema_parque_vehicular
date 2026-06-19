@@ -1226,6 +1226,117 @@
         });
     }
 
+    /* ——— Combustible (medidor + select) ——— */
+    function combustibleGaugeLevel(pct) {
+        if (pct <= 0) {
+            return 'empty';
+        }
+        if (pct <= 25) {
+            return 'low';
+        }
+        return 'normal';
+    }
+
+    function syncCombustibleGauge(group) {
+        const select = group.querySelector('[data-combustible-value]');
+        const range = group.querySelector('[data-combustible-range]');
+        const fill = group.querySelector('[data-combustible-fill]');
+        const display = group.querySelector('[data-combustible-display]');
+        if (!select) {
+            return;
+        }
+
+        let pct = parseInt(select.value, 10);
+        if (Number.isNaN(pct) && range) {
+            pct = parseInt(range.value, 10);
+        }
+        if (Number.isNaN(pct)) {
+            pct = 100;
+        }
+        pct = Math.max(0, Math.min(100, pct));
+        pct = Math.round(pct / 25) * 25;
+
+        select.value = String(pct);
+        if (range) {
+            range.value = String(pct);
+        }
+        if (fill) {
+            fill.style.height = pct + '%';
+            fill.setAttribute('data-level', combustibleGaugeLevel(pct));
+        }
+        if (display) {
+            display.textContent = pct + '%';
+        }
+
+        group.querySelectorAll('[data-combustible-preset]').forEach(function (btn) {
+            const preset = parseInt(btn.getAttribute('data-combustible-preset'), 10);
+            const active = preset === pct;
+            btn.classList.toggle('is-active', active);
+        });
+    }
+
+    function ensureCombustibleOnSubmit(form) {
+        form.querySelectorAll('[data-combustible-gauge]').forEach(function (group) {
+            syncCombustibleGauge(group);
+            const select = group.querySelector('[data-combustible-value]');
+            const fieldName = group.getAttribute('data-combustible-name');
+            if (!select || !fieldName) {
+                return;
+            }
+            let pct = parseInt(select.value, 10);
+            if (Number.isNaN(pct)) {
+                pct = 100;
+            }
+            if (!form.querySelector('[name="' + fieldName + '"]')) {
+                const backup = document.createElement('input');
+                backup.type = 'hidden';
+                backup.name = fieldName;
+                backup.value = String(pct);
+                form.appendChild(backup);
+            }
+        });
+    }
+
+    function initCombustibleFields() {
+        document.querySelectorAll('[data-combustible-gauge]').forEach(function (group) {
+            syncCombustibleGauge(group);
+
+            const select = group.querySelector('[data-combustible-value]');
+            const range = group.querySelector('[data-combustible-range]');
+
+            if (select) {
+                select.addEventListener('change', function () {
+                    syncCombustibleGauge(group);
+                });
+            }
+
+            if (range) {
+                range.addEventListener('input', function () {
+                    if (select) {
+                        select.value = range.value;
+                    }
+                    syncCombustibleGauge(group);
+                });
+            }
+
+            group.querySelectorAll('[data-combustible-preset]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    const preset = btn.getAttribute('data-combustible-preset');
+                    if (select && preset !== null) {
+                        select.value = preset;
+                    }
+                    syncCombustibleGauge(group);
+                });
+            });
+        });
+
+        document.querySelectorAll('form').forEach(function (form) {
+            form.addEventListener('submit', function () {
+                ensureCombustibleOnSubmit(form);
+            });
+        });
+    }
+
     /* ——— Init ——— */
     document.addEventListener('DOMContentLoaded', function () {
         initTheme();
@@ -1237,6 +1348,7 @@
         initConfirm();
         initDashLights();
         initKmAutofill();
+        initCombustibleFields();
         initLucesAutofill();
         initConductorSelect();
         initResponsableRegresoSelect();

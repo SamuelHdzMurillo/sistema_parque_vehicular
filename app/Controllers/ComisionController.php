@@ -45,10 +45,11 @@ final class ComisionController extends BaseController
         try {
             $id = $this->comisiones->create($data, $userId);
         } catch (\InvalidArgumentException $e) {
-            $_SESSION['_old'] = $data;
+            $_SESSION['_old'] = $this->filterOldInput($data);
             flash('error', $e->getMessage());
             $this->redirect('comisiones/create');
         }
+        unset($_SESSION['_old']);
         flash('success', 'Comisión registrada correctamente.');
         $this->redirect('comisiones/' . $id);
     }
@@ -108,7 +109,7 @@ final class ComisionController extends BaseController
             $this->redirect('comisiones/' . $id . '/edit');
         }
         if ($error !== null) {
-            $_SESSION['_old'] = $request->post();
+            $_SESSION['_old'] = $this->filterOldInput($request->post());
             flash('error', $error);
             $this->redirect('comisiones/' . $id . '/edit');
         }
@@ -130,7 +131,7 @@ final class ComisionController extends BaseController
         $this->validateCsrf($request);
         $error = $this->comisiones->finalizar((int) $id, $request->post());
         if ($error !== null) {
-            $_SESSION['_old'] = $request->post();
+            $_SESSION['_old'] = $this->filterOldInput($request->post());
             flash('error', $error);
         } else {
             unset($_SESSION['_old']);
@@ -153,5 +154,21 @@ final class ComisionController extends BaseController
         $error = $this->comisiones->eliminar((int) $id);
         flash($error ? 'error' : 'success', $error ?? 'Comisión eliminada definitivamente.');
         $this->redirect('comisiones');
+    }
+
+    /** @param array<string, mixed> $data */
+    private function filterOldInput(array $data): array
+    {
+        foreach (['combustible_salida', 'combustible_regreso'] as $field) {
+            if (!array_key_exists($field, $data)) {
+                continue;
+            }
+            $value = $data[$field];
+            if ($value === '' || $value === null || is_array($value)) {
+                unset($data[$field]);
+            }
+        }
+
+        return $data;
     }
 }

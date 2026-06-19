@@ -91,10 +91,8 @@ final class ComisionService
         $data['responsable_id'] = (int) ($data['responsable_id'] ?? $userId);
         $data = $this->normalizeResponsableRegreso($data);
         $data = $this->normalizeConductor($data);
-        if (!array_key_exists('combustible_salida', $data)) {
-            throw new \InvalidArgumentException('Indique el nivel de combustible a la salida.');
-        }
-        $data = $this->normalizeCombustible($data, true);
+        $data = $this->coalesceCombustiblePost($data, 'combustible_salida', 100.0);
+        $data['combustible_salida'] = $this->resolveCombustiblePercent($data, 'combustible_salida', 100.0);
         $data['folio'] = $this->resolveFolio($data['folio'] ?? null);
         $data['estado'] = 'borrador';
         $id = $this->repo->create($data);
@@ -120,7 +118,7 @@ final class ComisionService
             $data = $this->normalizeResponsableRegreso($data);
             $data = $this->normalizeConductor($data);
             $data = $this->sanitizeCombustibleInputForUpdate($data);
-            $data = $this->normalizeCombustible($data, false);
+            $data = $this->applyCombustibleFields($data, $before);
 
             $merged = array_merge($before, $data);
             $merged['vehiculo_id'] = (int) ($data['vehiculo_id'] ?? $before['vehiculo_id']);
@@ -379,6 +377,40 @@ final class ComisionService
         return $data;
     }
 
+    /** Si el POST no trae combustible o viene vacío, usa el valor por defecto indicado. */
+    private function coalesceCombustiblePost(array $data, string $field, ?float $defaultPercent = null): array
+    {
+        $raw = $data[$field] ?? null;
+
+        if (is_array($raw)) {
+            $candidates = array_values(array_filter($raw, static function (mixed $value): bool {
+                return !is_array($value) && trim((string) $value) !== '';
+            }));
+            $raw = $candidates !== [] ? (string) end($candidates) : null;
+            if ($raw !== null) {
+                $data[$field] = $raw;
+
+                return $data;
+            }
+            unset($data[$field]);
+        }
+
+        $missing = !array_key_exists($field, $data);
+        $raw = $missing ? null : $data[$field];
+
+        if (!$missing && !is_array($raw) && trim((string) $raw) !== '') {
+            return $data;
+        }
+
+        if ($defaultPercent !== null) {
+            $data[$field] = (string) (int) round($defaultPercent);
+        } elseif (!$missing) {
+            unset($data[$field]);
+        }
+
+        return $data;
+    }
+
     private function parseCombustibleField(array $data, string $field): ?float
     {
         if (!array_key_exists($field, $data)) {
@@ -387,7 +419,10 @@ final class ComisionService
 
         $raw = $data[$field];
         if (is_array($raw)) {
-            return null;
+            $candidates = array_values(array_filter($raw, static function (mixed $value): bool {
+                return !is_array($value) && trim((string) $value) !== '';
+            }));
+            $raw = $candidates !== [] ? (string) end($candidates) : '';
         }
 
         $raw = trim((string) $raw);
@@ -398,11 +433,52 @@ final class ComisionService
         $porcentaje = combustible_fraccion_a_porcentaje($raw);
         if ($porcentaje === null) {
             throw new \InvalidArgumentException(
-                'El combustible debe indicarse en cuartos: 0/4, 1/4, 1/2, 3/4 o 4/4.'
+                'El combustible debe indicarse en porcentaje: 0, 25, 50, 75 o 100.'
             );
         }
 
         return $porcentaje;
+    }
+
+    private function resolveCombustiblePercent(array $data, string $field, float $default): float
+    {
+        $data = $this->coalesceCombustiblePost($data, $field, $default);
+
+        return $this->parseCombustibleField($data, $field) ?? $default;
+    }
+
+    private function resolveCombustibleField(array $data, string $field, bool $required): float
+    {
+        $porcentaje = $this->parseCombustibleField($data, $field);
+        if ($porcentaje !== null) {
+            return $porcentaje;
+        }
+
+        if ($required) {
+            throw new \InvalidArgumentException(
+                $field === 'combustible_regreso'
+                    ? 'Indique el nivel de combustible al regreso.'
+                    : 'Indique el nivel de combustible a la salida.'
+            );
+        }
+
+        throw new \InvalidArgumentException('Nivel de combustible no válido.');
+    }
+
+    private function applyCombustibleFields(array $data, ?array $before = null): array
+    {
+        $estado = (string) ($before['estado'] ?? '');
+        $before = $before ?? [];
+
+        $salidaDefault = (float) ($before['combustible_salida'] ?? 100);
+        $data['combustible_salida'] = $this->resolveCombustiblePercent($data, 'combustible_salida', $salidaDefault);
+
+        if ($estado === 'finalizada') {
+            $regresoDefault = (float) ($before['combustible_regreso'] ?? $before['combustible_salida'] ?? 100);
+            $data['combustible_regreso'] = $this->resolveCombustiblePercent($data, 'combustible_regreso', $regresoDefault);
+        }
+
+        return $data;
     }
 
     private function sanitizeCombustibleInputForUpdate(array $data): array
@@ -415,41 +491,6 @@ final class ComisionService
             if (is_array($raw) || $raw === '' || $raw === null) {
                 unset($data[$campo]);
             }
-        }
-
-        return $data;
-    }
-
-    private function normalizeCombustible(array $data, bool $strict = false): array
-    {
-        foreach (['combustible_salida', 'combustible_regreso'] as $campo) {
-            if (!array_key_exists($campo, $data)) {
-                continue;
-            }
-            $raw = $data[$campo];
-            if (is_array($raw)) {
-                throw new \InvalidArgumentException(
-                    'El nivel de combustible no es válido. Seleccione una fracción del tanque.'
-                );
-            }
-            if ($raw === '' || $raw === null) {
-                if ($strict) {
-                    throw new \InvalidArgumentException(
-                        $campo === 'combustible_regreso'
-                            ? 'Indique el nivel de combustible al regreso.'
-                            : 'Indique el nivel de combustible a la salida.'
-                    );
-                }
-                unset($data[$campo]);
-                continue;
-            }
-            $porcentaje = combustible_fraccion_a_porcentaje($raw);
-            if ($porcentaje === null) {
-                throw new \InvalidArgumentException(
-                    'El combustible debe indicarse en cuartos: 0/4, 1/4, 1/2, 3/4 o 4/4.'
-                );
-            }
-            $data[$campo] = $porcentaje;
         }
 
         return $data;
@@ -508,13 +549,12 @@ final class ComisionService
                     . ($comision['estado'] ?? 'desconocido') . '.';
             }
 
-            $combustibleRegreso = $this->parseCombustibleField($data, 'combustible_regreso');
-            if ($combustibleRegreso === null) {
-                return 'Indique el nivel de combustible al regreso.';
-            }
-
             $merged = array_merge($comision, $data);
-            $merged['combustible_regreso'] = $combustibleRegreso;
+            $merged['combustible_regreso'] = $this->resolveCombustiblePercent(
+                $data,
+                'combustible_regreso',
+                (float) ($comision['combustible_salida'] ?? 100)
+            );
 
             if (empty($merged['hora_regreso'])) {
                 return 'Indique la hora de regreso.';
@@ -592,6 +632,8 @@ final class ComisionService
             $this->repo->commit();
             AuditService::log('UPDATE', 'comisiones', $id, ['estado' => 'en_curso'], ['estado' => 'finalizada']);
             return null;
+        } catch (\InvalidArgumentException $e) {
+            return $e->getMessage();
         } catch (\Throwable $e) {
             $this->repo->rollBack();
             return user_facing_error($e, 'No se pudo finalizar la comisión.');
