@@ -132,7 +132,7 @@ $renderLuces = static function (array $codigos) use ($lucesById): string {
             <div class="meta-grid">
                 <div class="meta-item"><label>Hora salida</label><span><?= e(substr($c['hora_salida'] ?? '', 0, 5)) ?></span></div>
                 <div class="meta-item"><label>Km salida</label><span><?= number_format((int) $c['km_salida']) ?></span></div>
-                <div class="meta-item"><label>Combustible</label><span><?= e(combustible_porcentaje_a_fraccion($c['combustible_salida'] ?? null)) ?></span></div>
+                <div class="meta-item"><label>Combustible</label><span><?= e(combustible_fraccion_etiqueta($c['combustible_salida'] ?? null)) ?></span></div>
             </div>
 
             <h4 style="margin:1.25rem 0 .5rem;font-size:.9rem">Luces del tablero encendidas</h4>
@@ -154,7 +154,7 @@ $renderLuces = static function (array $codigos) use ($lucesById): string {
             <div class="meta-grid">
                 <div class="meta-item"><label>Hora regreso</label><span><?= $c['hora_regreso'] ? e(substr($c['hora_regreso'], 0, 5)) : '—' ?></span></div>
                 <div class="meta-item"><label>Km regreso</label><span><?= $c['km_regreso'] !== null ? number_format((int) $c['km_regreso']) : '—' ?></span></div>
-                <div class="meta-item"><label>Combustible</label><span><?= $c['combustible_regreso'] !== null ? e(combustible_porcentaje_a_fraccion($c['combustible_regreso'])) : '—' ?></span></div>
+                <div class="meta-item"><label>Combustible</label><span><?= $c['combustible_regreso'] !== null ? e(combustible_fraccion_etiqueta($c['combustible_regreso'])) : '—' ?></span></div>
             </div>
 
             <h4 style="margin:1.25rem 0 .5rem;font-size:.9rem">Luces del tablero encendidas</h4>
@@ -177,9 +177,16 @@ $renderLuces = static function (array $codigos) use ($lucesById): string {
             <p class="text-muted">La comisión aún no ha iniciado. Registre la salida en la pestaña <strong>Acciones</strong> para poder capturar el regreso.</p>
             <?php else: ?>
             <p class="text-muted">El vehículo está en comisión. Complete el formulario siguiente al regresar.</p>
+            <div class="meta-grid mb-2">
+                <div class="meta-item"><label>Combustible salida registrado</label><span><?= e(combustible_fraccion_etiqueta($c['combustible_salida'] ?? null)) ?></span></div>
+                <div class="meta-item"><label>Km salida</label><span><?= number_format((int) $c['km_salida']) ?></span></div>
+            </div>
             <?php endif; ?>
 
             <?php if ($c['estado'] === 'en_curso' && can('comisiones.update')): ?>
+            <?php
+            $kmRegresoSugerido = (string) old('km_regreso', (string) max($minKmRegreso, (int) ($c['kilometraje_actual'] ?? 0)));
+            ?>
             <hr style="margin:1.5rem 0;border:none;border-top:1px solid var(--border-color)">
             <h3 style="margin:0 0 1rem;font-size:1rem">Finalizar comisión</h3>
             <form action="<?= url('comisiones/' . $c['id'] . '/finalizar') ?>" method="post">
@@ -191,7 +198,8 @@ $renderLuces = static function (array $codigos) use ($lucesById): string {
                     </div>
                     <div class="form-group">
                         <label class="form-label" for="km_regreso">Km regreso <span class="required">*</span></label>
-                        <input type="number" id="km_regreso" name="km_regreso" class="form-control" required min="<?= $minKmRegreso ?>" value="<?= e((string) old('km_regreso', '')) ?>">
+                        <input type="number" id="km_regreso" name="km_regreso" class="form-control" required min="<?= $minKmRegreso ?>" value="<?= e($kmRegresoSugerido) ?>"
+                               title="Debe ser al menos <?= number_format($minKmRegreso) ?> km (km de salida o kilometraje actual del vehículo).">
                         <small class="form-hint text-muted" data-km-hint data-km-value="<?= (int) ($c['kilometraje_actual'] ?? 0) ?>" data-km-regreso-static data-km-salida="<?= (int) ($c['km_salida'] ?? 0) ?>"></small>
                     </div>
                     <div class="form-group">

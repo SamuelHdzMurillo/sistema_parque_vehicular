@@ -496,6 +496,22 @@ function combustible_porcentaje_a_fraccion(mixed $porcentaje): string
     return combustible_cuartos_a_fraccion($cuartos);
 }
 
+function combustible_fraccion_etiqueta(mixed $valor): string
+{
+    if ($valor === null || $valor === '') {
+        return '—';
+    }
+
+    $fraccion = combustible_input_a_fraccion($valor);
+    if ($fraccion === '') {
+        return '—';
+    }
+
+    $opciones = combustible_fracciones_opciones();
+
+    return $opciones[$fraccion] ?? $fraccion;
+}
+
 function combustible_porcentaje_a_valor_formulario(mixed $porcentaje): string
 {
     if ($porcentaje === null || $porcentaje === '') {

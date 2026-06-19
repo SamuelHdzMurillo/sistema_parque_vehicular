@@ -6,8 +6,18 @@ $areas = $areas ?? [];
 $planteles = $planteles ?? [];
 $conductores = $conductores ?? [];
 $usuarios = $usuarios ?? [];
-$c = array_merge($comision, array_intersect_key($_SESSION['_old'] ?? [], array_flip(array_keys($comision))));
+$oldInput = array_intersect_key($_SESSION['_old'] ?? [], array_flip(array_keys($comision)));
+foreach (['combustible_salida', 'combustible_regreso'] as $fuelField) {
+    if (!array_key_exists($fuelField, $oldInput)) {
+        continue;
+    }
+    if ($oldInput[$fuelField] === '' || $oldInput[$fuelField] === null) {
+        unset($oldInput[$fuelField]);
+    }
+}
+$c = array_merge($comision, $oldInput);
 $esFinalizada = ($c['estado'] ?? '') === 'finalizada';
+$esEnCurso = ($c['estado'] ?? '') === 'en_curso';
 $respRegresoSeleccionado = 0;
 $nombreRegreso = trim((string) ($c['responsable_regreso_nombre'] ?? ''));
 if ($nombreRegreso !== '') {
@@ -29,6 +39,8 @@ if ($nombreRegreso !== '') {
         <h1 class="page-title">Editar comisión <?= e($c['folio']) ?></h1>
         <?php if ($esFinalizada): ?>
         <p class="page-subtitle text-muted">Comisión finalizada — al cambiar vehículo o kilómetros se actualizará el odómetro correspondiente.</p>
+        <?php elseif ($esEnCurso): ?>
+        <p class="page-subtitle text-muted">Comisión en curso — para registrar el regreso (km, combustible, luces) use la pestaña <a href="<?= url('comisiones/' . $c['id'] . '#regreso') ?>">Regreso</a> en el detalle de la comisión.</p>
         <?php endif; ?>
     </div>
 </div>
@@ -94,15 +106,13 @@ if ($nombreRegreso !== '') {
                 <input type="number" id="km_salida" name="km_salida" class="form-control" value="<?= e((string) $c['km_salida']) ?>" required data-km-target data-km-mode="hint">
                 <small class="form-hint text-muted" data-km-hint></small>
             </div>
-            <div class="form-group">
-                <?php App\Core\View::component('combustible-fraccion-select', [
-                    'id' => 'combustible_salida',
-                    'name' => 'combustible_salida',
-                    'label' => 'Combustible salida',
-                    'valuePorcentaje' => $c['combustible_salida'] ?? null,
-                    'required' => true,
-                ]); ?>
-            </div>
+            <?php App\Core\View::component('combustible-fraccion-select', [
+                'id' => 'combustible_salida',
+                'name' => 'combustible_salida',
+                'label' => 'Combustible salida',
+                'valuePorcentaje' => $c['combustible_salida'] ?? null,
+                'required' => true,
+            ]); ?>
         </div>
         <div class="form-row">
             <div class="form-group">
@@ -218,15 +228,13 @@ if ($nombreRegreso !== '') {
                 <input type="number" id="km_regreso" name="km_regreso" class="form-control" required min="<?= (int) ($c['km_salida'] ?? 0) ?>" value="<?= e((string) ($c['km_regreso'] ?? '')) ?>" data-km-target data-km-mode="hint" data-km-regreso>
                 <small class="form-hint text-muted" data-km-hint></small>
             </div>
-            <div class="form-group">
-                <?php App\Core\View::component('combustible-fraccion-select', [
-                    'id' => 'combustible_regreso',
-                    'name' => 'combustible_regreso',
-                    'label' => 'Combustible regreso',
-                    'valuePorcentaje' => $c['combustible_regreso'] ?? null,
-                    'required' => true,
-                ]); ?>
-            </div>
+            <?php App\Core\View::component('combustible-fraccion-select', [
+                'id' => 'combustible_regreso',
+                'name' => 'combustible_regreso',
+                'label' => 'Combustible regreso',
+                'valuePorcentaje' => $c['combustible_regreso'] ?? null,
+                'required' => true,
+            ]); ?>
         </div>
 
         <?php

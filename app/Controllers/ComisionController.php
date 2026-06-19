@@ -40,7 +40,7 @@ final class ComisionController extends BaseController
             $this->redirect('login');
         }
 
-        $data = $request->all();
+        $data = $request->post();
         $data['responsable_id'] = $data['responsable_id'] ?? $userId;
         try {
             $id = $this->comisiones->create($data, $userId);
@@ -102,16 +102,17 @@ final class ComisionController extends BaseController
     {
         $this->validateCsrf($request);
         try {
-            $error = $this->comisiones->update((int) $id, $request->all());
+            $error = $this->comisiones->update((int) $id, $request->post());
         } catch (\InvalidArgumentException $e) {
             flash('error', $e->getMessage());
             $this->redirect('comisiones/' . $id . '/edit');
         }
         if ($error !== null) {
-            $_SESSION['_old'] = $request->all();
+            $_SESSION['_old'] = $request->post();
             flash('error', $error);
             $this->redirect('comisiones/' . $id . '/edit');
         }
+        unset($_SESSION['_old']);
         flash('success', 'Comisión actualizada correctamente.');
         $this->redirect('comisiones/' . $id);
     }
@@ -127,9 +128,9 @@ final class ComisionController extends BaseController
     public function finalizar(Request $request, string $id): never
     {
         $this->validateCsrf($request);
-        $error = $this->comisiones->finalizar((int) $id, $request->all());
+        $error = $this->comisiones->finalizar((int) $id, $request->post());
         if ($error !== null) {
-            $_SESSION['_old'] = $request->all();
+            $_SESSION['_old'] = $request->post();
             flash('error', $error);
         } else {
             unset($_SESSION['_old']);

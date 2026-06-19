@@ -91,7 +91,10 @@ final class ComisionService
         $data['responsable_id'] = (int) ($data['responsable_id'] ?? $userId);
         $data = $this->normalizeResponsableRegreso($data);
         $data = $this->normalizeConductor($data);
-        $data = $this->normalizeCombustible($data);
+        if (!array_key_exists('combustible_salida', $data)) {
+            throw new \InvalidArgumentException('Indique el nivel de combustible a la salida.');
+        }
+        $data = $this->normalizeCombustible($data, true);
         $data['folio'] = $this->resolveFolio($data['folio'] ?? null);
         $data['estado'] = 'borrador';
         $id = $this->repo->create($data);
@@ -116,7 +119,8 @@ final class ComisionService
 
             $data = $this->normalizeResponsableRegreso($data);
             $data = $this->normalizeConductor($data);
-            $data = $this->normalizeCombustible($data);
+            $data = $this->sanitizeCombustibleInputForUpdate($data);
+            $data = $this->normalizeCombustible($data, false);
 
             $merged = array_merge($before, $data);
             $merged['vehiculo_id'] = (int) ($data['vehiculo_id'] ?? $before['vehiculo_id']);
@@ -401,14 +405,42 @@ final class ComisionService
         return $porcentaje;
     }
 
-    private function normalizeCombustible(array $data): array
+    private function sanitizeCombustibleInputForUpdate(array $data): array
     {
         foreach (['combustible_salida', 'combustible_regreso'] as $campo) {
             if (!array_key_exists($campo, $data)) {
                 continue;
             }
             $raw = $data[$campo];
+            if (is_array($raw) || $raw === '' || $raw === null) {
+                unset($data[$campo]);
+            }
+        }
+
+        return $data;
+    }
+
+    private function normalizeCombustible(array $data, bool $strict = false): array
+    {
+        foreach (['combustible_salida', 'combustible_regreso'] as $campo) {
+            if (!array_key_exists($campo, $data)) {
+                continue;
+            }
+            $raw = $data[$campo];
+            if (is_array($raw)) {
+                throw new \InvalidArgumentException(
+                    'El nivel de combustible no es válido. Seleccione una fracción del tanque.'
+                );
+            }
             if ($raw === '' || $raw === null) {
+                if ($strict) {
+                    throw new \InvalidArgumentException(
+                        $campo === 'combustible_regreso'
+                            ? 'Indique el nivel de combustible al regreso.'
+                            : 'Indique el nivel de combustible a la salida.'
+                    );
+                }
+                unset($data[$campo]);
                 continue;
             }
             $porcentaje = combustible_fraccion_a_porcentaje($raw);

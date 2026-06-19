@@ -1623,10 +1623,31 @@ a.tab-btn {
     font-weight: 500;
 }
 
+/* ——— Secciones del expediente (General) ——— */
+.expediente-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    margin-top: 1.5rem;
+}
+
+.expediente-section .card-header {
+    flex-wrap: wrap;
+    align-items: flex-start;
+}
+
+.expediente-section-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: .5rem;
+    text-align: right;
+}
+
 /* ——— Galería de fotos del vehículo ——— */
 .vehiculo-fotos-upload {
     padding: 1rem;
-    margin-top: .75rem;
+    margin-top: 0;
     border: 1px dashed var(--border-color);
     border-radius: var(--radius-lg);
     background: var(--bg-code);
@@ -2078,6 +2099,11 @@ a.tab-btn {
     .kpi-grid { grid-template-columns: 1fr 1fr; }
     .form-row { grid-template-columns: 1fr; }
     .expediente-header { flex-direction: column; }
+    .expediente-section-meta {
+        align-items: flex-start;
+        text-align: left;
+        width: 100%;
+    }
 }
 
 @media print {

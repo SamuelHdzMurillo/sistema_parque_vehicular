@@ -42,6 +42,12 @@ final class Request
         return array_merge($_GET, $_POST);
     }
 
+    /** @return array<string, mixed> */
+    public function post(): array
+    {
+        return $_POST;
+    }
+
     public function file(string $key): ?array
     {
         $files = $this->files($key);

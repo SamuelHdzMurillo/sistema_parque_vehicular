@@ -99,83 +99,116 @@ $fotoUrl = !empty($fotoRuta) ? url('storage/uploads/' . ltrim((string) $fotoRuta
             $lucesCatalog = \App\Repositories\InspeccionRepository::LUCES_TABLERO;
             $lucesOn = $luces_tablero ?? [];
             $lucesMeta = $luces_tablero_meta ?? null;
+            $lucesOrigenUrl = null;
+            if (!empty($lucesMeta['origen_tipo']) && !empty($lucesMeta['origen_id'])) {
+                $lucesOrigenUrl = $lucesMeta['origen_tipo'] === 'comision'
+                    ? url('comisiones/' . (int) $lucesMeta['origen_id'])
+                    : url('inspecciones/' . (int) $lucesMeta['origen_id']);
+            }
             ?>
-            <h4 class="mt-3">Estado del tablero</h4>
-            <?php if (!empty($lucesMeta['origen_label'])): ?>
-            <p class="form-hint text-muted mb-2">
-                Última actualización: <?= e($lucesMeta['origen_label']) ?>
-                <?php if (!empty($lucesMeta['updated_at'])): ?>
-                · <?= format_datetime($lucesMeta['updated_at']) ?>
-                <?php endif; ?>
-            </p>
-            <?php elseif ($lucesOn === []): ?>
-            <p class="text-muted">Sin luces de advertencia registradas encendidas.</p>
-            <?php endif; ?>
-            <div class="dash-lights-grid dash-lights-grid--readonly">
-                <?php foreach ($lucesCatalog as $luz): ?>
-                <?php $isOn = in_array($luz['codigo'], $lucesOn, true); ?>
-                <div class="dash-light-card<?= $isOn ? ' is-on' : ' is-off' ?>">
-                    <span class="dash-light-icon" aria-hidden="true">
-                        <img src="<?= e(asset('images/luces-tablero/' . $luz['icon'])) ?>" alt="" width="48" height="48">
-                    </span>
-                    <span class="dash-light-name"><?= e($luz['nombre']) ?></span>
-                    <span class="dash-light-status"><?= $isOn ? 'Encendida' : 'Apagada' ?></span>
+
+            <div class="expediente-sections">
+                <div class="card expediente-section">
+                    <div class="card-header">
+                        <div>
+                            <h3>Luces del tablero</h3>
+                            <?php if ($lucesOn === []): ?>
+                            <p class="card-header-hint">Ninguna luz de advertencia registrada encendida.</p>
+                            <?php else: ?>
+                            <p class="card-header-hint"><?= count($lucesOn) ?> luz(es) encendida(s) según el último registro.</p>
+                            <?php endif; ?>
+                        </div>
+                        <?php if (!empty($lucesMeta['origen_label'])): ?>
+                        <div class="expediente-section-meta">
+                            <span class="text-muted" style="font-size:.8rem">
+                                Actualizado: <?= e($lucesMeta['origen_label']) ?>
+                                <?php if (!empty($lucesMeta['updated_at'])): ?>
+                                · <?= format_datetime($lucesMeta['updated_at']) ?>
+                                <?php endif; ?>
+                            </span>
+                            <?php if ($lucesOrigenUrl !== null): ?>
+                            <a href="<?= e($lucesOrigenUrl) ?>" class="btn btn-sm btn-secondary">Ver registro</a>
+                            <?php endif; ?>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                    <div class="card-body">
+                        <div class="dash-lights-grid dash-lights-grid--readonly">
+                            <?php foreach ($lucesCatalog as $luz): ?>
+                            <?php $isOn = in_array($luz['codigo'], $lucesOn, true); ?>
+                            <div class="dash-light-card<?= $isOn ? ' is-on' : ' is-off' ?>">
+                                <span class="dash-light-icon" aria-hidden="true">
+                                    <img src="<?= e(asset('images/luces-tablero/' . $luz['icon'])) ?>" alt="" width="48" height="48">
+                                </span>
+                                <span class="dash-light-name"><?= e($luz['nombre']) ?></span>
+                                <span class="dash-light-status"><?= $isOn ? 'Encendida' : 'Apagada' ?></span>
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <p class="dash-lights-summary mt-2">
+                            El estado se actualiza automáticamente al registrar una comisión o inspección.
+                        </p>
+                    </div>
                 </div>
-                <?php endforeach; ?>
-            </div>
-            <?php if ($lucesOn !== []): ?>
-            <p class="dash-lights-summary mt-2 text-muted">
-                <?= count($lucesOn) ?> luz(es) encendida(s) según el último registro de comisión o inspección.
-            </p>
-            <?php endif; ?>
 
-            <h4 class="mt-3">Fotografías</h4>
-
-            <?php if (can('vehiculos.update')): ?>
-            <form action="<?= url('vehiculos/' . $id . '/foto') ?>" method="post" enctype="multipart/form-data" class="vehiculo-fotos-upload">
-                <?= csrf_field() ?>
-                <div class="form-group">
-                    <label class="form-label" for="fotos">Subir fotografías</label>
-                    <input type="file" id="fotos" name="fotos[]" class="form-control" accept="image/jpeg,image/png,image/webp" multiple required>
-                    <p class="form-hint">Seleccione todas las imágenes de una vez (Ctrl o Shift para elegir varias). Luego podrá borrar las que no necesite o elegir la principal.</p>
-                </div>
-                <button type="submit" class="btn btn-secondary">Subir fotografías</button>
-            </form>
-            <?php endif; ?>
-
-            <?php if (!empty($fotos)): ?>
-            <div class="vehiculo-fotos-grid mt-2">
-                <?php foreach ($fotos as $f): ?>
-                <?php
-                $esPrincipal = !empty($f['es_principal']) || (($foto_principal ?? '') !== '' && ($foto_principal ?? '') === ($f['ruta'] ?? ''));
-                $fUrl = url('storage/uploads/' . ltrim((string) $f['ruta'], '/'));
-                ?>
-                <div class="vehiculo-foto-card<?= $esPrincipal ? ' principal' : '' ?>">
-                    <img src="<?= e($fUrl) ?>" alt="<?= e($f['descripcion'] ?? 'Foto del vehículo') ?>">
-                    <?php if ($esPrincipal): ?>
-                    <span class="vehiculo-foto-badge">Principal</span>
-                    <?php endif; ?>
-                    <?php if (can('vehiculos.update')): ?>
-                    <form action="<?= url('vehiculos/' . $id . '/foto/' . $f['id'] . '/delete') ?>" method="post" class="vehiculo-foto-delete"
-                          onsubmit="return confirm('¿Eliminar esta fotografía?')">
-                        <?= csrf_field() ?>
-                        <button type="submit" class="btn btn-sm btn-danger" title="Eliminar">×</button>
-                    </form>
-                    <?php endif; ?>
-                    <div class="vehiculo-foto-meta">
-                        <?php if (can('vehiculos.update') && !$esPrincipal): ?>
-                        <form action="<?= url('vehiculos/' . $id . '/foto/' . $f['id'] . '/principal') ?>" method="post">
+                <div class="card expediente-section">
+                    <div class="card-header">
+                        <div>
+                            <h3>Fotografías</h3>
+                            <p class="card-header-hint">
+                                <?= !empty($fotos) ? count($fotos) . ' imagen(es) registrada(s).' : 'Sin fotografías registradas.' ?>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <?php if (can('vehiculos.update')): ?>
+                        <form action="<?= url('vehiculos/' . $id . '/foto') ?>" method="post" enctype="multipart/form-data" class="vehiculo-fotos-upload">
                             <?= csrf_field() ?>
-                            <button type="submit" class="btn btn-sm btn-secondary">Hacer principal</button>
+                            <div class="form-group mb-0">
+                                <label class="form-label" for="fotos">Subir fotografías</label>
+                                <input type="file" id="fotos" name="fotos[]" class="form-control" accept="image/jpeg,image/png,image/webp" multiple required>
+                                <p class="form-hint">Seleccione todas las imágenes de una vez (Ctrl o Shift para elegir varias). Luego podrá borrar las que no necesite o elegir la principal.</p>
+                            </div>
+                            <button type="submit" class="btn btn-secondary mt-2">Subir fotografías</button>
                         </form>
+                        <?php endif; ?>
+
+                        <?php if (!empty($fotos)): ?>
+                        <div class="vehiculo-fotos-grid<?= can('vehiculos.update') ? ' mt-3' : '' ?>">
+                            <?php foreach ($fotos as $f): ?>
+                            <?php
+                            $esPrincipal = !empty($f['es_principal']) || (($foto_principal ?? '') !== '' && ($foto_principal ?? '') === ($f['ruta'] ?? ''));
+                            $fUrl = url('storage/uploads/' . ltrim((string) $f['ruta'], '/'));
+                            ?>
+                            <div class="vehiculo-foto-card<?= $esPrincipal ? ' principal' : '' ?>">
+                                <img src="<?= e($fUrl) ?>" alt="<?= e($f['descripcion'] ?? 'Foto del vehículo') ?>">
+                                <?php if ($esPrincipal): ?>
+                                <span class="vehiculo-foto-badge">Principal</span>
+                                <?php endif; ?>
+                                <?php if (can('vehiculos.update')): ?>
+                                <form action="<?= url('vehiculos/' . $id . '/foto/' . $f['id'] . '/delete') ?>" method="post" class="vehiculo-foto-delete"
+                                      onsubmit="return confirm('¿Eliminar esta fotografía?')">
+                                    <?= csrf_field() ?>
+                                    <button type="submit" class="btn btn-sm btn-danger" title="Eliminar">×</button>
+                                </form>
+                                <?php endif; ?>
+                                <div class="vehiculo-foto-meta">
+                                    <?php if (can('vehiculos.update') && !$esPrincipal): ?>
+                                    <form action="<?= url('vehiculos/' . $id . '/foto/' . $f['id'] . '/principal') ?>" method="post">
+                                        <?= csrf_field() ?>
+                                        <button type="submit" class="btn btn-sm btn-secondary">Hacer principal</button>
+                                    </form>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <?php elseif (!can('vehiculos.update')): ?>
+                        <p class="text-muted">Sin fotografías registradas.</p>
                         <?php endif; ?>
                     </div>
                 </div>
-                <?php endforeach; ?>
             </div>
-            <?php else: ?>
-            <p class="text-muted mt-2">Sin fotografías registradas.</p>
-            <?php endif; ?>
 
             <?php if (!empty($estado_historial)): ?>
             <h4 class="mt-3">Historial de estados</h4>
