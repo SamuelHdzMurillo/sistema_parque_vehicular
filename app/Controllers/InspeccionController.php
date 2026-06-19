@@ -52,4 +52,12 @@ final class InspeccionController extends BaseController
         }
         $this->render('inspecciones.show', $data);
     }
+
+    public function eliminar(Request $request, string $id): never
+    {
+        $this->validateCsrf($request);
+        $error = $this->inspecciones->eliminar((int) $id);
+        flash($error ? 'error' : 'success', $error ?? 'Inspección eliminada correctamente.');
+        $this->redirect('inspecciones');
+    }
 }

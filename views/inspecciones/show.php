@@ -18,10 +18,18 @@ $lucesOn = array_column($i['luces_tablero'] ?? [], 'luz_codigo');
             </span>
         </p>
     </div>
-    <?php if (!empty($i['vehiculo_id'])): ?>
+    <?php if (!empty($i['vehiculo_id']) || can('inspecciones.delete')): ?>
     <div class="page-actions">
+        <?php if (!empty($i['vehiculo_id'])): ?>
         <a href="<?= url('formatos/inspeccion/' . $i['id']) ?>" class="btn btn-secondary" target="_blank">Descargar PDF / Imprimir</a>
         <a href="<?= url('vehiculos/' . $i['vehiculo_id']) ?>" class="btn btn-secondary">Ver expediente</a>
+        <?php endif; ?>
+        <?php if (can('inspecciones.delete')): ?>
+        <form action="<?= url('inspecciones/' . $i['id'] . '/eliminar') ?>" method="post" class="inline-form">
+            <?= csrf_field() ?>
+            <button type="submit" class="btn btn-danger" data-confirm="¿Confirma eliminar esta inspección? Esta acción no se puede deshacer.">Eliminar</button>
+        </form>
+        <?php endif; ?>
     </div>
     <?php endif; ?>
 </div>

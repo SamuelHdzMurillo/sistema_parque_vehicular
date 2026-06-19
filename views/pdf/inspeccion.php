@@ -15,8 +15,45 @@ if ($i !== null) {
     }
 }
 
+$lucesCatalog = $luces_tablero ?? [];
+$lucesById = [];
+foreach ($lucesCatalog as $luz) {
+    $lucesById[$luz['codigo']] = $luz;
+}
+
+$lucesOn = [];
+if ($i !== null) {
+    foreach ($i['luces_tablero'] ?? [] as $row) {
+        $lucesOn[] = $row['luz_codigo'];
+    }
+}
+
+$renderLucesPdf = static function (array $codigos) use ($lucesById): string {
+    if ($codigos === []) {
+        return '<span class="luz-none">No tiene luces prendidas.</span>';
+    }
+    $parts = [];
+    foreach ($codigos as $codigo) {
+        $luz = $lucesById[$codigo] ?? null;
+        if ($luz === null) {
+            continue;
+        }
+        $iconPath = public_path('assets/images/luces-tablero/' . $luz['icon']);
+        $img = is_file($iconPath) ? '<img src="' . e($iconPath) . '" width="14" height="14"> ' : '';
+        $parts[] = '<span class="luz-item">' . $img . e($luz['nombre']) . '</span>';
+    }
+    return '<span class="luz-list">' . implode(' &nbsp; ', $parts) . '</span>';
+};
+
 ob_start();
 ?>
+<style>
+    .luz-list { font-size: 9.5px; line-height: 1.45; }
+    .luz-item { white-space: nowrap; }
+    .luz-item img { vertical-align: middle; }
+    .luz-none { font-size: 9.5px; font-style: italic; color: #555; }
+</style>
+
 <div class="section">
     <div class="section-title">Datos de la inspección</div>
     <?php
@@ -64,36 +101,10 @@ ob_start();
     </table>
 </div>
 
-<?php
-$lucesCatalog = $luces_tablero ?? [];
-$lucesOn = [];
-if ($i !== null) {
-    foreach ($i['luces_tablero'] ?? [] as $row) {
-        $lucesOn[] = $row['luz_codigo'];
-    }
-}
-?>
-<?php if (!empty($lucesCatalog)): ?>
+<?php if ($i !== null): ?>
 <div class="section">
     <div class="section-title">Luces del tablero encendidas</div>
-    <table class="data" style="width:100%;border-collapse:separate;border-spacing:6px;">
-        <tr>
-            <?php $col = 0; foreach ($lucesCatalog as $luz): ?>
-            <?php $isOn = in_array($luz['codigo'], $lucesOn, true); $col++; ?>
-            <td style="width:25%;text-align:center;padding:8px;border:<?= $isOn ? '2px solid #f59e0b' : '1px solid #e2e8f0' ?>;border-radius:6px;background:<?= $isOn ? '#fef3c7' : '#f8fafc' ?>;vertical-align:top;">
-                <?php
-                $iconPath = public_path('assets/images/luces-tablero/' . $luz['icon']);
-                if (is_file($iconPath)) {
-                    echo '<img src="' . e($iconPath) . '" width="40" height="40" alt="">';
-                }
-                ?>
-                <div style="font-size:7px;font-weight:<?= $isOn ? '700' : '600' ?>;margin-top:4px;color:<?= $isOn ? '#b45309' : '#475569' ?>;"><?= e($luz['nombre']) ?></div>
-                <div style="font-size:6px;font-weight:<?= $isOn ? '700' : '400' ?>;color:<?= $isOn ? '#d97706' : '#94a3b8' ?>;"><?= $isOn ? '✔ ENCENDIDA' : '○ Apagada' ?></div>
-            </td>
-            <?php if ($col % 4 === 0): ?></tr><tr><?php endif; ?>
-            <?php endforeach; ?>
-        </tr>
-    </table>
+    <?= $renderLucesPdf($lucesOn) ?>
 </div>
 <?php endif; ?>
 

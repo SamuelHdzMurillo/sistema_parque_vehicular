@@ -26,6 +26,7 @@ INSERT INTO permissions (slug, modulo, accion, descripcion) VALUES
 ('inspecciones.read', 'inspecciones', 'read', 'Ver inspecciones'),
 ('inspecciones.create', 'inspecciones', 'create', 'Crear inspecciones'),
 ('inspecciones.update', 'inspecciones', 'update', 'Editar inspecciones'),
+('inspecciones.delete', 'inspecciones', 'delete', 'Eliminar inspecciones'),
 ('danios.read', 'danios', 'read', 'Ver daños'),
 ('danios.create', 'danios', 'create', 'Reportar daños'),
 ('danios.update', 'danios', 'update', 'Actualizar daños'),

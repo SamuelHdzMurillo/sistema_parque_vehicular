@@ -486,4 +486,18 @@ final class VehiculoRepository extends BaseRepository
             [$vehiculoId, $origenTipo, $origenId]
         );
     }
+
+    public function clearLucesTableroIfOrigin(int $vehiculoId, string $origenTipo, int $origenId): void
+    {
+        $meta = $this->fetchOne(
+            'SELECT origen_tipo, origen_id FROM vehiculo_luces_meta WHERE vehiculo_id = ?',
+            [$vehiculoId]
+        );
+        if ($meta === null || $meta['origen_tipo'] !== $origenTipo || (int) $meta['origen_id'] !== $origenId) {
+            return;
+        }
+
+        $this->execute('DELETE FROM vehiculo_luces_tablero WHERE vehiculo_id = ?', [$vehiculoId]);
+        $this->execute('DELETE FROM vehiculo_luces_meta WHERE vehiculo_id = ?', [$vehiculoId]);
+    }
 }

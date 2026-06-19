@@ -53,6 +53,37 @@ final class InspeccionService
         return ['inspeccion' => $data];
     }
 
+    public function eliminar(int $id): ?string
+    {
+        try {
+            $inspeccion = $this->repo->findWithItems($id);
+            if ($inspeccion === null) {
+                return 'Inspección no encontrada.';
+            }
+
+            $this->repo->beginTransaction();
+
+            $this->vehiculos->clearLucesTableroIfOrigin(
+                (int) $inspeccion['vehiculo_id'],
+                'inspeccion',
+                $id
+            );
+
+            $this->eliminarArchivosInspeccion($inspeccion);
+
+            if (!$this->repo->delete($id)) {
+                throw new \RuntimeException('No se pudo eliminar la inspección.');
+            }
+
+            $this->repo->commit();
+            AuditService::log('DELETE', 'inspecciones', $id, $inspeccion, null);
+            return null;
+        } catch (\Throwable $e) {
+            $this->repo->rollBack();
+            return user_facing_error($e, 'No se pudo eliminar la inspección.');
+        }
+    }
+
     public function create(array $data, int $userId): int
     {
         $items = $this->parseItems($data);
@@ -138,6 +169,29 @@ final class InspeccionService
                         'nivel' => 'rojo',
                     ]);
                 }
+            }
+        }
+    }
+
+    /** @param array<string, mixed> $inspeccion */
+    private function eliminarArchivosInspeccion(array $inspeccion): void
+    {
+        $ruta = trim((string) ($inspeccion['firma_digital'] ?? ''));
+        if ($ruta !== '') {
+            $path = storage_path('uploads/' . ltrim($ruta, '/'));
+            if (is_file($path)) {
+                @unlink($path);
+            }
+        }
+
+        foreach ($inspeccion['fotos'] ?? [] as $foto) {
+            $rutaFoto = trim((string) ($foto['ruta'] ?? ''));
+            if ($rutaFoto === '') {
+                continue;
+            }
+            $path = storage_path('uploads/' . ltrim($rutaFoto, '/'));
+            if (is_file($path)) {
+                @unlink($path);
             }
         }
     }

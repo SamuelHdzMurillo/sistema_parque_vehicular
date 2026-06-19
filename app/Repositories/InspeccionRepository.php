@@ -235,4 +235,9 @@ final class InspeccionRepository extends BaseRepository
             [$inspeccionId]
         );
     }
+
+    public function delete(int $id): bool
+    {
+        return $this->execute('DELETE FROM inspecciones WHERE id = ?', [$id]);
+    }
 }
