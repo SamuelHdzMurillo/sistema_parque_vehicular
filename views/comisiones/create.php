@@ -41,7 +41,7 @@ if ($nombreRegreso !== '') {
         <div class="form-row">
             <div class="form-group">
                 <label class="form-label" for="vehiculo_id">Vehículo <span class="required">*</span></label>
-                <select id="vehiculo_id" name="vehiculo_id" class="form-select" required data-km-source>
+                <select id="vehiculo_id" name="vehiculo_id" class="form-select" required data-km-source data-luces-autofill>
                     <option value="">Seleccione…</option>
                     <?php foreach ($vehiculos as $v): ?>
                     <option value="<?= (int) $v['id'] ?>" data-km="<?= (int) ($v['kilometraje_actual'] ?? 0) ?>" <?= (string) $preVehiculo === (string) $v['id'] ? 'selected' : '' ?>>
@@ -99,7 +99,7 @@ if ($nombreRegreso !== '') {
                 <label class="form-label" for="km_salida">Km salida <span class="required">*</span></label>
                 <input type="number" id="km_salida" name="km_salida" class="form-control" required min="0"
                        data-km-target value="<?= e((string) old('km_salida')) ?>">
-                <small class="form-hint text-muted">Se toma el kilometraje actual del vehículo; puede ajustarlo si es necesario.</small>
+                <small class="form-hint text-muted" data-km-hint>Seleccione un vehículo para ver el kilometraje actual.</small>
             </div>
             <div class="form-group">
                 <?php App\Core\View::component('combustible-fraccion-select', [
@@ -153,10 +153,13 @@ if ($nombreRegreso !== '') {
         if (!is_array($lucesSalida)) {
             $lucesSalida = [];
         }
+        if ($lucesSalida === [] && !empty($vehiculo_luces_preset) && is_array($vehiculo_luces_preset)) {
+            $lucesSalida = $vehiculo_luces_preset;
+        }
         ?>
         <div class="form-group">
             <label class="form-label">Luces del tablero encendidas (a la salida)</label>
-            <p class="card-header-hint">Marque las luces de advertencia encendidas al momento de la salida. Si no hay ninguna, déjelas todas apagadas.</p>
+            <p class="card-header-hint">Marque las luces de advertencia encendidas al momento de la salida. Se cargan automáticamente del último registro del vehículo (inspección o comisión anterior).</p>
             <div class="dash-lights-grid" data-dash-lights>
                 <?php foreach ($lucesTablero as $luz): ?>
                 <?php $codigo = $luz['codigo']; $isOn = in_array($codigo, $lucesSalida, true); ?>

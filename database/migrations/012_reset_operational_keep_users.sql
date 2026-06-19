@@ -41,6 +41,8 @@ TRUNCATE TABLE mantenimientos;
 
 TRUNCATE TABLE combustible_cargas;
 
+TRUNCATE TABLE vehiculo_luces_tablero;
+TRUNCATE TABLE vehiculo_luces_meta;
 TRUNCATE TABLE herramienta_reposiciones;
 TRUNCATE TABLE vehiculo_fotos;
 TRUNCATE TABLE vehiculo_estado_historial;

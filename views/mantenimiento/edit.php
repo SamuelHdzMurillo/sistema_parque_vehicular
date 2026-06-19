@@ -36,6 +36,7 @@ $tipos = $tipos ?? [];
             <div class="form-group">
                 <label class="form-label" for="kilometraje">Kilometraje</label>
                 <input type="number" id="kilometraje" name="kilometraje" class="form-control" value="<?= e((string) ($m['kilometraje'] ?? '')) ?>" required>
+                <small class="form-hint text-muted" data-km-hint data-km-value="<?= (int) ($m['kilometraje_actual'] ?? 0) ?>"></small>
             </div>
             <div class="form-group">
                 <label class="form-label" for="proveedor_id">Proveedor / taller</label>

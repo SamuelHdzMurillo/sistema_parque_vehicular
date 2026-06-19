@@ -294,24 +294,154 @@
         });
     }
 
-    /* ——— Autocompletar km del vehículo seleccionado ——— */
+    function initLucesAutofill() {
+        const source = document.querySelector('[data-luces-autofill]');
+        const grid = document.querySelector('[data-dash-lights]');
+        if (!source || !grid) return;
+
+        function applyLuces(luces) {
+            const set = new Set(luces || []);
+            grid.querySelectorAll('input[type="checkbox"]').forEach(function (input) {
+                input.checked = set.has(input.value);
+            });
+            grid.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+
+        function hasCheckedLuces() {
+            return grid.querySelectorAll('input[type="checkbox"]:checked').length > 0;
+        }
+
+        function fetchAndApply(force) {
+            const id = source.value;
+            if (!id) {
+                if (force) {
+                    applyLuces([]);
+                }
+                return;
+            }
+            fetch(appFetchUrl('vehiculos/' + id + '/luces'), {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    if (!data || !data.ok) {
+                        return;
+                    }
+                    if (force || !hasCheckedLuces()) {
+                        applyLuces(data.luces);
+                    }
+                })
+                .catch(function () {});
+        }
+
+        source.addEventListener('change', function () {
+            fetchAndApply(true);
+        });
+        if (source.value) {
+            fetchAndApply(false);
+        }
+    }
+
+    /* ——— Kilometraje del vehículo en formularios ——— */
+    function formatKmHint(km) {
+        return Number(km || 0).toLocaleString('es-MX');
+    }
+
+    function findKmHint(target) {
+        const group = target.closest('.form-group');
+        if (group) {
+            const hint = group.querySelector('[data-km-hint]');
+            if (hint) {
+                return hint;
+            }
+        }
+        const next = target.nextElementSibling;
+        if (next && (next.matches('[data-km-hint]') || next.matches('.form-hint') || next.matches('small'))) {
+            return next;
+        }
+        return null;
+    }
+
+    function buildKmHintText(target, km, form) {
+        const kmNum = Number(km || 0);
+        let msg = 'Kilometraje actual del vehículo: ' + formatKmHint(kmNum) + ' km.';
+        if (target.hasAttribute('data-km-regreso')) {
+            const salidaEl = form.querySelector('#km_salida') || form.querySelector('[name="km_salida"]');
+            const salida = salidaEl ? Number(salidaEl.value || 0) : 0;
+            const minKm = Math.max(kmNum, salida);
+            msg += ' Mínimo para regreso: ' + formatKmHint(minKm) + ' km (salida: ' + formatKmHint(salida) + ').';
+        } else {
+            msg += ' Debe ser igual o mayor.';
+        }
+        return msg;
+    }
+
     function initKmAutofill() {
-        const source = document.querySelector('[data-km-source]');
-        const target = document.querySelector('[data-km-target]');
-        if (!source || !target) return;
+        document.querySelectorAll('[data-km-source]').forEach(function (source) {
+            const form = source.closest('form');
+            if (!form) {
+                return;
+            }
+            const targets = form.querySelectorAll('[data-km-target]');
+            if (targets.length === 0) {
+                return;
+            }
 
-        function apply() {
-            const option = source.options[source.selectedIndex];
-            const km = option ? option.getAttribute('data-km') : null;
-            if (km === null || km === '') return;
-            target.value = km;
-            target.min = km;
-        }
+            function vehiculoKm() {
+                const option = source.options[source.selectedIndex];
+                if (!option || !option.value) {
+                    return null;
+                }
+                return option.getAttribute('data-km') || '0';
+            }
 
-        source.addEventListener('change', apply);
-        if (source.value && target.value === '') {
+            function apply() {
+                const km = vehiculoKm();
+                if (km === null) {
+                    return;
+                }
+                targets.forEach(function (target) {
+                    const mode = target.getAttribute('data-km-mode') || 'fill';
+                    let minKm = Number(km);
+                    if (target.hasAttribute('data-km-regreso')) {
+                        const salidaEl = form.querySelector('#km_salida') || form.querySelector('[name="km_salida"]');
+                        minKm = Math.max(minKm, salidaEl ? Number(salidaEl.value || 0) : 0);
+                    }
+                    target.min = String(minKm);
+                    if (mode === 'fill' && (!target.value || Number(target.value) < Number(km))) {
+                        target.value = km;
+                    }
+                    const hint = findKmHint(target);
+                    if (hint) {
+                        hint.textContent = buildKmHintText(target, km, form);
+                    }
+                });
+            }
+
+            source.addEventListener('change', apply);
+            const salidaEl = form.querySelector('#km_salida') || form.querySelector('[name="km_salida"]');
+            if (salidaEl) {
+                salidaEl.addEventListener('input', apply);
+                salidaEl.addEventListener('change', apply);
+            }
             apply();
-        }
+        });
+
+        document.querySelectorAll('[data-km-hint][data-km-value]').forEach(function (hint) {
+            const km = hint.getAttribute('data-km-value') || '0';
+            let msg = 'Kilometraje actual del vehículo: ' + formatKmHint(km) + ' km.';
+            if (hint.hasAttribute('data-km-regreso-static')) {
+                const salida = Number(hint.getAttribute('data-km-salida') || 0);
+                const minKm = Math.max(Number(km), salida);
+                msg += ' Mínimo para regreso: ' + formatKmHint(minKm) + ' km (salida: ' + formatKmHint(salida) + ').';
+            } else {
+                msg += ' Debe ser igual o mayor.';
+            }
+            hint.textContent = msg;
+        });
     }
 
     /* ——— Confirmación de acciones destructivas ——— */
@@ -1107,6 +1237,7 @@
         initConfirm();
         initDashLights();
         initKmAutofill();
+        initLucesAutofill();
         initConductorSelect();
         initResponsableRegresoSelect();
         initAreaQuickModal();

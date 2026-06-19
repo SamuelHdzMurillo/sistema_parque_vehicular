@@ -213,6 +213,12 @@ final class VehiculoService
         return $this->repo->getExpedienteData($id);
     }
 
+    /** @return list<string> */
+    public function getLucesTablero(int $id): array
+    {
+        return $this->repo->getLucesTablero($id);
+    }
+
     /** @param list<array<string, mixed>> $fotos
      *  @param array<string, mixed>|null $before
      *  @return array<string, mixed>

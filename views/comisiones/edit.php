@@ -39,9 +39,9 @@ if ($nombreRegreso !== '') {
         <div class="form-row">
             <div class="form-group">
                 <label class="form-label" for="vehiculo_id">Vehículo</label>
-                <select id="vehiculo_id" name="vehiculo_id" class="form-select" required>
+                <select id="vehiculo_id" name="vehiculo_id" class="form-select" required data-km-source data-luces-autofill>
                     <?php foreach ($vehiculos as $v): ?>
-                    <option value="<?= (int) $v['id'] ?>" <?= (int) $c['vehiculo_id'] === (int) $v['id'] ? 'selected' : '' ?>>
+                    <option value="<?= (int) $v['id'] ?>" data-km="<?= (int) ($v['kilometraje_actual'] ?? 0) ?>" <?= (int) $c['vehiculo_id'] === (int) $v['id'] ? 'selected' : '' ?>>
                         <?= e(catalogo_vehiculo_label($v)) ?>
                     </option>
                     <?php endforeach; ?>
@@ -91,7 +91,8 @@ if ($nombreRegreso !== '') {
             </div>
             <div class="form-group">
                 <label class="form-label" for="km_salida">Km salida</label>
-                <input type="number" id="km_salida" name="km_salida" class="form-control" value="<?= e((string) $c['km_salida']) ?>" required>
+                <input type="number" id="km_salida" name="km_salida" class="form-control" value="<?= e((string) $c['km_salida']) ?>" required data-km-target data-km-mode="hint">
+                <small class="form-hint text-muted" data-km-hint></small>
             </div>
             <div class="form-group">
                 <?php App\Core\View::component('combustible-fraccion-select', [
@@ -144,6 +145,9 @@ if ($nombreRegreso !== '') {
         $lucesSalida = $c['luces_salida'] ?? [];
         if (!is_array($lucesSalida)) {
             $lucesSalida = [];
+        }
+        if ($lucesSalida === [] && !empty($vehiculo_luces_preset) && is_array($vehiculo_luces_preset)) {
+            $lucesSalida = $vehiculo_luces_preset;
         }
         ?>
         <div class="form-group">
@@ -211,7 +215,8 @@ if ($nombreRegreso !== '') {
             </div>
             <div class="form-group">
                 <label class="form-label" for="km_regreso">Km regreso</label>
-                <input type="number" id="km_regreso" name="km_regreso" class="form-control" required min="<?= (int) ($c['km_salida'] ?? 0) ?>" value="<?= e((string) ($c['km_regreso'] ?? '')) ?>">
+                <input type="number" id="km_regreso" name="km_regreso" class="form-control" required min="<?= (int) ($c['km_salida'] ?? 0) ?>" value="<?= e((string) ($c['km_regreso'] ?? '')) ?>" data-km-target data-km-mode="hint" data-km-regreso>
+                <small class="form-hint text-muted" data-km-hint></small>
             </div>
             <div class="form-group">
                 <?php App\Core\View::component('combustible-fraccion-select', [

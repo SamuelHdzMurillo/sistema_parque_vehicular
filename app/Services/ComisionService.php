@@ -69,6 +69,12 @@ final class ComisionService
         return InspeccionRepository::LUCES_TABLERO;
     }
 
+    /** @return list<string> */
+    public function getLucesVehiculo(int $vehiculoId): array
+    {
+        return $this->vehiculos->getLucesTablero($vehiculoId);
+    }
+
     public function getLiquidosCatalog(): array
     {
         return ComisionRepository::LIQUIDOS;
@@ -89,7 +95,9 @@ final class ComisionService
         $data['folio'] = $this->resolveFolio($data['folio'] ?? null);
         $data['estado'] = 'borrador';
         $id = $this->repo->create($data);
-        $this->repo->saveLuces($id, 'salida', $this->parseLuces($data, 'luces_salida'));
+        $lucesSalida = $this->parseLuces($data, 'luces_salida');
+        $this->repo->saveLuces($id, 'salida', $lucesSalida);
+        $this->vehiculos->syncLucesTablero((int) $data['vehiculo_id'], $lucesSalida, 'comision', $id);
         $this->repo->saveNiveles($id, 'salida', $this->parseNiveles($data, 'niveles_salida'));
         AuditService::log('CREATE', 'comisiones', $id, null, $data);
         return $id;
@@ -169,13 +177,19 @@ final class ComisionService
             }
 
             if (array_key_exists('luces_salida', $data)) {
-                $this->repo->saveLuces($id, 'salida', $this->parseLuces($data, 'luces_salida'));
+                $lucesSalida = $this->parseLuces($data, 'luces_salida');
+                $this->repo->saveLuces($id, 'salida', $lucesSalida);
+                if ($before['estado'] !== 'finalizada') {
+                    $this->vehiculos->syncLucesTablero((int) $merged['vehiculo_id'], $lucesSalida, 'comision', $id);
+                }
             }
             if (array_key_exists('niveles_salida', $data)) {
                 $this->repo->saveNiveles($id, 'salida', $this->parseNiveles($data, 'niveles_salida'));
             }
             if ($before['estado'] === 'finalizada') {
-                $this->repo->saveLuces($id, 'regreso', $this->parseLuces($data, 'luces_regreso'));
+                $lucesRegreso = $this->parseLuces($data, 'luces_regreso');
+                $this->repo->saveLuces($id, 'regreso', $lucesRegreso);
+                $this->vehiculos->syncLucesTablero((int) $merged['vehiculo_id'], $lucesRegreso, 'comision', $id);
                 $this->repo->saveNiveles($id, 'regreso', $this->parseNiveles($data, 'niveles_regreso'));
             }
 
@@ -520,7 +534,9 @@ final class ComisionService
                 throw new \RuntimeException('No se pudo guardar los datos de regreso en la comisión.');
             }
 
-            $this->repo->saveLuces($id, 'regreso', $this->parseLuces($data, 'luces_regreso'));
+            $lucesRegreso = $this->parseLuces($data, 'luces_regreso');
+            $this->repo->saveLuces($id, 'regreso', $lucesRegreso);
+            $this->vehiculos->syncLucesTablero((int) $comision['vehiculo_id'], $lucesRegreso, 'comision', $id);
             $this->repo->saveNiveles($id, 'regreso', $this->parseNiveles($data, 'niveles_regreso'));
 
             if (!$this->vehiculos->updateKilometraje((int) $comision['vehiculo_id'], $kmRegreso, auth_id())) {

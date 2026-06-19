@@ -26,7 +26,7 @@ $kilometrajeInicial = $kilometrajeInicial ?? '';
         <div class="form-row">
             <div class="form-group">
                 <label class="form-label" for="vehiculo_id">Vehículo <span class="required">*</span></label>
-                <select id="vehiculo_id" name="vehiculo_id" class="form-select" required>
+                <select id="vehiculo_id" name="vehiculo_id" class="form-select" required data-km-source>
                     <option value="">Seleccione…</option>
                     <?php foreach ($vehiculos as $v): ?>
                     <option value="<?= (int) $v['id'] ?>" data-km="<?= (int) ($v['kilometraje_actual'] ?? 0) ?>" <?= (string) $preVehiculo === (string) $v['id'] ? 'selected' : '' ?>><?= e(catalogo_vehiculo_label($v)) ?> (<?= number_format((int) ($v['kilometraje_actual'] ?? 0)) ?> km)</option>
@@ -39,8 +39,8 @@ $kilometrajeInicial = $kilometrajeInicial ?? '';
             </div>
             <div class="form-group">
                 <label class="form-label" for="kilometraje">Kilometraje al cargar <span class="required">*</span></label>
-                <input type="number" id="kilometraje" name="kilometraje" class="form-control" required min="0" value="<?= e((string) $kilometrajeInicial) ?>">
-                <small id="kilometraje-hint" class="text-muted">Debe ser igual o mayor al kilometraje actual del vehículo.</small>
+                <input type="number" id="kilometraje" name="kilometraje" class="form-control" required min="0" data-km-target value="<?= e((string) $kilometrajeInicial) ?>">
+                <small class="form-hint text-muted" data-km-hint>Seleccione un vehículo para ver el kilometraje actual.</small>
             </div>
             <div class="form-group">
                 <label class="form-label" for="litros">Litros <span class="required">*</span></label>
@@ -94,28 +94,3 @@ $kilometrajeInicial = $kilometrajeInicial ?? '';
 <?php if (can('proveedores.create')): ?>
 <?php App\Core\View::component('modal-proveedor-quick', ['tipo' => 'combustible', 'contexto' => 'combustible']); ?>
 <?php endif; ?>
-
-<script>
-(function () {
-    var select = document.getElementById('vehiculo_id');
-    var input = document.getElementById('kilometraje');
-    var hint = document.getElementById('kilometraje-hint');
-    if (!select || !input) return;
-
-    function syncKilometraje() {
-        var option = select.options[select.selectedIndex];
-        if (!option || !option.value) return;
-        var km = option.getAttribute('data-km') || '0';
-        input.min = km;
-        if (hint) {
-            hint.textContent = 'Kilometraje actual del vehículo: ' + Number(km).toLocaleString('es-MX') + ' km. Debe ser igual o mayor.';
-        }
-        if (!input.value || Number(input.value) < Number(km)) {
-            input.value = km;
-        }
-    }
-
-    select.addEventListener('change', syncKilometraje);
-    syncKilometraje();
-})();
-</script>

@@ -34,6 +34,16 @@ final class InspeccionService
         ];
     }
 
+    public function getFormDataForCreate(?int $vehiculoId = null): array
+    {
+        $data = $this->getFormData();
+        if ($vehiculoId !== null && $vehiculoId > 0) {
+            $data['vehiculo_luces_preset'] = $this->vehiculos->getLucesTablero($vehiculoId);
+        }
+
+        return $data;
+    }
+
     public function find(int $id): ?array
     {
         $data = $this->repo->findWithItems($id);
@@ -54,6 +64,7 @@ final class InspeccionService
         $data['resultado_general'] = $this->calcularResultadoGeneral($items);
         $id = $this->repo->createWithItems($data, $items, $lucesTablero);
         $this->vehiculos->updateKilometraje((int) $data['vehiculo_id'], (int) $data['kilometraje'], $userId);
+        $this->vehiculos->syncLucesTablero((int) $data['vehiculo_id'], $lucesTablero, 'inspeccion', $id);
         $this->generarAlertas((int) $data['vehiculo_id'], $id, $items);
         AuditService::log('CREATE', 'inspecciones', $id, null, ['vehiculo_id' => $data['vehiculo_id']]);
         return $id;

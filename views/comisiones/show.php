@@ -192,7 +192,7 @@ $renderLuces = static function (array $codigos) use ($lucesById): string {
                     <div class="form-group">
                         <label class="form-label" for="km_regreso">Km regreso <span class="required">*</span></label>
                         <input type="number" id="km_regreso" name="km_regreso" class="form-control" required min="<?= $minKmRegreso ?>" value="<?= e((string) old('km_regreso', '')) ?>">
-                        <small class="form-hint text-muted">Mínimo: <?= number_format($minKmRegreso) ?> km (salida: <?= number_format((int) $c['km_salida']) ?>, odómetro actual: <?= number_format((int) ($c['kilometraje_actual'] ?? 0)) ?>).</small>
+                        <small class="form-hint text-muted" data-km-hint data-km-value="<?= (int) ($c['kilometraje_actual'] ?? 0) ?>" data-km-regreso-static data-km-salida="<?= (int) ($c['km_salida'] ?? 0) ?>"></small>
                     </div>
                     <div class="form-group">
                         <?php App\Core\View::component('combustible-fraccion-select', [

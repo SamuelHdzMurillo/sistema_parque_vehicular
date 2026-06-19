@@ -23,10 +23,10 @@ $puedeAgregarResponsable = can('usuarios.create') || can('mantenimiento.create')
         <div class="form-row">
             <div class="form-group">
                 <label class="form-label" for="vehiculo_id">Vehículo <span class="required">*</span></label>
-                <select id="vehiculo_id" name="vehiculo_id" class="form-select" required>
+                <select id="vehiculo_id" name="vehiculo_id" class="form-select" required data-km-source>
                     <option value="">Seleccione…</option>
                     <?php foreach ($vehiculos as $v): ?>
-                    <option value="<?= (int) $v['id'] ?>" <?= (string) $preVehiculo === (string) $v['id'] ? 'selected' : '' ?>><?= e(catalogo_vehiculo_label($v)) ?></option>
+                    <option value="<?= (int) $v['id'] ?>" data-km="<?= (int) ($v['kilometraje_actual'] ?? 0) ?>" <?= (string) $preVehiculo === (string) $v['id'] ? 'selected' : '' ?>><?= e(catalogo_vehiculo_label($v)) ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -44,7 +44,8 @@ $puedeAgregarResponsable = can('usuarios.create') || can('mantenimiento.create')
             </div>
             <div class="form-group">
                 <label class="form-label" for="kilometraje">Kilometraje <span class="required">*</span></label>
-                <input type="number" id="kilometraje" name="kilometraje" class="form-control" required min="0" value="<?= e((string) old('kilometraje')) ?>">
+                <input type="number" id="kilometraje" name="kilometraje" class="form-control" required min="0" data-km-target value="<?= e((string) old('kilometraje')) ?>">
+                <small class="form-hint text-muted" data-km-hint>Seleccione un vehículo para ver el kilometraje actual.</small>
             </div>
             <div class="form-group">
                 <label class="form-label" for="proveedor_id">Proveedor / taller</label>

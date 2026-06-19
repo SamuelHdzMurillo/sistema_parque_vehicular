@@ -58,6 +58,7 @@ $router->get('busqueda', [BusquedaController::class, 'index'], $auth);
 $router->get('vehiculos', [VehiculoController::class, 'index'], $perm('vehiculos.read'));
 $router->get('vehiculos/create', [VehiculoController::class, 'create'], $perm('vehiculos.create'));
 $router->post('vehiculos', [VehiculoController::class, 'store'], $perm('vehiculos.create'));
+$router->get('vehiculos/{id}/luces', [VehiculoController::class, 'apiLuces'], $auth);
 $router->get('vehiculos/{id}', [VehiculoController::class, 'show'], $perm('expediente.read'));
 $router->get('vehiculos/{id}/edit', [VehiculoController::class, 'edit'], $perm('vehiculos.update'));
 $router->post('vehiculos/{id}', [VehiculoController::class, 'update'], $perm('vehiculos.update'));

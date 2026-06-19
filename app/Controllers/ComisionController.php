@@ -24,7 +24,12 @@ final class ComisionController extends BaseController
 
     public function create(Request $request): never
     {
-        $this->render('comisiones.create', $this->comisiones->getFormData());
+        $data = $this->comisiones->getFormData();
+        $vehiculoId = $request->input('vehiculo_id') ?? old('vehiculo_id');
+        if (is_string($vehiculoId) && $vehiculoId !== '' && ctype_digit($vehiculoId)) {
+            $data['vehiculo_luces_preset'] = $this->comisiones->getLucesVehiculo((int) $vehiculoId);
+        }
+        $this->render('comisiones.create', $data);
     }
 
     public function store(Request $request): never
@@ -86,7 +91,11 @@ final class ComisionController extends BaseController
             flash('error', 'Comisión no encontrada.');
             $this->redirect('comisiones');
         }
-        $this->render('comisiones.edit', array_merge($this->comisiones->getFormData(), ['comision' => $comision]));
+        $data = array_merge($this->comisiones->getFormData(), ['comision' => $comision]);
+        if (($comision['luces_salida'] ?? []) === []) {
+            $data['vehiculo_luces_preset'] = $this->comisiones->getLucesVehiculo((int) $comision['vehiculo_id']);
+        }
+        $this->render('comisiones.edit', $data);
     }
 
     public function update(Request $request, string $id): never

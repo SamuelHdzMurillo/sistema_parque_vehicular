@@ -23,3 +23,22 @@
 #15 C:\xampp\htdocs\sistema_parque_vehicular\public\index.php(13): App\Core\Application->run()
 #16 {main}
 ---
+[2026-06-19 08:47:29] PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'sicv_cecyte_bcs.vehiculo_luces_tablero' doesn't exist | GET /sistema_parque_vehicular/public/vehiculos/1 | user:1
+#0 C:\xampp\htdocs\sistema_parque_vehicular\app\Repositories\BaseRepository.php(21): PDO->prepare('SELECT luz_codi...')
+#1 C:\xampp\htdocs\sistema_parque_vehicular\app\Repositories\VehiculoRepository.php(419): App\Repositories\BaseRepository->fetchAll('SELECT luz_codi...', Array)
+#2 C:\xampp\htdocs\sistema_parque_vehicular\app\Repositories\VehiculoRepository.php(301): App\Repositories\VehiculoRepository->getLucesTablero(1)
+#3 C:\xampp\htdocs\sistema_parque_vehicular\app\Services\VehiculoService.php(213): App\Repositories\VehiculoRepository->getExpedienteData(1)
+#4 C:\xampp\htdocs\sistema_parque_vehicular\app\Controllers\VehiculoController.php(71): App\Services\VehiculoService->getExpediente(1)
+#5 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(93): App\Controllers\VehiculoController->show(Object(App\Core\Request), '1')
+#6 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(67): App\Core\Router->invokeHandler(Array, Array, Object(App\Core\Request))
+#7 C:\xampp\htdocs\sistema_parque_vehicular\app\Middlewares\PermissionMiddleware.php(24): App\Core\Router->App\Core\{closure}()
+#8 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(85): App\Middlewares\PermissionMiddleware->handle(Object(App\Core\Request), Object(Closure))
+#9 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(66): App\Core\Router->runMiddleware(Object(App\Middlewares\PermissionMiddleware), Object(App\Core\Request), Object(Closure))
+#10 C:\xampp\htdocs\sistema_parque_vehicular\app\Middlewares\AuthMiddleware.php(18): App\Core\Router->App\Core\{closure}()
+#11 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(85): App\Middlewares\AuthMiddleware->handle(Object(App\Core\Request), Object(Closure))
+#12 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(66): App\Core\Router->runMiddleware(Object(App\Middlewares\AuthMiddleware), Object(App\Core\Request), Object(Closure))
+#13 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(70): App\Core\Router->App\Core\{closure}()
+#14 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Application.php(36): App\Core\Router->dispatch(Object(App\Core\Request))
+#15 C:\xampp\htdocs\sistema_parque_vehicular\public\index.php(13): App\Core\Application->run()
+#16 {main}
+---

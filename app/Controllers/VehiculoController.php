@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Request;
+use App\Core\Response;
 use App\Exceptions\ValidationException;
 use App\Services\VehiculoService;
 use PDOException;
@@ -73,6 +74,19 @@ final class VehiculoController extends BaseController
             $this->redirect('vehiculos');
         }
         $this->render('vehiculos.show', $expediente);
+    }
+
+    public function apiLuces(Request $request, string $id): never
+    {
+        $vehiculo = $this->vehiculos->find((int) $id);
+        if ($vehiculo === null) {
+            Response::json(['ok' => false, 'error' => 'Vehículo no encontrado.'], 404);
+        }
+
+        Response::json([
+            'ok' => true,
+            'luces' => $this->vehiculos->getLucesTablero((int) $id),
+        ]);
     }
 
     public function edit(Request $request, string $id): never

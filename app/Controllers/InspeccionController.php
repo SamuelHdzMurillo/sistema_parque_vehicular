@@ -23,7 +23,11 @@ final class InspeccionController extends BaseController
 
     public function create(Request $request): never
     {
-        $this->render('inspecciones.create', $this->inspecciones->getFormData());
+        $vehiculoId = $request->input('vehiculo_id');
+        $presetId = (is_string($vehiculoId) && $vehiculoId !== '' && ctype_digit($vehiculoId))
+            ? (int) $vehiculoId
+            : null;
+        $this->render('inspecciones.create', $this->inspecciones->getFormDataForCreate($presetId));
     }
 
     public function store(Request $request): never

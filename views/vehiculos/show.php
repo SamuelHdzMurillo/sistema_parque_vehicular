@@ -95,6 +95,40 @@ $fotoUrl = !empty($fotoRuta) ? url('storage/uploads/' . ltrim((string) $fotoRuta
             <p class="mt-2"><strong>Observaciones:</strong> <?= e($observaciones) ?></p>
             <?php endif; ?>
 
+            <?php
+            $lucesCatalog = \App\Repositories\InspeccionRepository::LUCES_TABLERO;
+            $lucesOn = $luces_tablero ?? [];
+            $lucesMeta = $luces_tablero_meta ?? null;
+            ?>
+            <h4 class="mt-3">Estado del tablero</h4>
+            <?php if (!empty($lucesMeta['origen_label'])): ?>
+            <p class="form-hint text-muted mb-2">
+                Última actualización: <?= e($lucesMeta['origen_label']) ?>
+                <?php if (!empty($lucesMeta['updated_at'])): ?>
+                · <?= format_datetime($lucesMeta['updated_at']) ?>
+                <?php endif; ?>
+            </p>
+            <?php elseif ($lucesOn === []): ?>
+            <p class="text-muted">Sin luces de advertencia registradas encendidas.</p>
+            <?php endif; ?>
+            <div class="dash-lights-grid dash-lights-grid--readonly">
+                <?php foreach ($lucesCatalog as $luz): ?>
+                <?php $isOn = in_array($luz['codigo'], $lucesOn, true); ?>
+                <div class="dash-light-card<?= $isOn ? ' is-on' : ' is-off' ?>">
+                    <span class="dash-light-icon" aria-hidden="true">
+                        <img src="<?= e(asset('images/luces-tablero/' . $luz['icon'])) ?>" alt="" width="48" height="48">
+                    </span>
+                    <span class="dash-light-name"><?= e($luz['nombre']) ?></span>
+                    <span class="dash-light-status"><?= $isOn ? 'Encendida' : 'Apagada' ?></span>
+                </div>
+                <?php endforeach; ?>
+            </div>
+            <?php if ($lucesOn !== []): ?>
+            <p class="dash-lights-summary mt-2 text-muted">
+                <?= count($lucesOn) ?> luz(es) encendida(s) según el último registro de comisión o inspección.
+            </p>
+            <?php endif; ?>
+
             <h4 class="mt-3">Fotografías</h4>
 
             <?php if (can('vehiculos.update')): ?>

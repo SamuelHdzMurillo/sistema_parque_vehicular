@@ -298,6 +298,8 @@ final class VehiculoRepository extends BaseRepository
             'SELECT tipo, estado, fecha_vencimiento, observaciones FROM herramientas_vehiculo WHERE vehiculo_id = ?',
             [$id]
         );
+        $vehiculo['luces_tablero'] = $this->getLucesTablero($id);
+        $vehiculo['luces_tablero_meta'] = $this->getLucesTableroMeta($id);
         $vehiculo['costos'] = $this->fetchOne(
             'SELECT costo_mantenimiento, costo_combustible, costo_total FROM v_costos_vehiculo WHERE vehiculo_id = ?',
             [$id]
@@ -409,5 +411,79 @@ final class VehiculoRepository extends BaseRepository
         }
 
         return $foto;
+    }
+
+    /** @return list<string> */
+    public function getLucesTablero(int $vehiculoId): array
+    {
+        $rows = $this->fetchAll(
+            'SELECT luz_codigo FROM vehiculo_luces_tablero WHERE vehiculo_id = ? ORDER BY luz_codigo ASC',
+            [$vehiculoId]
+        );
+
+        return array_column($rows, 'luz_codigo');
+    }
+
+    public function getLucesTableroMeta(int $vehiculoId): ?array
+    {
+        $meta = $this->fetchOne(
+            'SELECT origen_tipo, origen_id, updated_at FROM vehiculo_luces_meta WHERE vehiculo_id = ?',
+            [$vehiculoId]
+        );
+        if ($meta === null) {
+            return null;
+        }
+
+        if ($meta['origen_tipo'] === 'comision') {
+            $comision = $this->fetchOne(
+                'SELECT folio, fecha FROM comisiones WHERE id = ?',
+                [(int) $meta['origen_id']]
+            );
+            $meta['origen_label'] = $comision !== null
+                ? 'Comisión ' . $comision['folio']
+                : null;
+        } else {
+            $inspeccion = $this->fetchOne(
+                'SELECT fecha FROM inspecciones WHERE id = ?',
+                [(int) $meta['origen_id']]
+            );
+            $meta['origen_label'] = $inspeccion !== null
+                ? 'Inspección del ' . $inspeccion['fecha']
+                : null;
+        }
+
+        return $meta;
+    }
+
+    /** @param list<string> $luces */
+    public function syncLucesTablero(int $vehiculoId, array $luces, string $origenTipo, int $origenId): void
+    {
+        $validCodes = array_column(InspeccionRepository::LUCES_TABLERO, 'codigo');
+        $filtered = [];
+        foreach ($luces as $codigo) {
+            $codigo = (string) $codigo;
+            if (in_array($codigo, $validCodes, true)) {
+                $filtered[] = $codigo;
+            }
+        }
+        $luces = array_values(array_unique($filtered));
+
+        $this->execute('DELETE FROM vehiculo_luces_tablero WHERE vehiculo_id = ?', [$vehiculoId]);
+        foreach ($luces as $codigo) {
+            $this->execute(
+                'INSERT INTO vehiculo_luces_tablero (vehiculo_id, luz_codigo) VALUES (?, ?)',
+                [$vehiculoId, $codigo]
+            );
+        }
+
+        $this->execute(
+            'INSERT INTO vehiculo_luces_meta (vehiculo_id, origen_tipo, origen_id, updated_at)
+             VALUES (?, ?, ?, NOW())
+             ON DUPLICATE KEY UPDATE
+                origen_tipo = VALUES(origen_tipo),
+                origen_id = VALUES(origen_id),
+                updated_at = NOW()',
+            [$vehiculoId, $origenTipo, $origenId]
+        );
     }
 }

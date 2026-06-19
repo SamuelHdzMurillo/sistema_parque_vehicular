@@ -8,6 +8,9 @@ $selectedLuces = old('luces_tablero', []);
 if (!is_array($selectedLuces)) {
     $selectedLuces = [];
 }
+if ($selectedLuces === [] && !empty($vehiculo_luces_preset) && is_array($vehiculo_luces_preset)) {
+    $selectedLuces = $vehiculo_luces_preset;
+}
 ?>
 <div class="page-header">
     <div>
@@ -24,10 +27,10 @@ if (!is_array($selectedLuces)) {
             <div class="form-row">
                 <div class="form-group">
                     <label class="form-label" for="vehiculo_id">Vehículo <span class="required">*</span></label>
-                    <select id="vehiculo_id" name="vehiculo_id" class="form-select" required>
+                    <select id="vehiculo_id" name="vehiculo_id" class="form-select" required data-luces-autofill data-km-source>
                         <option value="">Seleccione…</option>
                         <?php foreach ($vehiculos as $v): ?>
-                        <option value="<?= (int) $v['id'] ?>" <?= (string) $preVehiculo === (string) $v['id'] ? 'selected' : '' ?>>
+                        <option value="<?= (int) $v['id'] ?>" data-km="<?= (int) ($v['kilometraje_actual'] ?? 0) ?>" <?= (string) $preVehiculo === (string) $v['id'] ? 'selected' : '' ?>>
                             <?= e(catalogo_vehiculo_label($v)) ?>
                         </option>
                         <?php endforeach; ?>
@@ -39,7 +42,8 @@ if (!is_array($selectedLuces)) {
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="kilometraje">Kilometraje <span class="required">*</span></label>
-                    <input type="number" id="kilometraje" name="kilometraje" class="form-control" required min="0" value="<?= e((string) old('kilometraje')) ?>">
+                    <input type="number" id="kilometraje" name="kilometraje" class="form-control" required min="0" data-km-target value="<?= e((string) old('kilometraje')) ?>">
+                    <small class="form-hint text-muted" data-km-hint>Seleccione un vehículo para ver el kilometraje actual.</small>
                 </div>
             </div>
         </div>

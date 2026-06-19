@@ -9,7 +9,7 @@ final class MantenimientoRepository extends BaseRepository
     public function findById(int $id): ?array
     {
         return $this->fetchOne(
-            'SELECT m.*, v.numero_economico, v.placas,
+            'SELECT m.*, v.numero_economico, v.placas, v.kilometraje_actual,
                     p.razon_social AS proveedor_nombre,
                     p.rfc AS proveedor_rfc,
                     p.telefono AS proveedor_telefono,
