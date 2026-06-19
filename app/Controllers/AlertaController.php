@@ -43,14 +43,25 @@ final class AlertaController extends BaseController
     {
         if ($request->isPost()) {
             $this->validateCsrf($request);
+
+            $vehiculoId = (int) $request->input('vehiculo_id', 0);
+            $vehiculoConfig = $request->input('vehiculo_config', []);
+
+            if ($vehiculoId > 0 && is_array($vehiculoConfig)) {
+                $this->alertas->updateVehiculoConfig($vehiculoId, $vehiculoConfig);
+                flash('success', 'Configuración del vehículo guardada.');
+                $this->redirect('alertas/config?vehiculo_id=' . $vehiculoId);
+            }
+
             $config = $request->input('config', []);
             if (is_array($config)) {
                 $this->alertas->updateConfig($config);
             }
-            flash('success', 'Configuración de alertas guardada.');
+            flash('success', 'Configuración global de alertas guardada.');
             $this->redirect('alertas/config');
         }
 
-        $this->render('alertas.config', ['config' => $this->alertas->getConfig()]);
+        $vehiculoId = (int) $request->input('vehiculo_id', 0);
+        $this->render('alertas.config', $this->alertas->getConfigPageData($vehiculoId > 0 ? $vehiculoId : null));
     }
 }

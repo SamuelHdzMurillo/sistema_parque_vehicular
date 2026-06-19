@@ -112,7 +112,6 @@ final class AlertaRepository extends BaseRepository
              WHERE d.activo = 1 AND d.fecha_vencimiento IS NOT NULL AND v.deleted_at IS NULL'
         );
 
-        $configs = $this->getAlertaConfigsDocumentos();
         $generadas = 0;
 
         foreach ($documentos as $doc) {
@@ -121,7 +120,7 @@ final class AlertaRepository extends BaseRepository
                 continue;
             }
 
-            $config = $configs[$tipoAlerta] ?? $configs['seguro'] ?? null;
+            $config = $this->getEffectiveConfig((int) $doc['vehiculo_id'], $tipoAlerta);
             if ($config === null) {
                 continue;
             }
@@ -177,6 +176,32 @@ final class AlertaRepository extends BaseRepository
         return $this->fetchOne('SELECT * FROM alerta_config WHERE tipo = ? AND activo = 1', [$tipo]);
     }
 
+    public function getEffectiveConfig(int $vehiculoId, string $tipo): ?array
+    {
+        $global = $this->fetchOne('SELECT * FROM alerta_config WHERE tipo = ? AND activo = 1', [$tipo]);
+        if ($global === null) {
+            return null;
+        }
+
+        $custom = $this->fetchOne(
+            'SELECT * FROM vehiculo_alerta_config WHERE vehiculo_id = ? AND tipo = ? AND activo = 1',
+            [$vehiculoId, $tipo]
+        );
+
+        if ($custom === null) {
+            return $global;
+        }
+
+        return array_merge($global, [
+            'umbral_verde' => (int) $custom['umbral_verde'],
+            'umbral_amarillo' => (int) $custom['umbral_amarillo'],
+            'umbral_rojo' => (int) $custom['umbral_rojo'],
+            'umbral_verde_dias' => $custom['umbral_verde_dias'],
+            'umbral_amarillo_dias' => $custom['umbral_amarillo_dias'],
+            'umbral_rojo_dias' => $custom['umbral_rojo_dias'],
+        ]);
+    }
+
     public function getAllConfig(): array
     {
         return $this->fetchAll('SELECT * FROM alerta_config ORDER BY nombre ASC');
@@ -185,27 +210,92 @@ final class AlertaRepository extends BaseRepository
     public function updateConfig(int $id, array $data): bool
     {
         return $this->execute(
-            'UPDATE alerta_config SET umbral_verde = ?, umbral_amarillo = ?, umbral_rojo = ?, activo = ? WHERE id = ?',
+            'UPDATE alerta_config SET
+                nombre = ?, umbral_verde = ?, umbral_amarillo = ?, umbral_rojo = ?,
+                umbral_verde_dias = ?, umbral_amarillo_dias = ?, umbral_rojo_dias = ?,
+                activo = ?
+             WHERE id = ?',
             [
+                $data['nombre'] ?? '',
                 (int) ($data['umbral_verde'] ?? 0),
                 (int) ($data['umbral_amarillo'] ?? 0),
                 (int) ($data['umbral_rojo'] ?? 0),
+                $this->nullableInt($data['umbral_verde_dias'] ?? null),
+                $this->nullableInt($data['umbral_amarillo_dias'] ?? null),
+                $this->nullableInt($data['umbral_rojo_dias'] ?? null),
                 isset($data['activo']) ? (int) $data['activo'] : 1,
                 $id,
             ]
         );
     }
 
-    private function getAlertaConfigsDocumentos(): array
+    public function getVehiculoConfig(int $vehiculoId, string $tipo): ?array
+    {
+        return $this->fetchOne(
+            'SELECT * FROM vehiculo_alerta_config WHERE vehiculo_id = ? AND tipo = ? AND activo = 1',
+            [$vehiculoId, $tipo]
+        );
+    }
+
+    public function getVehiculoConfigAll(int $vehiculoId): array
     {
         $rows = $this->fetchAll(
-            'SELECT * FROM alerta_config WHERE unidad = "dias" AND activo = 1'
+            'SELECT * FROM vehiculo_alerta_config WHERE vehiculo_id = ? ORDER BY tipo ASC',
+            [$vehiculoId]
         );
         $map = [];
         foreach ($rows as $row) {
             $map[$row['tipo']] = $row;
         }
+
         return $map;
+    }
+
+    public function upsertVehiculoConfig(int $vehiculoId, string $tipo, array $data): void
+    {
+        $existing = $this->fetchOne(
+            'SELECT id FROM vehiculo_alerta_config WHERE vehiculo_id = ? AND tipo = ?',
+            [$vehiculoId, $tipo]
+        );
+
+        $params = [
+            (int) ($data['umbral_verde'] ?? 0),
+            (int) ($data['umbral_amarillo'] ?? 0),
+            (int) ($data['umbral_rojo'] ?? 0),
+            $this->nullableInt($data['umbral_verde_dias'] ?? null),
+            $this->nullableInt($data['umbral_amarillo_dias'] ?? null),
+            $this->nullableInt($data['umbral_rojo_dias'] ?? null),
+            isset($data['activo']) ? (int) $data['activo'] : 1,
+        ];
+
+        if ($existing !== null) {
+            $this->execute(
+                'UPDATE vehiculo_alerta_config SET
+                    umbral_verde = ?, umbral_amarillo = ?, umbral_rojo = ?,
+                    umbral_verde_dias = ?, umbral_amarillo_dias = ?, umbral_rojo_dias = ?,
+                    activo = ?, updated_at = NOW()
+                 WHERE id = ?',
+                array_merge($params, [(int) $existing['id']])
+            );
+
+            return;
+        }
+
+        $this->execute(
+            'INSERT INTO vehiculo_alerta_config (
+                vehiculo_id, tipo, umbral_verde, umbral_amarillo, umbral_rojo,
+                umbral_verde_dias, umbral_amarillo_dias, umbral_rojo_dias, activo
+             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            array_merge([$vehiculoId, $tipo], $params)
+        );
+    }
+
+    public function deleteVehiculoConfig(int $vehiculoId, string $tipo): void
+    {
+        $this->execute(
+            'DELETE FROM vehiculo_alerta_config WHERE vehiculo_id = ? AND tipo = ?',
+            [$vehiculoId, $tipo]
+        );
     }
 
     private function mapTipoDocumentoToAlerta(string $tipo): ?string
@@ -231,6 +321,11 @@ final class AlertaRepository extends BaseRepository
             return 'verde';
         }
         return null;
+    }
+
+    private function nullableInt(mixed $value): ?int
+    {
+        return $value === null || $value === '' ? null : (int) $value;
     }
 
     private function buildDocumentoMensaje(array $doc, int $diasRestantes): string

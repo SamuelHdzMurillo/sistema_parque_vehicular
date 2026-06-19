@@ -105,15 +105,15 @@ INSERT INTO conductores (nombre, area_id, telefono) VALUES
 ('Ana Torres Vega', 7, '6121112233'),
 ('Carlos Mendoza Ruiz', 3, '6127654321');
 
-INSERT INTO alerta_config (tipo, nombre, umbral_verde, umbral_amarillo, umbral_rojo, unidad) VALUES
-('cambio_aceite', 'Cambio de aceite', 5000, 2000, 500, 'km'),
-('afinacion', 'Afinación', 20000, 5000, 1000, 'km'),
-('llantas', 'Revisión de llantas', 40000, 10000, 2000, 'km'),
-('bateria', 'Batería', 730, 365, 90, 'dias'),
-('seguro', 'Póliza de seguro', 60, 30, 0, 'dias'),
-('tenencia', 'Tenencia', 60, 30, 0, 'dias'),
-('verificacion', 'Verificación vehicular', 60, 30, 0, 'dias'),
-('licencia', 'Licencia de conductor', 60, 30, 0, 'dias');
+INSERT INTO alerta_config (tipo, nombre, umbral_verde, umbral_amarillo, umbral_rojo, unidad, umbral_verde_dias, umbral_amarillo_dias, umbral_rojo_dias) VALUES
+('cambio_aceite', 'Cambio de aceite', 5000, 2000, 500, 'km', 365, 180, 90),
+('afinacion', 'Afinación', 20000, 5000, 1000, 'km', 730, 365, 180),
+('llantas', 'Revisión de llantas', 40000, 10000, 2000, 'km', 1095, 730, 365),
+('bateria', 'Batería', 730, 365, 90, 'dias', NULL, NULL, NULL),
+('seguro', 'Póliza de seguro', 60, 30, 0, 'dias', NULL, NULL, NULL),
+('tenencia', 'Tenencia', 60, 30, 0, 'dias', NULL, NULL, NULL),
+('verificacion', 'Verificación vehicular', 60, 30, 0, 'dias', NULL, NULL, NULL),
+('licencia', 'Licencia de conductor', 60, 30, 0, 'dias', NULL, NULL, NULL);
 
 -- Password: Admin123!
 INSERT INTO users (role_id, area_id, nombre, apellido_paterno, apellido_materno, email, telefono, password_hash, activo) VALUES
