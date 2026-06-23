@@ -61,7 +61,11 @@ final class ComisionService
 
     public function getUltimoMantenimiento(int $vehiculoId): ?array
     {
-        return $this->mantenimientos->getUltimoFinalizado($vehiculoId);
+        try {
+            return $this->mantenimientos->getUltimoFinalizado($vehiculoId);
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     public function getLucesCatalog(): array
@@ -91,6 +95,7 @@ final class ComisionService
         $data['responsable_id'] = (int) ($data['responsable_id'] ?? $userId);
         $data = $this->normalizeResponsableRegreso($data);
         $data = $this->normalizeConductor($data);
+        $data = $this->normalizeCombustiblePostKeys($data);
         $data = $this->coalesceCombustiblePost($data, 'combustible_salida', 100.0);
         $data['combustible_salida'] = $this->resolveCombustiblePercent($data, 'combustible_salida', 100.0);
         $data['folio'] = $this->resolveFolio($data['folio'] ?? null);
@@ -117,6 +122,7 @@ final class ComisionService
 
             $data = $this->normalizeResponsableRegreso($data);
             $data = $this->normalizeConductor($data);
+            $data = $this->normalizeCombustiblePostKeys($data);
             $data = $this->sanitizeCombustibleInputForUpdate($data);
             $data = $this->applyCombustibleFields($data, $before);
 
@@ -377,35 +383,53 @@ final class ComisionService
         return $data;
     }
 
-    /** Si el POST no trae combustible o viene vacío, usa el valor por defecto indicado. */
+    /** Compatibilidad: el componente legacy enviaba el campo con el nombre del archivo PHP. */
+    private function normalizeCombustiblePostKeys(array $data): array
+    {
+        $legacyField = 'combustible-fraccion-select';
+        if (!array_key_exists($legacyField, $data)) {
+            return $data;
+        }
+
+        $legacyValue = $data[$legacyField];
+        unset($data[$legacyField]);
+
+        foreach (['combustible_salida', 'combustible_regreso'] as $field) {
+            if (!array_key_exists($field, $data) || trim((string) ($data[$field] ?? '')) === '') {
+                $data[$field] = $legacyValue;
+            }
+        }
+
+        return $data;
+    }
+
+    /** Normaliza el valor de combustible enviado por el formulario (select, hidden, etc.). */
     private function coalesceCombustiblePost(array $data, string $field, ?float $defaultPercent = null): array
     {
-        $raw = $data[$field] ?? null;
+        if (!array_key_exists($field, $data)) {
+            if ($defaultPercent !== null) {
+                $data[$field] = (string) (int) round($defaultPercent);
+            }
 
+            return $data;
+        }
+
+        $raw = $data[$field];
         if (is_array($raw)) {
             $candidates = array_values(array_filter($raw, static function (mixed $value): bool {
                 return !is_array($value) && trim((string) $value) !== '';
             }));
-            $raw = $candidates !== [] ? (string) end($candidates) : null;
-            if ($raw !== null) {
-                $data[$field] = $raw;
-
-                return $data;
+            if ($candidates === []) {
+                unset($data[$field]);
+            } else {
+                $data[$field] = (string) end($candidates);
             }
+        } elseif (trim((string) $raw) === '') {
             unset($data[$field]);
         }
 
-        $missing = !array_key_exists($field, $data);
-        $raw = $missing ? null : $data[$field];
-
-        if (!$missing && !is_array($raw) && trim((string) $raw) !== '') {
-            return $data;
-        }
-
-        if ($defaultPercent !== null) {
+        if (!array_key_exists($field, $data) && $defaultPercent !== null) {
             $data[$field] = (string) (int) round($defaultPercent);
-        } elseif (!$missing) {
-            unset($data[$field]);
         }
 
         return $data;
@@ -549,6 +573,7 @@ final class ComisionService
                     . ($comision['estado'] ?? 'desconocido') . '.';
             }
 
+            $data = $this->normalizeCombustiblePostKeys($data);
             $merged = array_merge($comision, $data);
             $merged['combustible_regreso'] = $this->resolveCombustiblePercent(
                 $data,

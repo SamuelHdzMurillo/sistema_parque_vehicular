@@ -206,7 +206,7 @@ if ($nombreRegreso !== '') {
             'id' => 'combustible_salida',
             'name' => 'combustible_salida',
             'label' => 'Combustible salida',
-            'valuePorcentaje' => 100,
+            'valuePorcentaje' => old_nonempty('combustible_salida', 100),
             'required' => true,
         ]); ?>
         <div class="d-flex gap-1">

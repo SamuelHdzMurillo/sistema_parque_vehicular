@@ -19,15 +19,16 @@ if ($porcentajeInt !== null) {
     $porcentajeInt = 100;
 }
 $presets = [100, 75, 50, 25, 0];
+$selected = (int) ($porcentajeInt ?? ($required ? 100 : 0));
 ?>
 <div class="form-group" data-combustible-gauge data-combustible-name="<?= e($name) ?>">
     <label class="form-label" for="<?= e($id) ?>"><?= e($label) ?><?= $required ? ' <span class="required">*</span>' : '' ?></label>
     <div class="combustible-gauge">
         <div class="combustible-gauge-visual" aria-hidden="true">
             <div class="combustible-gauge-tank">
-                <div class="combustible-gauge-fill" data-combustible-fill style="height: <?= (int) ($porcentajeInt ?? 0) ?>%"></div>
+                <div class="combustible-gauge-fill" data-combustible-fill style="height: <?= $selected ?>%"></div>
             </div>
-            <span class="combustible-gauge-value" data-combustible-display><?= (int) ($porcentajeInt ?? 0) ?>%</span>
+            <span class="combustible-gauge-value" data-combustible-display><?= $selected ?>%</span>
         </div>
         <div class="combustible-gauge-controls">
             <input type="range"
@@ -35,15 +36,17 @@ $presets = [100, 75, 50, 25, 0];
                    min="0"
                    max="100"
                    step="25"
-                   value="<?= (int) ($porcentajeInt ?? ($required ? 100 : 0)) ?>"
+                   value="<?= $selected ?>"
                    data-combustible-range
+                   oninput="var s=document.getElementById(<?= json_encode($id, JSON_THROW_ON_ERROR) ?>);if(s){s.value=String(Math.round(parseInt(this.value,10)/25)*25);s.dispatchEvent(new Event('change',{bubbles:true}));}"
                    aria-hidden="true"
                    tabindex="-1">
             <div class="combustible-gauge-marks" role="group" aria-label="Niveles rápidos del tanque">
                 <?php foreach ($presets as $pct): ?>
                 <button type="button"
-                        class="combustible-gauge-mark<?= $porcentajeInt === $pct ? ' is-active' : '' ?>"
+                        class="combustible-gauge-mark<?= $selected === $pct ? ' is-active' : '' ?>"
                         data-combustible-preset="<?= $pct ?>"
+                        onclick="var s=document.getElementById(<?= json_encode($id, JSON_THROW_ON_ERROR) ?>);if(s){s.value='<?= $pct ?>';s.dispatchEvent(new Event('change',{bubbles:true}));}"
                         aria-label="<?= $pct ?> por ciento">
                     <?= $pct ?>%
                 </button>
@@ -61,7 +64,7 @@ $presets = [100, 75, 50, 25, 0];
         <option value="">— Seleccione —</option>
         <?php endif; ?>
         <?php foreach ($presets as $pct): ?>
-        <option value="<?= $pct ?>" <?= $porcentajeInt === $pct ? 'selected' : '' ?>><?= $pct ?>%</option>
+        <option value="<?= $pct ?>" <?= $selected === $pct ? 'selected' : '' ?>><?= $pct ?>%</option>
         <?php endforeach; ?>
     </select>
     <small class="form-hint text-muted">Use el medidor, los botones o la lista. Se guarda como porcentaje (0% a 100%).</small>

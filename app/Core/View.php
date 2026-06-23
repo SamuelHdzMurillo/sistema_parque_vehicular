@@ -33,9 +33,9 @@ final class View
         exit;
     }
 
-    public static function component(string $name, array $viewData = []): void
+    public static function component(string $component, array $viewData = []): void
     {
         extract($viewData, EXTR_SKIP);
-        require view_path('components/' . $name . '.php');
+        require view_path('components/' . $component . '.php');
     }
 }

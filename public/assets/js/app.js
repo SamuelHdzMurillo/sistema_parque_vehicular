@@ -1285,6 +1285,14 @@
         return 'normal';
     }
 
+    function normalizeCombustiblePct(pct) {
+        if (Number.isNaN(pct)) {
+            return null;
+        }
+        pct = Math.max(0, Math.min(100, pct));
+        return Math.round(pct / 25) * 25;
+    }
+
     function syncCombustibleGauge(group) {
         const select = group.querySelector('[data-combustible-value]');
         const range = group.querySelector('[data-combustible-range]');
@@ -1294,17 +1302,12 @@
             return;
         }
 
-        let pct = parseInt(select.value, 10);
-        if (Number.isNaN(pct) && range) {
-            pct = parseInt(range.value, 10);
+        let pct = normalizeCombustiblePct(parseInt(select.value, 10));
+        if (pct === null) {
+            pct = select.required ? 100 : 0;
+            select.value = String(pct);
         }
-        if (Number.isNaN(pct)) {
-            pct = 100;
-        }
-        pct = Math.max(0, Math.min(100, pct));
-        pct = Math.round(pct / 25) * 25;
 
-        select.value = String(pct);
         if (range) {
             range.value = String(pct);
         }
@@ -1318,39 +1321,29 @@
 
         group.querySelectorAll('[data-combustible-preset]').forEach(function (btn) {
             const preset = parseInt(btn.getAttribute('data-combustible-preset'), 10);
-            const active = preset === pct;
-            btn.classList.toggle('is-active', active);
+            btn.classList.toggle('is-active', preset === pct);
         });
     }
 
-    function ensureCombustibleOnSubmit(form) {
-        form.querySelectorAll('[data-combustible-gauge]').forEach(function (group) {
-            syncCombustibleGauge(group);
-            const select = group.querySelector('[data-combustible-value]');
-            const fieldName = group.getAttribute('data-combustible-name');
-            if (!select || !fieldName) {
-                return;
-            }
-            let pct = parseInt(select.value, 10);
-            if (Number.isNaN(pct)) {
-                pct = 100;
-            }
-            if (!form.querySelector('[name="' + fieldName + '"]')) {
-                const backup = document.createElement('input');
-                backup.type = 'hidden';
-                backup.name = fieldName;
-                backup.value = String(pct);
-                form.appendChild(backup);
-            }
-        });
+    function setCombustiblePct(group, pct) {
+        const select = group.querySelector('[data-combustible-value]');
+        if (!select) {
+            return;
+        }
+        pct = normalizeCombustiblePct(pct);
+        if (pct === null) {
+            return;
+        }
+        select.value = String(pct);
+        syncCombustibleGauge(group);
     }
 
     function initCombustibleFields() {
         document.querySelectorAll('[data-combustible-gauge]').forEach(function (group) {
-            syncCombustibleGauge(group);
-
             const select = group.querySelector('[data-combustible-value]');
             const range = group.querySelector('[data-combustible-range]');
+
+            syncCombustibleGauge(group);
 
             if (select) {
                 select.addEventListener('change', function () {
@@ -1360,27 +1353,33 @@
 
             if (range) {
                 range.addEventListener('input', function () {
-                    if (select) {
-                        select.value = range.value;
-                    }
-                    syncCombustibleGauge(group);
+                    setCombustiblePct(group, parseInt(range.value, 10));
                 });
             }
 
             group.querySelectorAll('[data-combustible-preset]').forEach(function (btn) {
                 btn.addEventListener('click', function () {
                     const preset = btn.getAttribute('data-combustible-preset');
-                    if (select && preset !== null) {
-                        select.value = preset;
+                    if (preset !== null) {
+                        setCombustiblePct(group, parseInt(preset, 10));
                     }
-                    syncCombustibleGauge(group);
                 });
             });
         });
 
         document.querySelectorAll('form').forEach(function (form) {
+            if (form.hasAttribute('data-combustible-submit-bound')) {
+                return;
+            }
+            form.setAttribute('data-combustible-submit-bound', '1');
             form.addEventListener('submit', function () {
-                ensureCombustibleOnSubmit(form);
+                form.querySelectorAll('[data-combustible-gauge]').forEach(function (group) {
+                    const select = group.querySelector('[data-combustible-value]');
+                    if (!select || !select.name) {
+                        return;
+                    }
+                    setCombustiblePct(group, parseInt(select.value, 10));
+                });
             });
         });
     }
