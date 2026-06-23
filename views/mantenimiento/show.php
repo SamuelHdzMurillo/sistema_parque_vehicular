@@ -6,7 +6,12 @@ $m = $mantenimiento ?? [];
     <div>
         <ul class="breadcrumb"><li><a href="<?= url('mantenimiento') ?>">Mantenimiento</a></li><li>/ <?= e($m['folio'] ?? '') ?></li></ul>
         <h1 class="page-title"><?= e($m['folio'] ?? '') ?></h1>
-        <p class="page-subtitle"><span class="badge badge-secondary"><?= e(str_replace('_', ' ', $m['estado'] ?? '')) ?></span></p>
+        <p class="page-subtitle">
+            <span class="badge badge-secondary"><?= e(str_replace('_', ' ', $m['estado'] ?? '')) ?></span>
+            <?php if (!empty($m['es_historico'])): ?>
+            <span class="badge badge-info">Registro histórico</span>
+            <?php endif; ?>
+        </p>
     </div>
     <div class="page-actions">
         <?php

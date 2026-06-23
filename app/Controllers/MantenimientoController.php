@@ -35,13 +35,20 @@ final class MantenimientoController extends BaseController
             $this->redirect('login');
         }
 
-        $data = $request->all();
-        $data['responsable_id'] = $data['responsable_id'] ?? $userId;
-        $data['archivo_factura'] = $request->file('archivo_factura');
-        $data['archivo_xml'] = $request->file('archivo_xml');
-        $id = $this->mantenimientos->create($data, $userId);
-        flash('success', 'Mantenimiento registrado correctamente.');
-        $this->redirect('mantenimiento/' . $id);
+        try {
+            $data = $request->all();
+            $data['responsable_id'] = $data['responsable_id'] ?? $userId;
+            $data['es_historico'] = !empty($data['es_historico']) ? 1 : 0;
+            $data['archivo_factura'] = $request->file('archivo_factura');
+            $data['archivo_xml'] = $request->file('archivo_xml');
+            $id = $this->mantenimientos->create($data, $userId);
+            flash('success', 'Mantenimiento registrado correctamente.');
+            $this->redirect('mantenimiento/' . $id);
+        } catch (\RuntimeException $e) {
+            $_SESSION['_old'] = $request->all();
+            flash('error', $e->getMessage());
+            $this->redirect('mantenimiento/create');
+        }
     }
 
     public function show(Request $request, string $id): never
@@ -67,15 +74,22 @@ final class MantenimientoController extends BaseController
     public function update(Request $request, string $id): never
     {
         $this->validateCsrf($request);
-        $data = $request->all();
-        $data['archivo_factura'] = $request->file('archivo_factura');
-        $data['archivo_xml'] = $request->file('archivo_xml');
-        if (!$this->mantenimientos->update((int) $id, $data)) {
-            flash('error', 'No se pudo actualizar el mantenimiento.');
+        try {
+            $data = $request->all();
+            $data['es_historico'] = !empty($data['es_historico']) ? 1 : 0;
+            $data['archivo_factura'] = $request->file('archivo_factura');
+            $data['archivo_xml'] = $request->file('archivo_xml');
+            if (!$this->mantenimientos->update((int) $id, $data)) {
+                flash('error', 'No se pudo actualizar el mantenimiento.');
+                $this->redirect('mantenimiento/' . $id . '/edit');
+            }
+            flash('success', 'Mantenimiento actualizado correctamente.');
+            $this->redirect('mantenimiento/' . $id);
+        } catch (\RuntimeException $e) {
+            $_SESSION['_old'] = $request->all();
+            flash('error', $e->getMessage());
             $this->redirect('mantenimiento/' . $id . '/edit');
         }
-        flash('success', 'Mantenimiento actualizado correctamente.');
-        $this->redirect('mantenimiento/' . $id);
     }
 
     public function autorizar(Request $request, string $id): never

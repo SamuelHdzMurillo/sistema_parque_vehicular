@@ -48,6 +48,14 @@ $puedeAgregarResponsable = can('usuarios.create') || can('mantenimiento.create')
                 <small class="form-hint text-muted" data-km-hint>Seleccione un vehículo para ver el kilometraje actual.</small>
             </div>
             <div class="form-group">
+                <label class="form-label">&nbsp;</label>
+                <label class="form-check">
+                    <input type="checkbox" name="es_historico" value="1" data-km-historic-toggle <?= old('es_historico') ? 'checked' : '' ?>>
+                    Mantenimiento anterior al kilometraje actual
+                </label>
+                <small class="form-hint text-muted">Permite registrar un servicio con kilometraje menor al actual del vehículo.</small>
+            </div>
+            <div class="form-group">
                 <label class="form-label" for="proveedor_id">Proveedor / taller</label>
                 <div class="input-group">
                     <select id="proveedor_id" name="proveedor_id" class="form-select" data-proveedor-select>

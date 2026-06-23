@@ -43,11 +43,13 @@ final class MantenimientoService
 
     public function create(array $data, int $userId): int
     {
+        $data = $this->normalizeHistorico($data);
+        $this->assertKilometrajeValido($data);
         $files = $this->extractFiles($data);
         $data['folio'] = $this->repo->generateFolio();
         $data['created_by'] = $userId;
         $data['responsable_id'] = (int) ($data['responsable_id'] ?? $userId);
-        $data['estado'] = $data['estado'] ?? 'pendiente';
+        $data['estado'] = !empty($data['es_historico']) ? 'finalizado' : ($data['estado'] ?? 'pendiente');
         $id = $this->repo->create($data);
 
         $rutas = $this->storeFacturaFiles($id, $files);
@@ -68,6 +70,8 @@ final class MantenimientoService
         if ($before === null) {
             return false;
         }
+        $data = $this->normalizeHistorico(array_merge($before, $data));
+        $this->assertKilometrajeValido($data);
         $files = $this->extractFiles($data);
         $rutas = $this->storeFacturaFiles($id, $files);
         $result = $this->repo->update($id, array_merge($before, $data, $rutas));
@@ -147,12 +151,46 @@ final class MantenimientoService
                 return 'No se puede finalizar en este estado.';
             }
             $this->repo->update($id, array_merge($mant, ['estado' => 'finalizado']));
-            $vehiculoId = (int) $mant['vehiculo_id'];
-            $this->vehiculos->updateKilometraje($vehiculoId, (int) $mant['kilometraje'], auth_id());
-            $this->vehiculos->updateEstado($vehiculoId, 'disponible', 'Fin mantenimiento ' . $mant['folio'], auth_id());
+            if (empty($mant['es_historico'])) {
+                $vehiculoId = (int) $mant['vehiculo_id'];
+                $this->vehiculos->updateKilometraje($vehiculoId, (int) $mant['kilometraje'], auth_id());
+                $this->vehiculos->updateEstado($vehiculoId, 'disponible', 'Fin mantenimiento ' . $mant['folio'], auth_id());
+            }
             return null;
         } catch (\Throwable $e) {
             return user_facing_error($e, 'No se pudo finalizar el mantenimiento.');
+        }
+    }
+
+    private function normalizeHistorico(array $data): array
+    {
+        $data['es_historico'] = !empty($data['es_historico']) ? 1 : 0;
+        return $data;
+    }
+
+    private function assertKilometrajeValido(array $data): void
+    {
+        if (!empty($data['es_historico'])) {
+            return;
+        }
+
+        $vehiculoId = (int) ($data['vehiculo_id'] ?? 0);
+        if ($vehiculoId <= 0) {
+            throw new \RuntimeException('Seleccione un vehículo.');
+        }
+
+        $vehiculo = $this->vehiculos->findById($vehiculoId);
+        if ($vehiculo === null) {
+            throw new \RuntimeException('Vehículo no encontrado.');
+        }
+
+        $km = (int) ($data['kilometraje'] ?? 0);
+        $kmActual = (int) $vehiculo['kilometraje_actual'];
+        if ($km < $kmActual) {
+            throw new \RuntimeException(
+                'El kilometraje (' . number_format($km) . ' km) no puede ser menor al actual del vehículo ('
+                . number_format($kmActual) . ' km). Marque «Mantenimiento anterior al kilometraje actual» si el servicio fue con menor kilometraje.'
+            );
         }
     }
 }

@@ -367,7 +367,12 @@
 
     function buildKmHintText(target, km, form) {
         const kmNum = Number(km || 0);
+        const historico = isKmHistorico(form);
         let msg = 'Kilometraje actual del vehículo: ' + formatKmHint(kmNum) + ' km.';
+        if (historico) {
+            msg += ' Registro histórico: puede ingresar el kilometraje que tenía el vehículo en esa fecha.';
+            return msg;
+        }
         if (target.hasAttribute('data-km-regreso')) {
             const salidaEl = form.querySelector('#km_salida') || form.querySelector('[name="km_salida"]');
             const salida = salidaEl ? Number(salidaEl.value || 0) : 0;
@@ -377,6 +382,14 @@
             msg += ' Debe ser igual o mayor.';
         }
         return msg;
+    }
+
+    function isKmHistorico(form) {
+        if (!form) {
+            return false;
+        }
+        const toggle = form.querySelector('[data-km-historic-toggle]');
+        return toggle ? toggle.checked : false;
     }
 
     function initKmAutofill() {
@@ -403,15 +416,16 @@
                 if (km === null) {
                     return;
                 }
+                const historico = isKmHistorico(form);
                 targets.forEach(function (target) {
                     const mode = target.getAttribute('data-km-mode') || 'fill';
-                    let minKm = Number(km);
-                    if (target.hasAttribute('data-km-regreso')) {
+                    let minKm = historico ? 0 : Number(km);
+                    if (!historico && target.hasAttribute('data-km-regreso')) {
                         const salidaEl = form.querySelector('#km_salida') || form.querySelector('[name="km_salida"]');
                         minKm = Math.max(minKm, salidaEl ? Number(salidaEl.value || 0) : 0);
                     }
                     target.min = String(minKm);
-                    if (mode === 'fill' && (!target.value || Number(target.value) < Number(km))) {
+                    if (!historico && mode === 'fill' && (!target.value || Number(target.value) < Number(km))) {
                         target.value = km;
                     }
                     const hint = findKmHint(target);
@@ -422,6 +436,10 @@
             }
 
             source.addEventListener('change', apply);
+            const historicoToggle = form.querySelector('[data-km-historic-toggle]');
+            if (historicoToggle) {
+                historicoToggle.addEventListener('change', apply);
+            }
             const salidaEl = form.querySelector('#km_salida') || form.querySelector('[name="km_salida"]');
             if (salidaEl) {
                 salidaEl.addEventListener('input', apply);
@@ -432,15 +450,45 @@
 
         document.querySelectorAll('[data-km-hint][data-km-value]').forEach(function (hint) {
             const km = hint.getAttribute('data-km-value') || '0';
+            const historico = hint.hasAttribute('data-km-historic')
+                || (hint.closest('form') && isKmHistorico(hint.closest('form')));
             let msg = 'Kilometraje actual del vehículo: ' + formatKmHint(km) + ' km.';
-            if (hint.hasAttribute('data-km-regreso-static')) {
+            if (historico) {
+                msg += ' Registro histórico: puede ingresar el kilometraje que tenía el vehículo en esa fecha.';
+            } else if (hint.hasAttribute('data-km-regreso-static')) {
                 const salida = Number(hint.getAttribute('data-km-salida') || 0);
                 const minKm = Math.max(Number(km), salida);
                 msg += ' Mínimo para regreso: ' + formatKmHint(minKm) + ' km (salida: ' + formatKmHint(salida) + ').';
-            } else {
+            } else if (!historico) {
                 msg += ' Debe ser igual o mayor.';
             }
             hint.textContent = msg;
+        });
+
+        document.querySelectorAll('[data-km-historic-toggle]').forEach(function (toggle) {
+            const form = toggle.closest('form');
+            if (!form) {
+                return;
+            }
+            function refreshStaticHints() {
+                const hintEl = form.querySelector('[data-km-hint][data-km-value]');
+                const km = hintEl ? (hintEl.getAttribute('data-km-value') || '0') : '0';
+                form.querySelectorAll('[data-km-hint][data-km-value]').forEach(function (hint) {
+                    let msg = 'Kilometraje actual del vehículo: ' + formatKmHint(km) + ' km.';
+                    if (toggle.checked) {
+                        msg += ' Registro histórico: puede ingresar el kilometraje que tenía el vehículo en esa fecha.';
+                    } else {
+                        msg += ' Debe ser igual o mayor.';
+                    }
+                    hint.textContent = msg;
+                });
+                const kmInput = form.querySelector('#kilometraje, [name="kilometraje"]');
+                if (kmInput) {
+                    kmInput.min = toggle.checked ? '0' : km;
+                }
+            }
+            toggle.addEventListener('change', refreshStaticHints);
+            refreshStaticHints();
         });
     }
 

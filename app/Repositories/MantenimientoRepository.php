@@ -31,16 +31,17 @@ final class MantenimientoRepository extends BaseRepository
     {
         $this->execute(
             'INSERT INTO mantenimientos (
-                folio, vehiculo_id, tipo, fecha, kilometraje, proveedor_id, descripcion, costo,
+                folio, vehiculo_id, tipo, fecha, kilometraje, es_historico, proveedor_id, descripcion, costo,
                 factura_folio, factura_uuid, factura_fecha, factura_subtotal, factura_iva, factura_total,
                 factura_ruta, xml_ruta, pdf_ruta, responsable_id, observaciones, estado, created_by
-             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
             [
                 $data['folio'],
                 (int) $data['vehiculo_id'],
                 $data['tipo'],
                 $data['fecha'],
                 (int) $data['kilometraje'],
+                !empty($data['es_historico']) ? 1 : 0,
                 $this->nullableInt($data['proveedor_id'] ?? null),
                 $data['descripcion'],
                 (float) ($data['costo'] ?? 0),
@@ -67,7 +68,7 @@ final class MantenimientoRepository extends BaseRepository
     {
         return $this->execute(
             'UPDATE mantenimientos SET
-                tipo = ?, fecha = ?, kilometraje = ?, proveedor_id = ?, descripcion = ?, costo = ?,
+                tipo = ?, fecha = ?, kilometraje = ?, es_historico = ?, proveedor_id = ?, descripcion = ?, costo = ?,
                 factura_folio = ?, factura_uuid = ?, factura_fecha = ?,
                 factura_subtotal = ?, factura_iva = ?, factura_total = ?,
                 factura_ruta = ?, xml_ruta = ?, pdf_ruta = ?, responsable_id = ?,
@@ -77,6 +78,7 @@ final class MantenimientoRepository extends BaseRepository
                 $data['tipo'],
                 $data['fecha'],
                 (int) $data['kilometraje'],
+                !empty($data['es_historico']) ? 1 : 0,
                 $this->nullableInt($data['proveedor_id'] ?? null),
                 $data['descripcion'],
                 (float) ($data['costo'] ?? 0),
@@ -202,6 +204,7 @@ final class MantenimientoRepository extends BaseRepository
         return $this->fetchOne(
             'SELECT * FROM mantenimientos
              WHERE vehiculo_id = ? AND tipo = "preventivo" AND estado = "finalizado"
+               AND es_historico = 0
                AND descripcion LIKE ?
              ORDER BY fecha DESC LIMIT 1',
             [$vehiculoId, '%' . $tipoDescripcion . '%']
@@ -215,7 +218,7 @@ final class MantenimientoRepository extends BaseRepository
                     p.razon_social AS proveedor_nombre
              FROM mantenimientos m
              LEFT JOIN proveedores p ON p.id = m.proveedor_id
-             WHERE m.vehiculo_id = ? AND m.estado = "finalizado"
+             WHERE m.vehiculo_id = ? AND m.estado = "finalizado" AND m.es_historico = 0
              ORDER BY m.fecha DESC, m.id DESC
              LIMIT 1',
             [$vehiculoId]

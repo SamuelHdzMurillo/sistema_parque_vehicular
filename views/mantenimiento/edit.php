@@ -35,8 +35,16 @@ $tipos = $tipos ?? [];
             </div>
             <div class="form-group">
                 <label class="form-label" for="kilometraje">Kilometraje</label>
-                <input type="number" id="kilometraje" name="kilometraje" class="form-control" value="<?= e((string) ($m['kilometraje'] ?? '')) ?>" required>
-                <small class="form-hint text-muted" data-km-hint data-km-value="<?= (int) ($m['kilometraje_actual'] ?? 0) ?>"></small>
+                <input type="number" id="kilometraje" name="kilometraje" class="form-control" value="<?= e((string) old('kilometraje', (string) ($m['kilometraje'] ?? ''))) ?>" required min="0">
+                <small class="form-hint text-muted" data-km-hint data-km-value="<?= (int) ($m['kilometraje_actual'] ?? 0) ?>" <?= !empty($m['es_historico']) ? 'data-km-historic' : '' ?>></small>
+            </div>
+            <div class="form-group">
+                <label class="form-label">&nbsp;</label>
+                <label class="form-check">
+                    <input type="checkbox" name="es_historico" value="1" data-km-historic-toggle <?= !empty(old('es_historico', $m['es_historico'] ?? 0)) ? 'checked' : '' ?>>
+                    Mantenimiento anterior al kilometraje actual
+                </label>
+                <small class="form-hint text-muted">Registro histórico: no modifica el kilometraje actual del vehículo.</small>
             </div>
             <div class="form-group">
                 <label class="form-label" for="proveedor_id">Proveedor / taller</label>
