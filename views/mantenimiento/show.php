@@ -29,12 +29,19 @@ $m = $mantenimiento ?? [];
         <?php if (can('mantenimiento.update')): ?>
         <a href="<?= url('mantenimiento/' . $m['id'] . '/edit') ?>" class="btn btn-secondary">Editar</a>
         <?php endif; ?>
+        <?php if (can('mantenimiento.delete')): ?>
+        <form action="<?= url('mantenimiento/' . $m['id'] . '/eliminar') ?>" method="post" class="inline-form">
+            <?= csrf_field() ?>
+            <button type="submit" class="btn btn-danger" data-confirm="¿Confirma eliminar este mantenimiento (<?= e($m['folio'] ?? '') ?>)? Esta acción no se puede deshacer y el folio quedará disponible para reutilizarse.">Eliminar</button>
+        </form>
+        <?php endif; ?>
     </div>
 </div>
 
 <div class="card mb-2">
     <div class="card-body">
         <div class="meta-grid">
+            <div class="meta-item"><label>Folio de servicio</label><span><strong><?= e($m['folio'] ?? '—') ?></strong></span></div>
             <div class="meta-item"><label>Vehículo</label><span><?= e($m['numero_economico'] ?? '—') ?></span></div>
             <div class="meta-item"><label>Tipo</label><span><?= e(ucfirst($m['tipo'] ?? '')) ?></span></div>
             <?php if (!empty($m['servicio'])): ?>

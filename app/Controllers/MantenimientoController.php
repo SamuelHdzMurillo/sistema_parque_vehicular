@@ -112,4 +112,12 @@ final class MantenimientoController extends BaseController
         flash($error ? 'error' : 'success', $error ?? 'Mantenimiento finalizado.');
         $this->redirect('mantenimiento/' . $id);
     }
+
+    public function eliminar(Request $request, string $id): never
+    {
+        $this->validateCsrf($request);
+        $error = $this->mantenimientos->eliminar((int) $id);
+        flash($error ? 'error' : 'success', $error ?? 'Mantenimiento eliminado correctamente.');
+        $this->redirect($error ? 'mantenimiento/' . $id : 'mantenimiento');
+    }
 }

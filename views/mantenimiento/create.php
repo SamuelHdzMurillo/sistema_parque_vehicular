@@ -7,6 +7,7 @@ $areas = $areas ?? [];
 $planteles = $planteles ?? [];
 $tipos = $tipos ?? [];
 $servicios = $servicios ?? [];
+$folioSugerido = (string) ($folio_sugerido ?? '');
 $puedeAgregarArea = can('catalogos.create');
 $preVehiculo = $_GET['vehiculo_id'] ?? old('vehiculo_id');
 $preServicio = $_GET['servicio'] ?? old('servicio');
@@ -22,6 +23,15 @@ $puedeAgregarResponsable = can('usuarios.create') || can('mantenimiento.create')
 <div class="card">
     <form action="<?= url('mantenimiento') ?>" method="post" enctype="multipart/form-data" class="card-body">
         <?= csrf_field() ?>
+        <?php if ($folioSugerido !== ''): ?>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Folio de servicio</label>
+                <p class="form-control-static" style="font-size:1.1rem;font-weight:600;margin:0;"><?= e($folioSugerido) ?></p>
+                <small class="form-hint text-muted">Se asignará automáticamente al guardar (orden de servicio / oficio).</small>
+            </div>
+        </div>
+        <?php endif; ?>
         <div class="form-row">
             <div class="form-group">
                 <label class="form-label" for="vehiculo_id">Vehículo <span class="required">*</span></label>

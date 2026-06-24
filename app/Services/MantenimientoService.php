@@ -37,6 +37,7 @@ final class MantenimientoService
             'tipos' => ['preventivo', 'correctivo', 'predictivo'],
             'servicios' => $this->alertas->getServiciosKm(),
             'estados' => ['pendiente', 'programado', 'autorizado', 'en_proceso', 'finalizado', 'cancelado'],
+            'folio_sugerido' => $this->repo->generateFolio(),
         ];
     }
 
@@ -177,6 +178,93 @@ final class MantenimientoService
             return null;
         } catch (\Throwable $e) {
             return user_facing_error($e, 'No se pudo finalizar el mantenimiento.');
+        }
+    }
+
+    public function eliminar(int $id): ?string
+    {
+        try {
+            $mant = $this->repo->findById($id);
+            if ($mant === null) {
+                return 'Mantenimiento no encontrado.';
+            }
+
+            $this->repo->beginTransaction();
+
+            if (($mant['estado'] ?? '') === 'finalizado' && empty($mant['es_historico'])) {
+                $this->revertirEfectosFinalizado($mant);
+            }
+
+            $this->eliminarArchivosMantenimiento($mant);
+
+            if (!$this->repo->delete($id)) {
+                throw new \RuntimeException('No se pudo eliminar el mantenimiento.');
+            }
+
+            $this->repo->commit();
+
+            if (($mant['estado'] ?? '') === 'finalizado') {
+                $this->alertaService->sincronizar();
+            }
+
+            AuditService::log('DELETE', 'mantenimientos', $id, $mant, null);
+            return null;
+        } catch (\InvalidArgumentException $e) {
+            $this->repo->rollBack();
+            return $e->getMessage();
+        } catch (\Throwable $e) {
+            $this->repo->rollBack();
+            return user_facing_error($e, 'No se pudo eliminar el mantenimiento.');
+        }
+    }
+
+    /** @param array<string, mixed> $mant */
+    private function revertirEfectosFinalizado(array $mant): void
+    {
+        $vehiculoId = (int) ($mant['vehiculo_id'] ?? 0);
+        $kmMant = (int) ($mant['kilometraje'] ?? 0);
+        if ($vehiculoId <= 0 || $kmMant <= 0) {
+            return;
+        }
+
+        $vehiculo = $this->vehiculos->findById($vehiculoId);
+        if ($vehiculo === null) {
+            throw new \InvalidArgumentException('Vehículo del mantenimiento no encontrado.');
+        }
+
+        $kmActual = (int) $vehiculo['kilometraje_actual'];
+        if ($kmActual !== $kmMant) {
+            return;
+        }
+
+        $kmAnterior = $this->repo->getMaxKmOperativoExcluding($vehiculoId, (int) $mant['id']);
+        if (!$this->vehiculos->setKilometraje($vehiculoId, $kmAnterior, auth_id())) {
+            throw new \RuntimeException('No se pudo revertir el kilometraje del vehículo.');
+        }
+    }
+
+    /** @param array<string, mixed> $mant */
+    private function eliminarArchivosMantenimiento(array $mant): void
+    {
+        foreach (['factura_ruta', 'xml_ruta', 'pdf_ruta'] as $campo) {
+            $ruta = trim((string) ($mant[$campo] ?? ''));
+            if ($ruta === '') {
+                continue;
+            }
+            $path = storage_path('uploads/' . ltrim($ruta, '/'));
+            if (is_file($path)) {
+                @unlink($path);
+            }
+        }
+
+        $dir = storage_path('uploads/mantenimientos/' . (int) ($mant['id'] ?? 0));
+        if (is_dir($dir)) {
+            foreach (glob($dir . '/*') ?: [] as $file) {
+                if (is_file($file)) {
+                    @unlink($file);
+                }
+            }
+            @rmdir($dir);
         }
     }
 

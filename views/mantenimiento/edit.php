@@ -23,6 +23,12 @@ $servicios = $servicios ?? [];
         <?= csrf_field() ?>
         <div class="form-row">
             <div class="form-group">
+                <label class="form-label">Folio de servicio</label>
+                <p class="form-control-static" style="font-size:1.1rem;font-weight:600;margin:0;"><?= e($m['folio'] ?? '—') ?></p>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
                 <label class="form-label" for="tipo">Tipo</label>
                 <select id="tipo" name="tipo" class="form-select" required data-tipo-mantenimiento>
                     <?php foreach ($tipos as $t): ?>

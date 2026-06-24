@@ -128,10 +128,33 @@ final class MantenimientoRepository extends BaseRepository
 
     public function delete(int $id): bool
     {
-        return $this->execute(
-            'DELETE FROM mantenimientos WHERE id = ? AND estado IN ("pendiente", "cancelado")',
-            [$id]
+        return $this->execute('DELETE FROM mantenimientos WHERE id = ?', [$id]);
+    }
+
+    public function getMaxKmOperativoExcluding(int $vehiculoId, int $excludeMantenimientoId): int
+    {
+        $params = [$vehiculoId, $excludeMantenimientoId];
+        $row = $this->fetchOne(
+            'SELECT GREATEST(
+                COALESCE((
+                    SELECT MAX(kilometraje) FROM mantenimientos
+                    WHERE vehiculo_id = ? AND id != ? AND estado = "finalizado" AND es_historico = 0
+                ), 0),
+                COALESCE((
+                    SELECT MAX(km_regreso) FROM comisiones
+                    WHERE vehiculo_id = ? AND estado = "finalizada" AND km_regreso IS NOT NULL
+                ), 0),
+                COALESCE((
+                    SELECT MAX(kilometraje) FROM combustible_cargas WHERE vehiculo_id = ?
+                ), 0),
+                COALESCE((
+                    SELECT MAX(kilometraje) FROM inspecciones WHERE vehiculo_id = ?
+                ), 0)
+            ) AS km_max',
+            array_merge($params, [$vehiculoId, $vehiculoId, $vehiculoId])
         );
+
+        return (int) ($row['km_max'] ?? 0);
     }
 
     public function paginate(int $page = 1, int $perPage = 15, array $filters = []): array
@@ -181,15 +204,18 @@ final class MantenimientoRepository extends BaseRepository
     {
         $year = date('Y');
         $prefix = "MNT-{$year}-";
-        $last = $this->fetchOne(
-            'SELECT folio FROM mantenimientos WHERE folio LIKE ? ORDER BY id DESC LIMIT 1',
+        $rows = $this->fetchAll(
+            'SELECT folio FROM mantenimientos WHERE folio LIKE ?',
             ["{$prefix}%"]
         );
-        $seq = 1;
-        if ($last !== null && preg_match('/(\d+)$/', $last['folio'], $m)) {
-            $seq = (int) $m[1] + 1;
+        $maxSeq = 0;
+        foreach ($rows as $row) {
+            if (preg_match('/(\d+)$/', (string) $row['folio'], $m)) {
+                $maxSeq = max($maxSeq, (int) $m[1]);
+            }
         }
-        return $prefix . str_pad((string) $seq, 3, '0', STR_PAD_LEFT);
+
+        return $prefix . str_pad((string) ($maxSeq + 1), 3, '0', STR_PAD_LEFT);
     }
 
     public function authorize(int $id, int $autorizadoPor): bool

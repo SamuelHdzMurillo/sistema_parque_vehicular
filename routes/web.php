@@ -106,6 +106,7 @@ $router->get('mantenimiento/{id}/edit', [MantenimientoController::class, 'edit']
 $router->post('mantenimiento/{id}', [MantenimientoController::class, 'update'], $perm('mantenimiento.update'));
 $router->post('mantenimiento/{id}/autorizar', [MantenimientoController::class, 'autorizar'], $perm('mantenimiento.authorize'));
 $router->post('mantenimiento/{id}/finalizar', [MantenimientoController::class, 'finalizar'], $perm('mantenimiento.update'));
+$router->post('mantenimiento/{id}/eliminar', [MantenimientoController::class, 'eliminar'], $perm('mantenimiento.delete'));
 
 // ——— Proveedores ———
 $router->get('proveedores', [ProveedorController::class, 'index'], $perm('proveedores.read'));

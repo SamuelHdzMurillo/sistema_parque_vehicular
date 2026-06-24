@@ -34,6 +34,7 @@ INSERT INTO permissions (slug, modulo, accion, descripcion) VALUES
 ('mantenimiento.create', 'mantenimiento', 'create', 'Crear mantenimiento'),
 ('mantenimiento.update', 'mantenimiento', 'update', 'Editar mantenimiento'),
 ('mantenimiento.authorize', 'mantenimiento', 'authorize', 'Autorizar mantenimiento'),
+('mantenimiento.delete', 'mantenimiento', 'delete', 'Eliminar mantenimientos'),
 ('proveedores.read', 'proveedores', 'read', 'Ver proveedores'),
 ('proveedores.create', 'proveedores', 'create', 'Crear proveedores'),
 ('proveedores.update', 'proveedores', 'update', 'Editar proveedores'),
