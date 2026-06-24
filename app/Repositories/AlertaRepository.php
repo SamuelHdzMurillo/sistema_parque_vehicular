@@ -206,14 +206,23 @@ final class AlertaRepository extends BaseRepository
             return $global;
         }
 
-        return array_merge($global, [
+        $merged = array_merge($global, [
             'umbral_verde' => (int) $custom['umbral_verde'],
             'umbral_amarillo' => (int) $custom['umbral_amarillo'],
             'umbral_rojo' => (int) $custom['umbral_rojo'],
-            'umbral_verde_dias' => $custom['umbral_verde_dias'],
-            'umbral_amarillo_dias' => $custom['umbral_amarillo_dias'],
-            'umbral_rojo_dias' => $custom['umbral_rojo_dias'],
+            'umbral_verde_dias' => $custom['umbral_verde_dias'] ?? $global['umbral_verde_dias'],
+            'umbral_amarillo_dias' => $custom['umbral_amarillo_dias'] ?? $global['umbral_amarillo_dias'],
+            'umbral_rojo_dias' => $custom['umbral_rojo_dias'] ?? $global['umbral_rojo_dias'],
         ]);
+
+        if (array_key_exists('intervalo_km', $custom)) {
+            $merged['intervalo_km'] = $custom['intervalo_km'];
+        }
+        if (array_key_exists('intervalo_dias', $custom)) {
+            $merged['intervalo_dias'] = $custom['intervalo_dias'];
+        }
+
+        return $merged;
     }
 
     public function getAllConfig(): array

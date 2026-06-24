@@ -602,36 +602,100 @@ function mantenimiento_inferir_servicio(string $descripcion): ?string
     return null;
 }
 
+/** Intervalo en días para calcular cuándo toca el siguiente servicio. */
+function alerta_intervalo_dias(array $config): ?int
+{
+    $dias = $config['umbral_verde_dias'] ?? null;
+    if ($dias !== null && (int) $dias > 0) {
+        return (int) $dias;
+    }
+
+    $intervalo = $config['intervalo_dias'] ?? null;
+    if ($intervalo !== null && (int) $intervalo > 0) {
+        return (int) $intervalo;
+    }
+
+    if (($config['unidad'] ?? '') === 'dias') {
+        $dias = $config['umbral_verde'] ?? null;
+        return ($dias !== null && (int) $dias > 0) ? (int) $dias : null;
+    }
+
+    return null;
+}
+
+/** Intervalo en km para calcular el kilometraje del próximo servicio. */
+function alerta_intervalo_km(array $config): ?int
+{
+    $intervalo = $config['intervalo_km'] ?? null;
+    if ($intervalo !== null && (int) $intervalo > 0) {
+        return (int) $intervalo;
+    }
+
+    $umbrales = alerta_config_umbrales_km($config);
+    $km = (int) ($umbrales['urgente'] ?? 0);
+
+    return $km > 0 ? $km : null;
+}
+
 /**
  * Calcula la última fecha de servicio y la próxima fecha programada según la config.
  *
  * @return array{ultima: ?string, proxima: ?string}
  */
-function alerta_mantenimiento_fechas(?array $ultimo, array $config): array
+function alerta_mantenimiento_fechas(?array $ultimo, array $config, ?array $vehiculo = null): array
 {
     $ultima = null;
     if ($ultimo !== null && !empty($ultimo['fecha'])) {
         $ultima = substr((string) $ultimo['fecha'], 0, 10);
     }
 
-    if ($ultima === null) {
-        return ['ultima' => null, 'proxima' => null];
+    $intervalDias = alerta_intervalo_dias($config);
+    $baseFecha = $ultima;
+
+    if ($baseFecha === null && $vehiculo !== null && !empty($vehiculo['fecha_adquisicion'])) {
+        $baseFecha = substr((string) $vehiculo['fecha_adquisicion'], 0, 10);
     }
 
-    $intervalDias = $config['umbral_verde_dias'] ?? null;
-    if ($intervalDias === null || (int) $intervalDias <= 0) {
-        if (($config['unidad'] ?? '') === 'dias') {
-            $intervalDias = $config['umbral_verde'] ?? null;
-        }
+    $proxima = null;
+    if ($baseFecha !== null && $intervalDias !== null) {
+        $proxima = date('Y-m-d', strtotime($baseFecha . ' + ' . $intervalDias . ' days'));
     }
-
-    if ($intervalDias === null || (int) $intervalDias <= 0) {
-        return ['ultima' => $ultima, 'proxima' => null];
-    }
-
-    $proxima = date('Y-m-d', strtotime($ultima . ' + ' . (int) $intervalDias . ' days'));
 
     return ['ultima' => $ultima, 'proxima' => $proxima];
+}
+
+/** Kilometraje estimado del próximo servicio. */
+function alerta_proximo_km(?array $ultimo, array $config): ?int
+{
+    $intervalo = alerta_intervalo_km($config);
+    if ($intervalo === null) {
+        return null;
+    }
+
+    $baseKm = $ultimo !== null ? (int) ($ultimo['kilometraje'] ?? 0) : 0;
+
+    return $baseKm + $intervalo;
+}
+
+/** @return array{fecha: ?string, km: ?string} */
+function alerta_proximo_partes(array $alerta): array
+{
+    return [
+        'fecha' => !empty($alerta['fecha_proximo_mantenimiento'])
+            ? format_date($alerta['fecha_proximo_mantenimiento'])
+            : null,
+        'km' => !empty($alerta['proximo_km'])
+            ? number_format((int) $alerta['proximo_km'], 0, '.', ',') . ' km'
+            : null,
+    ];
+}
+
+/** Texto para la columna «Próximo toca». */
+function alerta_proximo_display(array $alerta): string
+{
+    $partes = array_filter(alerta_proximo_partes($alerta));
+
+    return implode(' · ', $partes);
 }
 
 /** URL para atender la alerta (registrar servicio o revisar documentación). */

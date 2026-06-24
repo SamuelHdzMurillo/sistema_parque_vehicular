@@ -333,11 +333,13 @@ final class AlertaService
         $alerta['servicio_nombre'] = (string) ($config['nombre'] ?? mantenimiento_servicio_label($tipo));
 
         if ($config !== null && ($config['unidad'] ?? '') === 'km') {
+            $vehiculo = $this->vehiculos->findById($vehiculoId);
             $ultimo = $this->mantenimientos->getUltimoPorServicio($vehiculoId, $tipo);
-            $fechas = alerta_mantenimiento_fechas($ultimo, $config);
+            $fechas = alerta_mantenimiento_fechas($ultimo, $config, $vehiculo);
             $alerta['categoria'] = 'mantenimiento';
             $alerta['fecha_ultimo_mantenimiento'] = $fechas['ultima'];
             $alerta['fecha_proximo_mantenimiento'] = $fechas['proxima'];
+            $alerta['proximo_km'] = alerta_proximo_km($ultimo, $config);
             $alerta['mantenimiento_id'] = $ultimo['id'] ?? null;
             $alerta['mantenimiento_folio'] = $ultimo['folio'] ?? null;
 
@@ -346,7 +348,6 @@ final class AlertaService
             $alerta['mantenimiento_abierto_folio'] = $abierto['folio'] ?? null;
 
             if ($ultimo !== null) {
-                $vehiculo = $this->vehiculos->findById($vehiculoId);
                 $kmActual = (int) ($vehiculo['kilometraje_actual'] ?? 0);
                 $alerta['km_desde'] = max(0, $kmActual - (int) $ultimo['kilometraje']);
                 if (!empty($ultimo['fecha'])) {
