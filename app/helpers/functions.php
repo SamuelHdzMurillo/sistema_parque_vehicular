@@ -432,6 +432,109 @@ function alerta_nivel_label(?string $nivel): string
     };
 }
 
+/** URL de la pantalla de alertas conservando filtros activos. */
+function alerta_index_url(array $overrides = []): string
+{
+    $params = array_merge($_GET ?? [], $overrides);
+    $query = [];
+
+    if (!empty($params['vehiculo_id'])) {
+        $query['vehiculo_id'] = (int) $params['vehiculo_id'];
+    }
+    if (!empty($params['pendientes'])) {
+        $query['pendientes'] = 1;
+    }
+    if (!empty($params['historial']) || !empty($params['todas'])) {
+        $query['historial'] = 1;
+    }
+    if (!empty($params['page']) && (int) $params['page'] > 1) {
+        $query['page'] = (int) $params['page'];
+    }
+
+    return $query === [] ? url('alertas') : url('alertas?' . http_build_query($query));
+}
+
+/** Estado visible en la matriz de mantenimiento por vehículo. */
+function alerta_estado_mantenimiento(array $fila): array
+{
+    if (!empty($fila['sin_alta'])) {
+        return ['label' => 'Sin alta', 'class' => 'badge-secondary'];
+    }
+
+    $nivel = isset($fila['nivel']) ? (string) $fila['nivel'] : null;
+    if ($nivel === null || $nivel === '') {
+        return ['label' => 'En orden', 'class' => 'badge-info'];
+    }
+
+    return ['label' => alerta_nivel_label($nivel), 'class' => semaforo_class($nivel)];
+}
+
+/** Texto del último mantenimiento registrado o «Sin alta». */
+function alerta_ultimo_mantenimiento_display(array $fila): string
+{
+    if (!empty($fila['sin_alta'])) {
+        return 'Sin alta';
+    }
+
+    $partes = [];
+    if (!empty($fila['fecha_ultimo_mantenimiento'])) {
+        $partes[] = format_date($fila['fecha_ultimo_mantenimiento']);
+    }
+    if (isset($fila['ultimo_km']) && $fila['ultimo_km'] !== null) {
+        $partes[] = number_format((int) $fila['ultimo_km'], 0, '.', ',') . ' km';
+    }
+
+    return $partes !== [] ? implode(' · ', $partes) : '—';
+}
+
+/** Texto de «próximo toca» o indicación cuando no hay alta. */
+function alerta_proximo_mantenimiento_display(array $fila): string
+{
+    if (!empty($fila['sin_alta'])) {
+        return 'Registre el primer servicio';
+    }
+
+    $partes = array_filter(alerta_proximo_partes($fila));
+
+    return $partes !== [] ? implode(' · ', $partes) : '—';
+}
+
+/** Nivel más grave entre filas de un vehículo (ignora sin alta). */
+function alerta_nivel_max_filas(array $filas): ?string
+{
+    $max = null;
+    foreach ($filas as $fila) {
+        if (!empty($fila['sin_alta'])) {
+            continue;
+        }
+
+        $nivel = isset($fila['nivel']) ? (string) $fila['nivel'] : null;
+        if ($nivel !== null && $nivel !== '' && alerta_nivel_peso($nivel) > alerta_nivel_peso($max)) {
+            $max = $nivel;
+        }
+    }
+
+    return $max;
+}
+
+/** Ordena filas: urgentes primero, sin alta al final. */
+function alerta_ordenar_filas(array &$filas): void
+{
+    usort($filas, static function (array $a, array $b): int {
+        $pesoA = !empty($a['sin_alta']) ? -1 : alerta_nivel_peso($a['nivel'] ?? null);
+        $pesoB = !empty($b['sin_alta']) ? -1 : alerta_nivel_peso($b['nivel'] ?? null);
+        $cmp = $pesoB <=> $pesoA;
+        if ($cmp !== 0) {
+            return $cmp;
+        }
+
+        return strcasecmp(
+            (string) ($a['servicio_nombre'] ?? $a['titulo'] ?? ''),
+            (string) ($b['servicio_nombre'] ?? $b['titulo'] ?? '')
+        );
+    });
+}
+
 /** Breve explicación de para qué sirve cada tipo de alerta. */
 function alerta_tipo_descripcion(string $tipo, string $unidad): string
 {

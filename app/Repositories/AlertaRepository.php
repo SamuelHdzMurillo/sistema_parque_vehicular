@@ -258,6 +258,21 @@ final class AlertaRepository extends BaseRepository
         );
     }
 
+    /** @return list<array<string, mixed>> */
+    public function findPendientesDocumentoPorVehiculo(int $vehiculoId): array
+    {
+        return $this->fetchAll(
+            'SELECT a.id, a.vehiculo_id, a.documento_id, a.tipo, a.titulo, a.mensaje, a.nivel,
+                    a.atendida, a.created_at, v.numero_economico, d.fecha_vencimiento
+             FROM alertas a
+             LEFT JOIN vehiculos v ON v.id = a.vehiculo_id
+             LEFT JOIN documentos d ON d.id = a.documento_id
+             WHERE a.vehiculo_id = ? AND a.atendida = 0 AND a.documento_id IS NOT NULL
+             ORDER BY FIELD(a.nivel, "rojo", "amarillo", "verde"), a.tipo ASC',
+            [$vehiculoId]
+        );
+    }
+
     public function tipoExists(string $tipo): bool
     {
         return $this->fetchOne('SELECT id FROM alerta_config WHERE tipo = ?', [$tipo]) !== null;

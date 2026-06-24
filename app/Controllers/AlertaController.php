@@ -17,10 +17,22 @@ final class AlertaController extends BaseController
     public function index(Request $request): never
     {
         $page = max(1, (int) $request->input('page', 1));
-        $todas = (bool) $request->input('todas');
-        $result = $this->alertas->paginate($page, !$todas);
+        $historial = (bool) $request->input('historial') || (bool) $request->input('todas');
+        $soloConAvisos = (bool) $request->input('pendientes');
+        $vehiculoId = (int) $request->input('vehiculo_id', 0);
+        $vehiculoId = $vehiculoId > 0 ? $vehiculoId : null;
+
+        if ($historial) {
+            $result = $this->alertas->paginate($page, false, $vehiculoId);
+            $result['modo'] = 'historial';
+            $result['solo_pendientes'] = false;
+            $result['vehiculo_id'] = $vehiculoId;
+            $result['vehiculos'] = $this->alertas->getVehiculosCatalogo();
+        } else {
+            $result = $this->alertas->getMatrizMantenimiento($page, $soloConAvisos, $vehiculoId);
+        }
+
         $result['counts'] = $this->alertas->getDashboardCounts();
-        $result['solo_pendientes'] = !$todas;
         $this->render('alertas.index', $result);
     }
 

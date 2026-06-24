@@ -55,18 +55,102 @@ final class AlertaService
         }
     }
 
-    public function paginate(int $page = 1, bool $soloPendientes = true): array
+    public function paginate(int $page = 1, bool $soloPendientes = true, ?int $vehiculoId = null): array
     {
         if ($soloPendientes) {
             $this->sincronizar();
         }
 
         $filters = $soloPendientes ? ['atendida' => 0] : [];
+        if ($vehiculoId !== null && $vehiculoId > 0) {
+            $filters['vehiculo_id'] = $vehiculoId;
+        }
         $result = $this->repo->paginate($page, 15, $filters);
         $result['data'] = array_map(fn (array $row): array => $this->enriquecerFila($row), $result['data']);
         $result['grupos'] = alerta_agrupar_por_vehiculo($result['data']);
 
         return $result;
+    }
+
+    /**
+     * Vista por vehículo: todos los servicios de mantenimiento con último registro y próximo toque.
+     *
+     * @return array{grupos: list<array>, page: int, total: int, per_page: int, counts: array, solo_pendientes: bool, modo: string, vehiculo_id: ?int, vehiculos: list<array>}
+     */
+    public function getMatrizMantenimiento(int $page = 1, bool $soloConAvisos = false, ?int $vehiculoId = null): array
+    {
+        $this->sincronizar();
+
+        $perPage = 10;
+        $serviciosKm = $this->repo->getServiciosKm();
+        $grupos = [];
+
+        if ($vehiculoId !== null && $vehiculoId > 0) {
+            $vehiculo = $this->vehiculos->findById($vehiculoId);
+            $vehiculosData = $vehiculo !== null ? [$vehiculo] : [];
+            $total = count($vehiculosData);
+            $page = 1;
+        } else {
+            $vehiculosResult = $this->vehiculos->paginate($page, $perPage);
+            $vehiculosData = $vehiculosResult['data'];
+            $total = $vehiculosResult['total'];
+        }
+
+        foreach ($vehiculosData as $vehiculo) {
+            $vehiculoId = (int) $vehiculo['id'];
+            $filas = [];
+
+            foreach ($serviciosKm as $cfg) {
+                $tipo = (string) $cfg['tipo'];
+                $config = $this->repo->getEffectiveConfig($vehiculoId, $tipo);
+                if ($config === null) {
+                    continue;
+                }
+
+                $filas[] = $this->buildFilaMantenimiento($vehiculo, $tipo, $config);
+            }
+
+            foreach ($this->repo->findPendientesDocumentoPorVehiculo($vehiculoId) as $alerta) {
+                $filas[] = $this->enriquecerFila($alerta);
+            }
+
+            $nivelMax = alerta_nivel_max_filas($filas);
+
+            if ($soloConAvisos && $nivelMax === null) {
+                continue;
+            }
+
+            alerta_ordenar_filas($filas);
+
+            $grupos[] = [
+                'vehiculo_id' => $vehiculoId,
+                'numero_economico' => (string) $vehiculo['numero_economico'],
+                'kilometraje_actual' => (int) ($vehiculo['kilometraje_actual'] ?? 0),
+                'nivel_max' => $nivelMax,
+                'alertas' => $filas,
+            ];
+        }
+
+        usort($grupos, static function (array $a, array $b): int {
+            $cmp = alerta_nivel_peso($b['nivel_max']) <=> alerta_nivel_peso($a['nivel_max']);
+            if ($cmp !== 0) {
+                return $cmp;
+            }
+
+            return strcasecmp($a['numero_economico'], $b['numero_economico']);
+        });
+
+        return [
+            'grupos' => $grupos,
+            'page' => $page,
+            'total' => $total,
+            'per_page' => $perPage,
+            'counts' => $this->repo->getDashboardCounts(),
+            'solo_pendientes' => $soloConAvisos,
+            'modo' => 'matriz',
+            'vehiculo_id' => $vehiculoId !== null && $vehiculoId > 0 ? $vehiculoId : null,
+            'vehiculos' => $this->catalogos->getVehiculosCatalogo(),
+        ];
     }
 
     public function getConfigPageData(?int $vehiculoId = null): array
@@ -175,6 +259,12 @@ final class AlertaService
     public function getDashboardCounts(): array
     {
         return $this->repo->getDashboardCounts();
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function getVehiculosCatalogo(): array
+    {
+        return $this->catalogos->getVehiculosCatalogo();
     }
 
     /** Al finalizar un mantenimiento, cierra alertas de cada servicio y recalcula. */
@@ -389,6 +479,67 @@ final class AlertaService
         return sprintf('%s · %s', $nombreServicio, $motivo);
     }
 
+    /** @return array<string, mixed> */
+    private function buildFilaMantenimiento(array $vehiculo, string $tipo, array $config): array
+    {
+        $vehiculoId = (int) $vehiculo['id'];
+        $ultimo = $this->mantenimientos->getUltimoPorServicio($vehiculoId, $tipo);
+        $fechas = alerta_mantenimiento_fechas($ultimo, $config, $vehiculo);
+
+        $fila = [
+            'vehiculo_id' => $vehiculoId,
+            'numero_economico' => (string) ($vehiculo['numero_economico'] ?? ''),
+            'tipo' => $tipo,
+            'servicio_nombre' => (string) ($config['nombre'] ?? mantenimiento_servicio_label($tipo)),
+            'categoria' => 'mantenimiento',
+            'sin_alta' => $ultimo === null,
+            'fecha_ultimo_mantenimiento' => $fechas['ultima'],
+            'fecha_proximo_mantenimiento' => $fechas['proxima'],
+            'proximo_km' => alerta_proximo_km($ultimo, $config),
+            'ultimo_km' => $ultimo !== null ? (int) $ultimo['kilometraje'] : null,
+            'mantenimiento_id' => $ultimo['id'] ?? null,
+            'mantenimiento_folio' => $ultimo['folio'] ?? null,
+            'atendida' => 0,
+            'id' => null,
+            'nivel' => null,
+        ];
+
+        $abierto = $this->mantenimientos->findAbiertoPorServicio($vehiculoId, $tipo);
+        $fila['mantenimiento_abierto_id'] = $abierto['id'] ?? null;
+        $fila['mantenimiento_abierto_folio'] = $abierto['folio'] ?? null;
+
+        if ($ultimo !== null) {
+            $kmActual = (int) ($vehiculo['kilometraje_actual'] ?? 0);
+            $kmDesde = max(0, $kmActual - (int) $ultimo['kilometraje']);
+            $diasDesde = 0;
+            if (!empty($ultimo['fecha'])) {
+                $diasDesde = (int) ((strtotime(date('Y-m-d')) - strtotime((string) $ultimo['fecha'])) / 86400);
+            }
+
+            $fila['km_desde'] = $kmDesde;
+            $fila['dias_desde'] = $diasDesde;
+
+            $evaluacion = $this->evaluarUmbralesMantenimiento(
+                $kmDesde,
+                $diasDesde,
+                $config,
+                $ultimo,
+                $kmActual
+            );
+            $fila['nivel'] = $evaluacion['nivel'] ?? null;
+        } else {
+            $fila['km_desde'] = null;
+            $fila['dias_desde'] = null;
+        }
+
+        $activa = $this->repo->findActive($vehiculoId, $tipo);
+        if ($activa !== null) {
+            $fila['id'] = (int) $activa['id'];
+        }
+
+        return $fila;
+    }
+
     private function enriquecerFila(array $alerta): array
     {
         $tipo = (string) ($alerta['tipo'] ?? '');
@@ -406,6 +557,8 @@ final class AlertaService
             $alerta['proximo_km'] = alerta_proximo_km($ultimo, $config);
             $alerta['mantenimiento_id'] = $ultimo['id'] ?? null;
             $alerta['mantenimiento_folio'] = $ultimo['folio'] ?? null;
+            $alerta['ultimo_km'] = $ultimo !== null ? (int) $ultimo['kilometraje'] : null;
+            $alerta['sin_alta'] = $ultimo === null;
 
             $abierto = $this->mantenimientos->findAbiertoPorServicio($vehiculoId, $tipo);
             $alerta['mantenimiento_abierto_id'] = $abierto['id'] ?? null;

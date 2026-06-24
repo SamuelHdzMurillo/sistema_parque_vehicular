@@ -1367,9 +1367,37 @@ details[open] > .servicios-picker-item--add .servicios-picker-chip--add {
     border-bottom: 1px solid var(--border-subtle, rgba(255,255,255,.06));
 }
 
+.alertas-filtro-vehiculo {
+    margin-bottom: 1rem;
+}
+
+.alertas-filtro-vehiculo .filters-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: .75rem 1rem;
+    padding: 1rem 1.25rem;
+}
+
+.alertas-filtro-vehiculo .form-group {
+    flex: 1 1 280px;
+    max-width: 420px;
+    margin: 0;
+}
+
 .alertas-grupo-fila--atendida { opacity: .65; }
 
-.alertas-col-prioridad { width: 100px; white-space: nowrap; }
+.alertas-grupo-fila--sin-alta .alertas-sin-alta {
+    font-style: italic;
+    color: var(--text-secondary);
+}
+
+.alertas-sin-alta-hint {
+    font-style: italic;
+    color: var(--text-secondary);
+}
+
+.alertas-col-prioridad { width: 110px; white-space: nowrap; }
 .alertas-col-fecha { width: 120px; white-space: nowrap; }
 .alertas-col-accion { width: 110px; text-align: right; }
 

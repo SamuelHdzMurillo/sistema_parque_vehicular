@@ -32,7 +32,7 @@
             </article>
         </div>
         <ul class="alertas-guia-list">
-            <li><strong>Mantenimiento:</strong> primero registre el servicio en Mantenimiento (aceite, afinación, llantas…). Solo después de ese alta el sistema empieza a contar km y días para avisarle.</li>
+            <li><strong>Mantenimiento:</strong> en la tabla ve cada servicio del vehículo (aceite, afinación, llantas…). Si dice <strong>Sin alta</strong>, aún no hay registro; use «Registrar» para dar el primer alta.</li>
             <li><strong>Documentos:</strong> el sistema cuenta cuántos días faltan para que venza un papel (seguro, tenencia, etc.).</li>
             <li><strong>Atender:</strong> use el botón «Atender» para registrar el nuevo mantenimiento o revisar el documento.</li>
         </ul>
