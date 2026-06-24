@@ -65,10 +65,11 @@ final class AlertaRepository extends BaseRepository
 
         $queryParams = array_merge($params, [$perPage, $offset]);
         $rows = $this->fetchAll(
-            "SELECT a.id, a.tipo, a.titulo, a.mensaje, a.nivel, a.atendida, a.created_at,
-                    v.numero_economico
+            "SELECT a.id, a.vehiculo_id, a.documento_id, a.tipo, a.titulo, a.mensaje, a.nivel,
+                    a.atendida, a.created_at, v.numero_economico, d.fecha_vencimiento
              FROM alertas a
              LEFT JOIN vehiculos v ON v.id = a.vehiculo_id
+             LEFT JOIN documentos d ON d.id = a.documento_id
              {$where}
              ORDER BY a.atendida ASC, FIELD(a.nivel, 'rojo', 'amarillo', 'verde'), a.created_at DESC
              LIMIT ? OFFSET ?",
@@ -163,12 +164,25 @@ final class AlertaRepository extends BaseRepository
         return $generadas;
     }
 
-    public function existsActive(int $vehiculoId, string $tipo): bool
+    public function findActive(int $vehiculoId, string $tipo): ?array
     {
         return $this->fetchOne(
             'SELECT id FROM alertas WHERE vehiculo_id = ? AND tipo = ? AND atendida = 0 LIMIT 1',
             [$vehiculoId, $tipo]
-        ) !== null;
+        );
+    }
+
+    public function existsActive(int $vehiculoId, string $tipo): bool
+    {
+        return $this->findActive($vehiculoId, $tipo) !== null;
+    }
+
+    public function updateMensaje(int $id, string $mensaje, string $nivel): bool
+    {
+        return $this->execute(
+            'UPDATE alertas SET mensaje = ?, nivel = ?, updated_at = NOW() WHERE id = ?',
+            [$mensaje, $nivel, $id]
+        );
     }
 
     public function getAlertaConfig(string $tipo): ?array
@@ -350,16 +364,15 @@ final class AlertaRepository extends BaseRepository
     {
         if ($diasRestantes < 0) {
             return sprintf(
-                'El documento "%s" del vehículo %s venció hace %d día(s).',
+                '%s · vencido hace %d día(s)',
                 $doc['titulo'],
-                $doc['numero_economico'],
                 abs($diasRestantes)
             );
         }
+
         return sprintf(
-            'El documento "%s" del vehículo %s vence en %d día(s).',
+            '%s · vence en %d día(s)',
             $doc['titulo'],
-            $doc['numero_economico'],
             $diasRestantes
         );
     }

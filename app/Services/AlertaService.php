@@ -62,7 +62,11 @@ final class AlertaService
         }
 
         $filters = $soloPendientes ? ['atendida' => 0] : [];
-        return $this->repo->paginate($page, 15, $filters);
+        $result = $this->repo->paginate($page, 15, $filters);
+        $result['data'] = array_map(fn (array $row): array => $this->enriquecerFila($row), $result['data']);
+        $result['grupos'] = alerta_agrupar_por_vehiculo($result['data']);
+
+        return $result;
     }
 
     public function getConfigPageData(?int $vehiculoId = null): array
@@ -188,12 +192,25 @@ final class AlertaService
                 $diasDesde = (int) ((strtotime(date('Y-m-d')) - strtotime((string) $ultimo['fecha'])) / 86400);
             }
 
-            $evaluacion = $this->evaluarUmbralesMantenimiento($kmDesde, $diasDesde, $config);
+            $evaluacion = $this->evaluarUmbralesMantenimiento(
+                $kmDesde,
+                $diasDesde,
+                $config,
+                $ultimo,
+                $kmActual
+            );
             if ($evaluacion === null) {
                 continue;
             }
 
-            if ($this->repo->existsActive($vehiculoId, $tipoConfig)) {
+            $mensaje = $this->buildMensajeMantenimiento(
+                (string) $config['nombre'],
+                $evaluacion['motivo']
+            );
+
+            $activa = $this->repo->findActive($vehiculoId, $tipoConfig);
+            if ($activa !== null) {
+                $this->repo->updateMensaje((int) $activa['id'], $mensaje, $evaluacion['nivel']);
                 continue;
             }
 
@@ -201,13 +218,7 @@ final class AlertaService
                 'vehiculo_id' => $vehiculoId,
                 'tipo' => $tipoConfig,
                 'titulo' => $tituloBase . ' — ' . $vehiculo['numero_economico'],
-                'mensaje' => $this->buildMensajeMantenimiento(
-                    $vehiculo['numero_economico'],
-                    $config['nombre'],
-                    $kmDesde,
-                    $diasDesde,
-                    $evaluacion['motivo']
-                ),
+                'mensaje' => $mensaje,
                 'nivel' => $evaluacion['nivel'],
             ]);
             $generadas++;
@@ -221,8 +232,13 @@ final class AlertaService
      *
      * @return array{nivel: string, motivo: string}|null
      */
-    private function evaluarUmbralesMantenimiento(int $kmDesde, int $diasDesde, array $config): ?array
-    {
+    private function evaluarUmbralesMantenimiento(
+        int $kmDesde,
+        int $diasDesde,
+        array $config,
+        ?array $ultimo,
+        int $kmActual
+    ): ?array {
         $nivelKm = $this->calcularNivelAcumulado($kmDesde, $config, 'km');
         $nivelDias = null;
 
@@ -237,15 +253,26 @@ final class AlertaService
 
         $motivos = [];
         if ($nivelKm !== null) {
-            $motivos[] = sprintf('%d km desde el último servicio', $kmDesde);
+            if ($ultimo === null) {
+                $motivos[] = sprintf(
+                    '%s km sin registro previo de este servicio',
+                    number_format($kmActual, 0, '.', ',')
+                );
+            } else {
+                $motivos[] = sprintf('%s km desde el último servicio', number_format($kmDesde, 0, '.', ','));
+            }
         }
         if ($nivelDias !== null) {
-            $motivos[] = sprintf('%d día(s) desde el último servicio', $diasDesde);
+            if ($ultimo === null) {
+                $motivos[] = 'sin registro previo por fecha';
+            } else {
+                $motivos[] = sprintf('%d día(s) desde el último servicio', $diasDesde);
+            }
         }
 
         return [
             'nivel' => $nivel,
-            'motivo' => implode(' o ', $motivos),
+            'motivo' => implode(' · ', $motivos),
         ];
     }
 
@@ -293,20 +320,52 @@ final class AlertaService
         return $pa >= $pb ? $a : $b;
     }
 
-    private function buildMensajeMantenimiento(
-        string $numeroEconomico,
-        string $nombreServicio,
-        int $kmDesde,
-        int $diasDesde,
-        string $motivo
-    ): string {
-        return sprintf(
-            'El vehículo %s requiere %s (%s). Registro: %d km y %d día(s) transcurridos.',
-            $numeroEconomico,
-            $nombreServicio,
-            $motivo,
-            $kmDesde,
-            $diasDesde
-        );
+    private function buildMensajeMantenimiento(string $nombreServicio, string $motivo): string
+    {
+        return sprintf('%s · %s', $nombreServicio, $motivo);
+    }
+
+    private function enriquecerFila(array $alerta): array
+    {
+        $tipo = (string) ($alerta['tipo'] ?? '');
+        $vehiculoId = (int) ($alerta['vehiculo_id'] ?? 0);
+        $config = $vehiculoId > 0 ? $this->repo->getEffectiveConfig($vehiculoId, $tipo) : null;
+        $alerta['servicio_nombre'] = (string) ($config['nombre'] ?? mantenimiento_servicio_label($tipo));
+
+        if ($config !== null && ($config['unidad'] ?? '') === 'km') {
+            $ultimo = $this->mantenimientos->getUltimoPorServicio($vehiculoId, $tipo);
+            $fechas = alerta_mantenimiento_fechas($ultimo, $config);
+            $alerta['categoria'] = 'mantenimiento';
+            $alerta['fecha_ultimo_mantenimiento'] = $fechas['ultima'];
+            $alerta['fecha_proximo_mantenimiento'] = $fechas['proxima'];
+            $alerta['mantenimiento_id'] = $ultimo['id'] ?? null;
+            $alerta['mantenimiento_folio'] = $ultimo['folio'] ?? null;
+
+            $abierto = $this->mantenimientos->findAbiertoPorServicio($vehiculoId, $tipo);
+            $alerta['mantenimiento_abierto_id'] = $abierto['id'] ?? null;
+            $alerta['mantenimiento_abierto_folio'] = $abierto['folio'] ?? null;
+
+            if ($ultimo !== null) {
+                $vehiculo = $this->vehiculos->findById($vehiculoId);
+                $kmActual = (int) ($vehiculo['kilometraje_actual'] ?? 0);
+                $alerta['km_desde'] = max(0, $kmActual - (int) $ultimo['kilometraje']);
+                if (!empty($ultimo['fecha'])) {
+                    $alerta['dias_desde'] = (int) ((strtotime(date('Y-m-d')) - strtotime((string) $ultimo['fecha'])) / 86400);
+                }
+            } else {
+                $alerta['km_desde'] = null;
+                $alerta['dias_desde'] = null;
+            }
+
+            return $alerta;
+        }
+
+        $alerta['categoria'] = 'documento';
+        if (!empty($alerta['fecha_vencimiento'])) {
+            $alerta['fecha_proximo_mantenimiento'] = substr((string) $alerta['fecha_vencimiento'], 0, 10);
+            $alerta['dias_restantes'] = (int) ((strtotime($alerta['fecha_proximo_mantenimiento']) - strtotime(date('Y-m-d'))) / 86400);
+        }
+
+        return $alerta;
     }
 }

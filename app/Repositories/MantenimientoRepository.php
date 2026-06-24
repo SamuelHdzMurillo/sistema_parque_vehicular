@@ -208,28 +208,39 @@ final class MantenimientoRepository extends BaseRepository
 
     public function getUltimoPorServicio(int $vehiculoId, string $servicio): ?array
     {
-        $row = $this->fetchOne(
-            'SELECT * FROM mantenimientos
-             WHERE vehiculo_id = ? AND estado = "finalizado" AND es_historico = 0 AND servicio = ?
-             ORDER BY fecha DESC, id DESC LIMIT 1',
-            [$vehiculoId, $servicio]
-        );
+        $keyword = $this->legacyBusquedaDescripcion($servicio);
+        $params = [$vehiculoId, $servicio];
+        $where = 'vehiculo_id = ? AND estado = "finalizado" AND es_historico = 0 AND (servicio = ?';
 
-        if ($row !== null) {
-            return $row;
+        if ($keyword !== null) {
+            $where .= ' OR descripcion LIKE ?';
+            $params[] = '%' . $keyword . '%';
         }
 
-        $legacy = $this->legacyBusquedaDescripcion($servicio);
-        if ($legacy === null) {
-            return null;
-        }
+        $where .= ')';
 
         return $this->fetchOne(
-            'SELECT * FROM mantenimientos
-             WHERE vehiculo_id = ? AND tipo = "preventivo" AND estado = "finalizado"
-               AND es_historico = 0 AND servicio IS NULL AND descripcion LIKE ?
-             ORDER BY fecha DESC, id DESC LIMIT 1',
-            [$vehiculoId, '%' . $legacy . '%']
+            "SELECT * FROM mantenimientos WHERE {$where} ORDER BY fecha DESC, id DESC LIMIT 1",
+            $params
+        );
+    }
+
+    public function findAbiertoPorServicio(int $vehiculoId, string $servicio): ?array
+    {
+        $keyword = $this->legacyBusquedaDescripcion($servicio);
+        $params = [$vehiculoId, $servicio];
+        $where = 'vehiculo_id = ? AND estado NOT IN ("finalizado", "cancelado") AND (servicio = ?';
+
+        if ($keyword !== null) {
+            $where .= ' OR (servicio IS NULL AND descripcion LIKE ?)';
+            $params[] = '%' . $keyword . '%';
+        }
+
+        $where .= ')';
+
+        return $this->fetchOne(
+            "SELECT id, folio, estado, servicio FROM mantenimientos WHERE {$where} ORDER BY id DESC LIMIT 1",
+            $params
         );
     }
 

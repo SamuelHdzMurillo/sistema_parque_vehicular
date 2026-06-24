@@ -9,6 +9,7 @@ $tipos = $tipos ?? [];
 $servicios = $servicios ?? [];
 $puedeAgregarArea = can('catalogos.create');
 $preVehiculo = $_GET['vehiculo_id'] ?? old('vehiculo_id');
+$preServicio = $_GET['servicio'] ?? old('servicio');
 $responsableActual = old('responsable_id', auth_id());
 $puedeAgregarResponsable = can('usuarios.create') || can('mantenimiento.create');
 ?>
@@ -44,7 +45,7 @@ $puedeAgregarResponsable = can('usuarios.create') || can('mantenimiento.create')
                 <select id="servicio" name="servicio" class="form-select" data-servicio-mantenimiento>
                     <option value="">Seleccione…</option>
                     <?php foreach ($servicios as $s): ?>
-                    <option value="<?= e($s['tipo']) ?>" <?= old('servicio') === ($s['tipo'] ?? '') ? 'selected' : '' ?>>
+                    <option value="<?= e($s['tipo']) ?>" <?= (string) $preServicio === (string) ($s['tipo'] ?? '') ? 'selected' : '' ?>>
                         <?= e($s['nombre'] ?? mantenimiento_servicio_label($s['tipo'] ?? '')) ?>
                     </option>
                     <?php endforeach; ?>

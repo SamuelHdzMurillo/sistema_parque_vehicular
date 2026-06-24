@@ -1130,10 +1130,21 @@ a:hover { color: var(--color-primary-hover); text-decoration: underline; }
     border: 0;
 }
 
-.alertas-tabla-fila--rojo td:first-child { box-shadow: inset 3px 0 0 var(--danger); }
-.alertas-tabla-fila--amarillo td:first-child { box-shadow: inset 3px 0 0 var(--warning); }
-.alertas-tabla-fila--verde td:first-child { box-shadow: inset 3px 0 0 var(--success); }
 .alertas-tabla-fila--atendida { opacity: .65; }
+.alertas-tabla-fila--sub td { border-top-color: var(--border-subtle, rgba(255,255,255,.06)); }
+.alertas-grupo-vehiculo {
+    vertical-align: top;
+    background: var(--surface-raised, rgba(255,255,255,.02));
+}
+.alertas-grupo-vehiculo--rojo { box-shadow: inset 3px 0 0 var(--danger); }
+.alertas-grupo-vehiculo--amarillo { box-shadow: inset 3px 0 0 var(--warning); }
+.alertas-grupo-vehiculo--verde { box-shadow: inset 3px 0 0 var(--success); }
+.alertas-grupo-count {
+    font-size: .78rem;
+    color: var(--text-secondary);
+    margin-top: .25rem;
+    font-weight: normal;
+}
 
 .alertas-tabla-detalle {
     font-size: .82rem;

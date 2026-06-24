@@ -602,6 +602,148 @@ function mantenimiento_inferir_servicio(string $descripcion): ?string
     return null;
 }
 
+/**
+ * Calcula la última fecha de servicio y la próxima fecha programada según la config.
+ *
+ * @return array{ultima: ?string, proxima: ?string}
+ */
+function alerta_mantenimiento_fechas(?array $ultimo, array $config): array
+{
+    $ultima = null;
+    if ($ultimo !== null && !empty($ultimo['fecha'])) {
+        $ultima = substr((string) $ultimo['fecha'], 0, 10);
+    }
+
+    if ($ultima === null) {
+        return ['ultima' => null, 'proxima' => null];
+    }
+
+    $intervalDias = $config['umbral_verde_dias'] ?? null;
+    if ($intervalDias === null || (int) $intervalDias <= 0) {
+        if (($config['unidad'] ?? '') === 'dias') {
+            $intervalDias = $config['umbral_verde'] ?? null;
+        }
+    }
+
+    if ($intervalDias === null || (int) $intervalDias <= 0) {
+        return ['ultima' => $ultima, 'proxima' => null];
+    }
+
+    $proxima = date('Y-m-d', strtotime($ultima . ' + ' . (int) $intervalDias . ' days'));
+
+    return ['ultima' => $ultima, 'proxima' => $proxima];
+}
+
+/** URL para atender la alerta (registrar servicio o revisar documentación). */
+function alerta_accion_url(array $alerta): string
+{
+    $vehiculoId = (int) ($alerta['vehiculo_id'] ?? 0);
+    $tipo = (string) ($alerta['tipo'] ?? '');
+
+    if (!empty($alerta['mantenimiento_abierto_id'])) {
+        return url('mantenimiento/' . (int) $alerta['mantenimiento_abierto_id']);
+    }
+
+    if (($alerta['categoria'] ?? '') === 'mantenimiento' && $vehiculoId > 0 && $tipo !== '') {
+        return url('mantenimiento/create?vehiculo_id=' . $vehiculoId . '&servicio=' . rawurlencode($tipo));
+    }
+
+    if (($alerta['categoria'] ?? '') === 'documento' && $vehiculoId > 0) {
+        return url('documentos?vehiculo_id=' . $vehiculoId);
+    }
+
+    return url('alertas');
+}
+
+/** Resumen breve para la fila de alertas (sin párrafo largo). */
+function alerta_resumen_fila(array $alerta): string
+{
+    if (($alerta['categoria'] ?? '') === 'mantenimiento') {
+        $partes = [];
+        if (isset($alerta['km_desde']) && $alerta['km_desde'] !== null) {
+            $partes[] = number_format((int) $alerta['km_desde'], 0, '.', ',') . ' km recorridos';
+        } else {
+            $partes[] = 'Sin registro previo de este servicio';
+        }
+        if (isset($alerta['dias_desde']) && $alerta['dias_desde'] !== null && (int) $alerta['dias_desde'] > 0) {
+            $partes[] = (int) $alerta['dias_desde'] . ' día(s)';
+        }
+
+        return implode(' · ', $partes);
+    }
+
+    if (($alerta['categoria'] ?? '') === 'documento') {
+        $dias = $alerta['dias_restantes'] ?? null;
+        if ($dias === null) {
+            return 'Documento por revisar';
+        }
+        if ((int) $dias < 0) {
+            return 'Vencido hace ' . number_format(abs((int) $dias)) . ' día(s)';
+        }
+
+        return 'Vence en ' . number_format((int) $dias) . ' día(s)';
+    }
+
+    return '';
+}
+
+/**
+ * Agrupa alertas enriquecidas por vehículo (urgentes primero).
+ *
+ * @param list<array<string, mixed>> $alertas
+ * @return list<array{vehiculo_id: int, numero_economico: string, nivel_max: ?string, alertas: list<array<string, mixed>>}>
+ */
+function alerta_agrupar_por_vehiculo(array $alertas): array
+{
+    $grupos = [];
+
+    foreach ($alertas as $alerta) {
+        $vehiculoId = (int) ($alerta['vehiculo_id'] ?? 0);
+        if (!isset($grupos[$vehiculoId])) {
+            $grupos[$vehiculoId] = [
+                'vehiculo_id' => $vehiculoId,
+                'numero_economico' => (string) ($alerta['numero_economico'] ?? '—'),
+                'nivel_max' => null,
+                'alertas' => [],
+            ];
+        }
+
+        $grupos[$vehiculoId]['alertas'][] = $alerta;
+        $nivel = isset($alerta['nivel']) ? (string) $alerta['nivel'] : null;
+        if ($nivel !== null && alerta_nivel_peso($nivel) > alerta_nivel_peso($grupos[$vehiculoId]['nivel_max'])) {
+            $grupos[$vehiculoId]['nivel_max'] = $nivel;
+        }
+    }
+
+    $lista = array_values($grupos);
+
+    usort($lista, static function (array $a, array $b): int {
+        $cmp = alerta_nivel_peso($b['nivel_max']) <=> alerta_nivel_peso($a['nivel_max']);
+        if ($cmp !== 0) {
+            return $cmp;
+        }
+
+        return strcasecmp($a['numero_economico'], $b['numero_economico']);
+    });
+
+    foreach ($lista as &$grupo) {
+        usort($grupo['alertas'], static function (array $a, array $b): int {
+            $cmp = alerta_nivel_peso($b['nivel'] ?? null) <=> alerta_nivel_peso($a['nivel'] ?? null);
+            if ($cmp !== 0) {
+                return $cmp;
+            }
+
+            return strcasecmp(
+                (string) ($a['servicio_nombre'] ?? $a['titulo'] ?? ''),
+                (string) ($b['servicio_nombre'] ?? $b['titulo'] ?? '')
+            );
+        });
+    }
+    unset($grupo);
+
+    return $lista;
+}
+
 function vehiculo_estado_badge(string $estado): string
 {
     return match ($estado) {
