@@ -13,8 +13,9 @@ $seguro = alerta_config_por_tipo($configDocs, 'seguro') ?? ($configDocs[0] ?? nu
             <ol class="alerta-como-funciona-pasos">
                 <li>Registre el servicio en <strong>Mantenimiento</strong> y elija uno o más <strong>servicios realizados</strong> (aceite, afinación, llantas…).</li>
                 <li>¿Necesita otro tipo de servicio? En <strong>Ajustes de alertas</strong> use «Agregar servicio de mantenimiento».</li>
-                <li>Al <strong>finalizar</strong> el mantenimiento, el sistema reinicia el contador de km para cada servicio seleccionado.</li>
-                <li>Las alertas solo aparecen <strong>después</strong> del primer mantenimiento finalizado de cada tipo; luego cuentan km y días desde ese registro.</li>
+                <li>Si el servicio ya se hizo antes, marque <strong>«Mantenimiento anterior al kilometraje actual»</strong> al registrarlo: eso es el alta que inicia el contador.</li>
+                <li>Al <strong>finalizar</strong> (o guardar como histórico), el sistema reinicia el contador de km y días para cada servicio seleccionado.</li>
+                <li><strong>Sin alta previa no hay alerta:</strong> un vehículo nuevo no genera avisos de mantenimiento hasta que usted registre ese servicio por primera vez.</li>
             </ol>
 
             <?php if ($aceite !== null): ?>

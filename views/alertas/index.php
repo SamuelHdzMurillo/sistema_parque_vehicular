@@ -29,6 +29,8 @@ $totalPendientes = (int) ($counts['total'] ?? 0);
     </div>
 </div>
 
+<?php App\Core\View::component('alertas-guia'); ?>
+
 <?php if ($solo_pendientes && $totalPendientes > 0): ?>
 <div class="alertas-resumen">
     <?php if ((int) ($counts['rojo'] ?? 0) > 0): ?>
@@ -52,7 +54,11 @@ $totalPendientes = (int) ($counts['total'] ?? 0);
 <?php if (empty($grupos)): ?>
 <div class="card">
     <div class="empty-state py-5 text-center text-muted">
-        <?= $solo_pendientes ? 'Nada pendiente. Todo en orden.' : 'No hay alertas registradas.' ?>
+        <?php if ($solo_pendientes): ?>
+        Nada pendiente. Para mantenimientos, registre primero el servicio en Mantenimiento; las alertas aparecerán cuando llegue el km o los días configurados.
+        <?php else: ?>
+        No hay alertas registradas.
+        <?php endif; ?>
     </div>
 </div>
 <?php else: ?>

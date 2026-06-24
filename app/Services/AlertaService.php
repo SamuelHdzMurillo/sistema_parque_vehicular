@@ -250,6 +250,11 @@ final class AlertaService
             $ultimo = $this->mantenimientos->getUltimoPorServicio($vehiculoId, $tipoConfig);
 
             if ($ultimo === null) {
+                $this->repo->dismissActivasPorServicio(
+                    $vehiculoId,
+                    $tipoConfig,
+                    'Sin mantenimiento registrado de este servicio.'
+                );
                 continue;
             }
 
@@ -323,21 +328,10 @@ final class AlertaService
 
         $motivos = [];
         if ($nivelKm !== null) {
-            if ($ultimo === null) {
-                $motivos[] = sprintf(
-                    '%s km sin registro previo de este servicio',
-                    number_format($kmActual, 0, '.', ',')
-                );
-            } else {
-                $motivos[] = sprintf('%s km desde el último servicio', number_format($kmDesde, 0, '.', ','));
-            }
+            $motivos[] = sprintf('%s km desde el último servicio', number_format($kmDesde, 0, '.', ','));
         }
         if ($nivelDias !== null) {
-            if ($ultimo === null) {
-                $motivos[] = 'sin registro previo por fecha';
-            } else {
-                $motivos[] = sprintf('%d día(s) desde el último servicio', $diasDesde);
-            }
+            $motivos[] = sprintf('%d día(s) desde el último servicio', $diasDesde);
         }
 
         return [

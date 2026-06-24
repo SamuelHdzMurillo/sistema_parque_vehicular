@@ -248,6 +248,16 @@ final class AlertaRepository extends BaseRepository
         );
     }
 
+    /** Cierra alertas de mantenimiento sin registro base (vehículo sin ese servicio registrado). */
+    public function dismissActivasPorServicio(int $vehiculoId, string $tipoServicio, string $comentario = ''): bool
+    {
+        return $this->execute(
+            'UPDATE alertas SET atendida = 1, comentario_atencion = ?, updated_at = NOW()
+             WHERE vehiculo_id = ? AND tipo = ? AND atendida = 0 AND documento_id IS NULL',
+            [$comentario, $vehiculoId, $tipoServicio]
+        );
+    }
+
     public function tipoExists(string $tipo): bool
     {
         return $this->fetchOne('SELECT id FROM alerta_config WHERE tipo = ?', [$tipo]) !== null;

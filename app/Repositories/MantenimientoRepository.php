@@ -332,7 +332,7 @@ final class MantenimientoRepository extends BaseRepository
         return $this->fetchOne(
             "SELECT m.* FROM mantenimientos m
              LEFT JOIN mantenimiento_servicios ms ON ms.mantenimiento_id = m.id
-             WHERE m.vehiculo_id = ? AND m.estado = 'finalizado' AND m.es_historico = 0 AND {$match}
+             WHERE m.vehiculo_id = ? AND m.estado = 'finalizado' AND {$match}
              ORDER BY m.fecha DESC, m.id DESC
              LIMIT 1",
             $params

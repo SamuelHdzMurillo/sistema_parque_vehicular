@@ -232,7 +232,7 @@ final class DashboardRepository extends BaseRepository
         $row = $this->fetchOne(
             'SELECT m.fecha, m.kilometraje FROM mantenimientos m
              LEFT JOIN mantenimiento_servicios ms ON ms.mantenimiento_id = m.id
-             WHERE m.vehiculo_id = ? AND m.estado = "finalizado" AND m.es_historico = 0
+             WHERE m.vehiculo_id = ? AND m.estado = "finalizado"
                AND (ms.servicio = ? OR m.servicio = ?)
              ORDER BY m.fecha DESC, m.id DESC LIMIT 1',
             [$vehiculoId, $servicio, $servicio]
@@ -245,7 +245,7 @@ final class DashboardRepository extends BaseRepository
         return $this->fetchOne(
             'SELECT fecha, kilometraje FROM mantenimientos
              WHERE vehiculo_id = ? AND tipo = "preventivo" AND estado = "finalizado"
-               AND es_historico = 0 AND servicio IS NULL AND descripcion LIKE ?
+               AND servicio IS NULL AND descripcion LIKE ?
              ORDER BY fecha DESC, id DESC LIMIT 1',
             [$vehiculoId, '%' . $this->legacyBusquedaDashboard($servicio) . '%']
         );

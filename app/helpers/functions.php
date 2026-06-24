@@ -653,28 +653,28 @@ function mantenimiento_inferir_servicio(string $descripcion): ?string
     return null;
 }
 
-/** Intervalo en días para calcular cuándo toca el siguiente servicio. */
+/** Intervalo en días para calcular cuándo toca el siguiente servicio (primer aviso). */
 function alerta_intervalo_dias(array $config): ?int
 {
-    $dias = $config['umbral_verde_dias'] ?? null;
-    if ($dias !== null && (int) $dias > 0) {
-        return (int) $dias;
-    }
-
     $intervalo = $config['intervalo_dias'] ?? null;
     if ($intervalo !== null && (int) $intervalo > 0) {
         return (int) $intervalo;
     }
 
+    $dias = $config['umbral_rojo_dias'] ?? null;
+    if ($dias !== null && (int) $dias > 0) {
+        return (int) $dias;
+    }
+
     if (($config['unidad'] ?? '') === 'dias') {
-        $dias = $config['umbral_verde'] ?? null;
+        $dias = $config['umbral_rojo'] ?? null;
         return ($dias !== null && (int) $dias > 0) ? (int) $dias : null;
     }
 
     return null;
 }
 
-/** Intervalo en km para calcular el kilometraje del próximo servicio. */
+/** Intervalo en km para calcular el kilometraje del próximo servicio (primer aviso). */
 function alerta_intervalo_km(array $config): ?int
 {
     $intervalo = $config['intervalo_km'] ?? null;
@@ -683,7 +683,7 @@ function alerta_intervalo_km(array $config): ?int
     }
 
     $umbrales = alerta_config_umbrales_km($config);
-    $km = (int) ($umbrales['urgente'] ?? 0);
+    $km = (int) ($umbrales['aviso'] ?? 0);
 
     return $km > 0 ? $km : null;
 }
@@ -700,16 +700,12 @@ function alerta_mantenimiento_fechas(?array $ultimo, array $config, ?array $vehi
         $ultima = substr((string) $ultimo['fecha'], 0, 10);
     }
 
-    $intervalDias = alerta_intervalo_dias($config);
-    $baseFecha = $ultima;
-
-    if ($baseFecha === null && $vehiculo !== null && !empty($vehiculo['fecha_adquisicion'])) {
-        $baseFecha = substr((string) $vehiculo['fecha_adquisicion'], 0, 10);
-    }
-
     $proxima = null;
-    if ($baseFecha !== null && $intervalDias !== null) {
-        $proxima = date('Y-m-d', strtotime($baseFecha . ' + ' . $intervalDias . ' days'));
+    if ($ultima !== null) {
+        $intervalDias = alerta_intervalo_dias($config);
+        if ($intervalDias !== null) {
+            $proxima = date('Y-m-d', strtotime($ultima . ' + ' . $intervalDias . ' days'));
+        }
     }
 
     return ['ultima' => $ultima, 'proxima' => $proxima];
@@ -777,8 +773,6 @@ function alerta_resumen_fila(array $alerta): string
         $partes = [];
         if (isset($alerta['km_desde']) && $alerta['km_desde'] !== null) {
             $partes[] = number_format((int) $alerta['km_desde'], 0, '.', ',') . ' km recorridos';
-        } else {
-            $partes[] = 'Sin registro previo de este servicio';
         }
         if (isset($alerta['dias_desde']) && $alerta['dias_desde'] !== null && (int) $alerta['dias_desde'] > 0) {
             $partes[] = (int) $alerta['dias_desde'] . ' día(s)';

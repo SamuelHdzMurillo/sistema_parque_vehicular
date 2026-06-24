@@ -32,9 +32,9 @@
             </article>
         </div>
         <ul class="alertas-guia-list">
-            <li><strong>Mantenimiento:</strong> el sistema cuenta cuántos kilómetros (o días) han pasado desde el último servicio.</li>
+            <li><strong>Mantenimiento:</strong> primero registre el servicio en Mantenimiento (aceite, afinación, llantas…). Solo después de ese alta el sistema empieza a contar km y días para avisarle.</li>
             <li><strong>Documentos:</strong> el sistema cuenta cuántos días faltan para que venza un papel (seguro, tenencia, etc.).</li>
-            <li><strong>Marcar como atendida:</strong> cuando ya resolvió el asunto, pulse el botón verde para quitarla de pendientes.</li>
+            <li><strong>Atender:</strong> use el botón «Atender» para registrar el nuevo mantenimiento o revisar el documento.</li>
         </ul>
     </div>
 </details>
