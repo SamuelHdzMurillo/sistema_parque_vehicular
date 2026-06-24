@@ -31,14 +31,15 @@ final class MantenimientoRepository extends BaseRepository
     {
         $this->execute(
             'INSERT INTO mantenimientos (
-                folio, vehiculo_id, tipo, fecha, kilometraje, es_historico, proveedor_id, descripcion, costo,
+                folio, vehiculo_id, tipo, servicio, fecha, kilometraje, es_historico, proveedor_id, descripcion, costo,
                 factura_folio, factura_uuid, factura_fecha, factura_subtotal, factura_iva, factura_total,
                 factura_ruta, xml_ruta, pdf_ruta, responsable_id, observaciones, estado, created_by
-             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
             [
                 $data['folio'],
                 (int) $data['vehiculo_id'],
                 $data['tipo'],
+                $this->nullableStr($data['servicio'] ?? null),
                 $data['fecha'],
                 (int) $data['kilometraje'],
                 !empty($data['es_historico']) ? 1 : 0,
@@ -68,7 +69,7 @@ final class MantenimientoRepository extends BaseRepository
     {
         return $this->execute(
             'UPDATE mantenimientos SET
-                tipo = ?, fecha = ?, kilometraje = ?, es_historico = ?, proveedor_id = ?, descripcion = ?, costo = ?,
+                tipo = ?, servicio = ?, fecha = ?, kilometraje = ?, es_historico = ?, proveedor_id = ?, descripcion = ?, costo = ?,
                 factura_folio = ?, factura_uuid = ?, factura_fecha = ?,
                 factura_subtotal = ?, factura_iva = ?, factura_total = ?,
                 factura_ruta = ?, xml_ruta = ?, pdf_ruta = ?, responsable_id = ?,
@@ -76,6 +77,7 @@ final class MantenimientoRepository extends BaseRepository
              WHERE id = ?',
             [
                 $data['tipo'],
+                $this->nullableStr($data['servicio'] ?? null),
                 $data['fecha'],
                 (int) $data['kilometraje'],
                 !empty($data['es_historico']) ? 1 : 0,
@@ -162,7 +164,7 @@ final class MantenimientoRepository extends BaseRepository
 
         $queryParams = array_merge($params, [$perPage, $offset]);
         $rows = $this->fetchAll(
-            "SELECT m.id, m.folio, m.tipo, m.fecha, m.costo, m.estado, v.numero_economico, p.razon_social AS proveedor
+            "SELECT m.id, m.folio, m.tipo, m.servicio, m.fecha, m.costo, m.estado, v.numero_economico, p.razon_social AS proveedor
              FROM mantenimientos m
              JOIN vehiculos v ON v.id = m.vehiculo_id
              LEFT JOIN proveedores p ON p.id = m.proveedor_id
@@ -199,16 +201,46 @@ final class MantenimientoRepository extends BaseRepository
         );
     }
 
-    public function getUltimoPreventivo(int $vehiculoId, string $tipoDescripcion = 'aceite'): ?array
+    public function getUltimoPreventivo(int $vehiculoId, string $servicio): ?array
     {
+        return $this->getUltimoPorServicio($vehiculoId, $servicio);
+    }
+
+    public function getUltimoPorServicio(int $vehiculoId, string $servicio): ?array
+    {
+        $row = $this->fetchOne(
+            'SELECT * FROM mantenimientos
+             WHERE vehiculo_id = ? AND estado = "finalizado" AND es_historico = 0 AND servicio = ?
+             ORDER BY fecha DESC, id DESC LIMIT 1',
+            [$vehiculoId, $servicio]
+        );
+
+        if ($row !== null) {
+            return $row;
+        }
+
+        $legacy = $this->legacyBusquedaDescripcion($servicio);
+        if ($legacy === null) {
+            return null;
+        }
+
         return $this->fetchOne(
             'SELECT * FROM mantenimientos
              WHERE vehiculo_id = ? AND tipo = "preventivo" AND estado = "finalizado"
-               AND es_historico = 0
-               AND descripcion LIKE ?
-             ORDER BY fecha DESC LIMIT 1',
-            [$vehiculoId, '%' . $tipoDescripcion . '%']
+               AND es_historico = 0 AND servicio IS NULL AND descripcion LIKE ?
+             ORDER BY fecha DESC, id DESC LIMIT 1',
+            [$vehiculoId, '%' . $legacy . '%']
         );
+    }
+
+    private function legacyBusquedaDescripcion(string $servicio): ?string
+    {
+        return match ($servicio) {
+            'cambio_aceite' => 'aceite',
+            'afinacion' => 'afinaci',
+            'llantas' => 'llanta',
+            default => str_contains($servicio, '_') ? null : $servicio,
+        };
     }
 
     public function getUltimoFinalizado(int $vehiculoId): ?array

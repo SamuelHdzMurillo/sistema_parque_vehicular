@@ -23,14 +23,15 @@
     </form>
     <div class="table-responsive">
         <table class="table">
-            <thead><tr><th>Folio</th><th>Vehículo</th><th>Tipo</th><th>Fecha</th><th>Proveedor</th><th>Costo</th><th>Estado</th><th></th></tr></thead>
+            <thead><tr><th>Folio</th><th>Vehículo</th><th>Servicio</th><th>Tipo</th><th>Fecha</th><th>Proveedor</th><th>Costo</th><th>Estado</th><th></th></tr></thead>
             <tbody>
                 <?php if (empty($data)): ?>
-                <tr><td colspan="8" class="text-center text-muted">Sin registros</td></tr>
+                <tr><td colspan="9" class="text-center text-muted">Sin registros</td></tr>
                 <?php else: foreach ($data as $m): ?>
                 <tr>
                     <td><strong><?= e($m['folio']) ?></strong></td>
                     <td><?= e($m['numero_economico'] ?? '—') ?></td>
+                    <td><?= !empty($m['servicio']) ? e(mantenimiento_servicio_label($m['servicio'])) : '—' ?></td>
                     <td><?= e(ucfirst($m['tipo'])) ?></td>
                     <td><?= format_date($m['fecha']) ?></td>
                     <td><?= e($m['proveedor_nombre'] ?? $m['razon_social'] ?? '—') ?></td>

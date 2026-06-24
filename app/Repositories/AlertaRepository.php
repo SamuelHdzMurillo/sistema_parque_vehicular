@@ -207,6 +207,24 @@ final class AlertaRepository extends BaseRepository
         return $this->fetchAll('SELECT * FROM alerta_config ORDER BY nombre ASC');
     }
 
+    /** @return list<array{tipo: string, nombre: string}> */
+    public function getServiciosKm(): array
+    {
+        return $this->fetchAll(
+            'SELECT tipo, nombre FROM alerta_config WHERE unidad = "km" AND activo = 1 ORDER BY nombre ASC'
+        );
+    }
+
+    public function atenderActivasPorServicio(int $vehiculoId, string $tipoServicio, int $userId): bool
+    {
+        return $this->execute(
+            'UPDATE alertas SET atendida = 1, atendida_por = ?, atendida_en = NOW(),
+                    comentario_atencion = ?, updated_at = NOW()
+             WHERE vehiculo_id = ? AND tipo = ? AND atendida = 0',
+            [$userId, 'Atendida automáticamente al registrar mantenimiento.', $vehiculoId, $tipoServicio]
+        );
+    }
+
     public function updateConfig(int $id, array $data): bool
     {
         return $this->execute(

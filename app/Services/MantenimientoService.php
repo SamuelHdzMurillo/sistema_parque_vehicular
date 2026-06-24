@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Helpers\FileUploader;
+use App\Repositories\AlertaRepository;
 use App\Repositories\CatalogoRepository;
 use App\Repositories\MantenimientoRepository;
 use App\Repositories\VehiculoRepository;
@@ -15,6 +16,8 @@ final class MantenimientoService
         private readonly MantenimientoRepository $repo = new MantenimientoRepository(),
         private readonly VehiculoRepository $vehiculos = new VehiculoRepository(),
         private readonly CatalogoRepository $catalogos = new CatalogoRepository(),
+        private readonly AlertaRepository $alertas = new AlertaRepository(),
+        private readonly AlertaService $alertaService = new AlertaService(),
     ) {
     }
 
@@ -32,6 +35,7 @@ final class MantenimientoService
             'areas' => $this->catalogos->getAreas(),
             'planteles' => $this->catalogos->getPlanteles(),
             'tipos' => ['preventivo', 'correctivo', 'predictivo'],
+            'servicios' => $this->alertas->getServiciosKm(),
             'estados' => ['pendiente', 'programado', 'autorizado', 'en_proceso', 'finalizado', 'cancelado'],
         ];
     }
@@ -44,6 +48,7 @@ final class MantenimientoService
     public function create(array $data, int $userId): int
     {
         $data = $this->normalizeHistorico($data);
+        $data = $this->normalizeServicio($data);
         $this->assertKilometrajeValido($data);
         $files = $this->extractFiles($data);
         $data['folio'] = $this->repo->generateFolio();
@@ -60,6 +65,13 @@ final class MantenimientoService
             }
         }
 
+        if (($data['estado'] ?? '') === 'finalizado') {
+            $mant = $this->repo->findById($id);
+            if ($mant !== null) {
+                $this->alertaService->registrarMantenimientoFinalizado($mant, $userId);
+            }
+        }
+
         AuditService::log('CREATE', 'mantenimientos', $id, null, $data);
         return $id;
     }
@@ -71,6 +83,7 @@ final class MantenimientoService
             return false;
         }
         $data = $this->normalizeHistorico(array_merge($before, $data));
+        $data = $this->normalizeServicio($data);
         $this->assertKilometrajeValido($data);
         $files = $this->extractFiles($data);
         $rutas = $this->storeFacturaFiles($id, $files);
@@ -151,15 +164,35 @@ final class MantenimientoService
                 return 'No se puede finalizar en este estado.';
             }
             $this->repo->update($id, array_merge($mant, ['estado' => 'finalizado']));
+            $userId = auth_id() ?? (int) ($mant['responsable_id'] ?? 0);
             if (empty($mant['es_historico'])) {
                 $vehiculoId = (int) $mant['vehiculo_id'];
                 $this->vehiculos->updateKilometraje($vehiculoId, (int) $mant['kilometraje'], auth_id());
                 $this->vehiculos->updateEstado($vehiculoId, 'disponible', 'Fin mantenimiento ' . $mant['folio'], auth_id());
             }
+            $finalizado = $this->repo->findById($id);
+            if ($finalizado !== null && $userId > 0) {
+                $this->alertaService->registrarMantenimientoFinalizado($finalizado, $userId);
+            }
             return null;
         } catch (\Throwable $e) {
             return user_facing_error($e, 'No se pudo finalizar el mantenimiento.');
         }
+    }
+
+    private function normalizeServicio(array $data): array
+    {
+        $servicio = trim((string) ($data['servicio'] ?? ''));
+        $data['servicio'] = $servicio !== '' ? $servicio : null;
+
+        if (($data['tipo'] ?? '') === 'preventivo' && $data['servicio'] === null) {
+            throw new \RuntimeException(
+                'Seleccione qué servicio preventivo se realizó (cambio de aceite, afinación, llantas…). '
+                . 'Debe coincidir con los tipos configurados en Alertas.'
+            );
+        }
+
+        return $data;
     }
 
     private function normalizeHistorico(array $data): array

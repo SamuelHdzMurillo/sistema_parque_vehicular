@@ -1,203 +1,213 @@
 <?php
 $pageTitle = 'Configuración de alertas';
-$config = $config ?? [];
+$config = alerta_config_sort($config ?? []);
 $vehiculos = $vehiculos ?? [];
 $vehiculo_id = $vehiculo_id ?? null;
-$vehiculo_config = $vehiculo_config ?? [];
+$vehiculo_config = alerta_config_sort($vehiculo_config ?? []);
+
+$configDocs = array_values(array_filter($config, fn ($r) => ($r['unidad'] ?? '') === 'dias'));
+$configKm = array_values(array_filter($config, fn ($r) => ($r['unidad'] ?? '') === 'km'));
+$configVehDocs = array_values(array_filter($vehiculo_config, fn ($r) => ($r['unidad'] ?? '') === 'dias'));
+$configVehKm = array_values(array_filter($vehiculo_config, fn ($r) => ($r['unidad'] ?? '') === 'km'));
 ?>
 <div class="page-header">
     <div>
-        <ul class="breadcrumb"><li><a href="<?= url('alertas') ?>">Alertas</a></li><li>/ Configuración</li></ul>
-        <h1 class="page-title">Configuración de alertas</h1>
-        <p class="page-subtitle">Umbrales globales y personalización por vehículo (kilometraje o tiempo)</p>
+        <ul class="breadcrumb"><li><a href="<?= url('alertas') ?>">Alertas</a></li><li>/ Ajustes</li></ul>
+        <h1 class="page-title">Ajustes de alertas</h1>
+        <p class="page-subtitle">Cuándo avisar por mantenimiento o por vencimiento de documentos</p>
+    </div>
+    <div class="page-actions">
+        <a href="<?= url('alertas') ?>" class="btn btn-secondary">Volver</a>
     </div>
 </div>
 
-<div class="card mb-3">
-    <div class="card-header"><strong>Configuración por vehículo</strong></div>
-    <div class="card-body">
-        <form method="get" action="<?= url('alertas/config') ?>" class="form-row mb-3">
-            <div class="form-group" style="flex:1;max-width:480px">
-                <label class="form-label" for="vehiculo_id">Seleccionar vehículo</label>
-                <select id="vehiculo_id" name="vehiculo_id" class="form-select" onchange="this.form.submit()">
-                    <option value="">— Valores por defecto (todos los vehículos) —</option>
-                    <?php foreach ($vehiculos as $v): ?>
-                    <option value="<?= (int) $v['id'] ?>" <?= (int) $vehiculo_id === (int) $v['id'] ? 'selected' : '' ?>>
-                        <?= e(catalogo_vehiculo_label($v)) ?>
-                    </option>
+<?php App\Core\View::component('alertas-como-funciona', [
+    'configKm' => $configKm,
+    'configDocs' => $configDocs,
+]); ?>
+
+<div class="card">
+    <form action="<?= url('alertas/config') ?>" method="post" class="card-body">
+        <?= csrf_field() ?>
+
+        <?php if (empty($config)): ?>
+        <p class="text-center text-muted">No hay configuración cargada.</p>
+        <?php else: ?>
+
+        <p class="alerta-config-lead">
+            Los números de mantenimiento son <strong>kilómetros recorridos desde el último servicio</strong>.
+            Los de documentos son <strong>días antes de vencer</strong>.
+        </p>
+
+        <?php if (!empty($configKm)): ?>
+        <h2 class="alerta-config-seccion">Mantenimiento — cada cuántos km avisar</h2>
+        <div class="table-responsive">
+            <table class="table alerta-config-table">
+                <thead>
+                    <tr>
+                        <th>Servicio</th>
+                        <th>En la práctica (con los valores actuales)</th>
+                        <th class="text-center" title="Encender o apagar">On</th>
+                        <th><span class="badge badge-success">Aviso</span><br><small class="text-muted">km desde servicio</small></th>
+                        <th><span class="badge badge-warning">Atención</span><br><small class="text-muted">km desde servicio</small></th>
+                        <th><span class="badge badge-danger">Urgente</span><br><small class="text-muted">km desde servicio</small></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($configKm as $row): ?>
+                    <?php App\Core\View::component('alerta-config-row', [
+                        'row' => $row,
+                        'mode' => 'global',
+                        'formKey' => (string) ($row['id'] ?? ''),
+                    ]); ?>
                     <?php endforeach; ?>
-                </select>
+                </tbody>
+            </table>
+        </div>
+
+        <details class="alerta-config-extra">
+            <summary>Mantenimiento también por días (opcional, avanzado)</summary>
+            <p class="text-muted mb-2">Si lo llena, avisa por kilómetros <em>o</em> por días, lo que pase primero.</p>
+            <div class="table-responsive">
+                <table class="table alerta-config-table alerta-config-table--compact">
+                    <thead>
+                        <tr>
+                            <th>Alerta</th>
+                            <th><span class="badge badge-success">Aviso</span></th>
+                            <th><span class="badge badge-warning">Atención</span></th>
+                            <th><span class="badge badge-danger">Urgente</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($configKm as $row): ?>
+                        <?php App\Core\View::component('alerta-config-dias-row', [
+                            'row' => $row,
+                            'mode' => 'global',
+                            'formKey' => (string) ($row['id'] ?? ''),
+                        ]); ?>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
             </div>
+        </details>
+        <?php endif; ?>
+
+        <?php if (!empty($configDocs)): ?>
+        <h2 class="alerta-config-seccion">Documentos — cuántos días antes avisar</h2>
+        <div class="table-responsive">
+            <table class="table alerta-config-table">
+                <thead>
+                    <tr>
+                        <th>Documento</th>
+                        <th>En la práctica (con los valores actuales)</th>
+                        <th class="text-center" title="Encender o apagar">On</th>
+                        <th><span class="badge badge-success">Aviso</span><br><small class="text-muted">días antes</small></th>
+                        <th><span class="badge badge-warning">Atención</span><br><small class="text-muted">días antes</small></th>
+                        <th><span class="badge badge-danger">Urgente</span><br><small class="text-muted">días antes</small></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($configDocs as $row): ?>
+                    <?php App\Core\View::component('alerta-config-row', [
+                        'row' => $row,
+                        'mode' => 'global',
+                        'formKey' => (string) ($row['id'] ?? ''),
+                    ]); ?>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+        <?php endif; ?>
+
+        <div class="alerta-config-actions">
+            <button type="submit" class="btn btn-primary">Guardar cambios</button>
+        </div>
+        <?php endif; ?>
+    </form>
+</div>
+
+<details class="card alerta-config-vehiculo-panel">
+    <summary class="card-header alerta-config-vehiculo-summary">
+        <strong>Reglas solo para un vehículo</strong>
+        <span class="text-muted">— opcional, la mayoría no lo necesita</span>
+    </summary>
+    <div class="card-body">
+        <form method="get" action="<?= url('alertas/config') ?>" class="mb-3">
+            <label class="form-label" for="vehiculo_id">Vehículo</label>
+            <select id="vehiculo_id" name="vehiculo_id" class="form-select" style="max-width:420px" onchange="this.form.submit()">
+                <option value="">— Ninguno —</option>
+                <?php foreach ($vehiculos as $v): ?>
+                <option value="<?= (int) $v['id'] ?>" <?= (int) $vehiculo_id === (int) $v['id'] ? 'selected' : '' ?>>
+                    <?= e(catalogo_vehiculo_label($v)) ?>
+                </option>
+                <?php endforeach; ?>
+            </select>
         </form>
 
         <?php if (!empty($vehiculo_id) && !empty($vehiculo_config)): ?>
         <form action="<?= url('alertas/config') ?>" method="post">
             <?= csrf_field() ?>
             <input type="hidden" name="vehiculo_id" value="<?= (int) $vehiculo_id ?>">
+            <p class="alerta-config-lead">Marque <strong>On</strong> solo en las filas que quiera cambiar para este vehículo.</p>
+
+            <?php if (!empty($configVehKm)): ?>
+            <h3 class="alerta-config-seccion alerta-config-seccion--sm">Mantenimiento</h3>
             <div class="table-responsive">
-                <table class="table">
+                <table class="table alerta-config-table">
                     <thead>
                         <tr>
-                            <th>Personalizar</th>
-                            <th>Tipo</th>
-                            <th>Nombre</th>
-                            <th>Umbral verde</th>
-                            <th>Umbral amarillo</th>
-                            <th>Umbral rojo</th>
-                            <?php $hayKm = false; foreach ($vehiculo_config as $vc) { if (($vc['unidad'] ?? '') === 'km') { $hayKm = true; break; } } ?>
-                            <?php if ($hayKm): ?>
-                            <th>Verde (días)</th>
-                            <th>Amarillo (días)</th>
-                            <th>Rojo (días)</th>
-                            <?php endif; ?>
+                            <th>Servicio</th>
+                            <th>En la práctica</th>
+                            <th class="text-center">Cambiar</th>
+                            <th><span class="badge badge-success">Aviso</span></th>
+                            <th><span class="badge badge-warning">Atención</span></th>
+                            <th><span class="badge badge-danger">Urgente</span></th>
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($vehiculo_config as $row): ?>
-                        <?php $tipo = (string) ($row['tipo'] ?? ''); $esKm = ($row['unidad'] ?? '') === 'km'; ?>
-                        <tr>
-                            <td>
-                                <input type="checkbox" name="vehiculo_config[<?= e($tipo) ?>][personalizado]" value="1"
-                                       <?= !empty($row['personalizado']) ? 'checked' : '' ?>>
-                            </td>
-                            <td><?= e($tipo) ?></td>
-                            <td><?= e($row['nombre'] ?? '') ?></td>
-                            <td>
-                                <input type="number" name="vehiculo_config[<?= e($tipo) ?>][umbral_verde]" class="form-control" min="0"
-                                       value="<?= e((string) ($row['umbral_verde'] ?? '')) ?>">
-                            </td>
-                            <td>
-                                <input type="number" name="vehiculo_config[<?= e($tipo) ?>][umbral_amarillo]" class="form-control" min="0"
-                                       value="<?= e((string) ($row['umbral_amarillo'] ?? '')) ?>">
-                            </td>
-                            <td>
-                                <input type="number" name="vehiculo_config[<?= e($tipo) ?>][umbral_rojo]" class="form-control" min="0"
-                                       value="<?= e((string) ($row['umbral_rojo'] ?? '')) ?>">
-                            </td>
-                            <?php if ($hayKm): ?>
-                            <td>
-                                <?php if ($esKm): ?>
-                                <input type="number" name="vehiculo_config[<?= e($tipo) ?>][umbral_verde_dias]" class="form-control" min="0"
-                                       value="<?= e((string) ($row['umbral_verde_dias'] ?? '')) ?>">
-                                <?php else: ?><span class="text-muted">—</span><?php endif; ?>
-                            </td>
-                            <td>
-                                <?php if ($esKm): ?>
-                                <input type="number" name="vehiculo_config[<?= e($tipo) ?>][umbral_amarillo_dias]" class="form-control" min="0"
-                                       value="<?= e((string) ($row['umbral_amarillo_dias'] ?? '')) ?>">
-                                <?php else: ?><span class="text-muted">—</span><?php endif; ?>
-                            </td>
-                            <td>
-                                <?php if ($esKm): ?>
-                                <input type="number" name="vehiculo_config[<?= e($tipo) ?>][umbral_rojo_dias]" class="form-control" min="0"
-                                       value="<?= e((string) ($row['umbral_rojo_dias'] ?? '')) ?>">
-                                <?php else: ?><span class="text-muted">—</span><?php endif; ?>
-                            </td>
-                            <?php endif; ?>
-                        </tr>
+                        <?php foreach ($configVehKm as $row): ?>
+                        <?php App\Core\View::component('alerta-config-row', [
+                            'row' => $row,
+                            'mode' => 'vehiculo',
+                            'formKey' => $row['tipo'] ?? '',
+                        ]); ?>
                         <?php endforeach; ?>
                     </tbody>
                 </table>
             </div>
-            <p class="form-hint">
-                Marque <strong>Personalizar</strong> en los tipos de alerta que desee configurar distinto para este vehículo.
-                Si no marca la casilla, se usarán los valores por defecto globales.
-            </p>
-            <button type="submit" class="btn btn-primary">Guardar configuración del vehículo</button>
+            <?php endif; ?>
+
+            <?php if (!empty($configVehDocs)): ?>
+            <h3 class="alerta-config-seccion alerta-config-seccion--sm">Documentos</h3>
+            <div class="table-responsive">
+                <table class="table alerta-config-table">
+                    <thead>
+                        <tr>
+                            <th>Documento</th>
+                            <th>En la práctica</th>
+                            <th class="text-center">Cambiar</th>
+                            <th><span class="badge badge-success">Aviso</span></th>
+                            <th><span class="badge badge-warning">Atención</span></th>
+                            <th><span class="badge badge-danger">Urgente</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($configVehDocs as $row): ?>
+                        <?php App\Core\View::component('alerta-config-row', [
+                            'row' => $row,
+                            'mode' => 'vehiculo',
+                            'formKey' => $row['tipo'] ?? '',
+                        ]); ?>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+            <?php endif; ?>
+
+            <button type="submit" class="btn btn-primary mt-2">Guardar de este vehículo</button>
         </form>
         <?php elseif (!empty($vehiculo_id)): ?>
-        <p class="text-muted">No hay tipos de alerta configurados.</p>
-        <?php else: ?>
-        <p class="text-muted">Elija un vehículo arriba para definir umbrales personalizados, o use los valores por defecto de abajo.</p>
+        <p class="text-muted">Sin alertas configurables.</p>
         <?php endif; ?>
     </div>
-</div>
-
-<div class="card">
-    <div class="card-header"><strong>Valores por defecto (todos los vehículos)</strong></div>
-    <form action="<?= url('alertas/config') ?>" method="post" class="card-body">
-        <?= csrf_field() ?>
-        <div class="table-responsive">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Tipo</th>
-                        <th>Nombre</th>
-                        <th>Unidad</th>
-                        <th>Umbral verde (km/días)</th>
-                        <th>Umbral amarillo</th>
-                        <th>Umbral rojo</th>
-                        <th>Umbral verde (días)*</th>
-                        <th>Umbral amarillo (días)</th>
-                        <th>Umbral rojo (días)</th>
-                        <th>Activo</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (empty($config)): ?>
-                    <tr><td colspan="10" class="text-center text-muted">No hay configuración cargada</td></tr>
-                    <?php else: foreach ($config as $row): ?>
-                    <?php $id = (int) ($row['id'] ?? 0); $esKm = ($row['unidad'] ?? '') === 'km'; ?>
-                    <tr>
-                        <td><?= e($row['tipo'] ?? '') ?></td>
-                        <td>
-                            <input type="text" name="config[<?= $id ?>][nombre]" class="form-control" value="<?= e($row['nombre'] ?? '') ?>">
-                        </td>
-                        <td><?= e($row['unidad'] ?? 'km') ?></td>
-                        <td>
-                            <input type="number" name="config[<?= $id ?>][umbral_verde]" class="form-control" min="0"
-                                   value="<?= e((string) ($row['umbral_verde'] ?? '')) ?>">
-                        </td>
-                        <td>
-                            <input type="number" name="config[<?= $id ?>][umbral_amarillo]" class="form-control" min="0"
-                                   value="<?= e((string) ($row['umbral_amarillo'] ?? '')) ?>">
-                        </td>
-                        <td>
-                            <input type="number" name="config[<?= $id ?>][umbral_rojo]" class="form-control" min="0"
-                                   value="<?= e((string) ($row['umbral_rojo'] ?? '')) ?>">
-                        </td>
-                        <td>
-                            <?php if ($esKm): ?>
-                            <input type="number" name="config[<?= $id ?>][umbral_verde_dias]" class="form-control" min="0"
-                                   value="<?= e((string) ($row['umbral_verde_dias'] ?? '')) ?>" placeholder="Opcional">
-                            <?php else: ?>
-                            <span class="text-muted">—</span>
-                            <?php endif; ?>
-                        </td>
-                        <td>
-                            <?php if ($esKm): ?>
-                            <input type="number" name="config[<?= $id ?>][umbral_amarillo_dias]" class="form-control" min="0"
-                                   value="<?= e((string) ($row['umbral_amarillo_dias'] ?? '')) ?>" placeholder="Opcional">
-                            <?php else: ?>
-                            <span class="text-muted">—</span>
-                            <?php endif; ?>
-                        </td>
-                        <td>
-                            <?php if ($esKm): ?>
-                            <input type="number" name="config[<?= $id ?>][umbral_rojo_dias]" class="form-control" min="0"
-                                   value="<?= e((string) ($row['umbral_rojo_dias'] ?? '')) ?>" placeholder="Opcional">
-                            <?php else: ?>
-                            <span class="text-muted">—</span>
-                            <?php endif; ?>
-                        </td>
-                        <td>
-                            <label class="form-check">
-                                <input type="checkbox" name="config[<?= $id ?>][activo]" value="1" <?= !empty($row['activo']) ? 'checked' : '' ?>>
-                                Activo
-                            </label>
-                        </td>
-                    </tr>
-                    <?php endforeach; endif; ?>
-                </tbody>
-            </table>
-        </div>
-        <p class="form-hint mt-2">
-            Para mantenimiento (km): la alerta se dispara si se alcanza el umbral en <strong>kilometraje o en días</strong> desde el último servicio, lo que ocurra primero.
-            Los umbrales en días son opcionales; si no se definen, solo aplica kilometraje.
-        </p>
-        <div class="mt-2">
-            <button type="submit" class="btn btn-primary">Guardar valores por defecto</button>
-            <a href="<?= url('alertas') ?>" class="btn btn-secondary">Cancelar</a>
-        </div>
-    </form>
-</div>
+</details>

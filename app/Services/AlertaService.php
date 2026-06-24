@@ -21,11 +21,15 @@ final class AlertaService
 
     public function runDailyCron(): array
     {
-        return [
-            'documentos' => $this->repo->generarFromDocumentos(),
-            'aceite' => $this->generarAlertasAceite(),
-            'afinacion' => $this->generarAlertasKm('afinacion', 'Afinación pendiente'),
-        ];
+        $result = ['documentos' => $this->repo->generarFromDocumentos()];
+
+        foreach ($this->repo->getServiciosKm() as $cfg) {
+            $tipo = (string) $cfg['tipo'];
+            $nombre = (string) ($cfg['nombre'] ?? $tipo);
+            $result[$tipo] = $this->generarAlertasKm($tipo, $nombre . ' pendiente');
+        }
+
+        return $result;
     }
 
     /** Genera o actualiza alertas pendientes según documentos y kilometraje. */
@@ -64,14 +68,16 @@ final class AlertaService
     public function getConfigPageData(?int $vehiculoId = null): array
     {
         $data = [
-            'config' => $this->repo->getAllConfig(),
+            'config' => alerta_config_sort($this->repo->getAllConfig()),
             'vehiculos' => $this->catalogos->getVehiculosCatalogo(),
             'vehiculo_id' => $vehiculoId,
             'vehiculo_config' => [],
         ];
 
         if ($vehiculoId !== null && $vehiculoId > 0) {
-            $data['vehiculo_config'] = $this->buildVehiculoConfigForm($vehiculoId, $data['config']);
+            $data['vehiculo_config'] = alerta_config_sort(
+                $this->buildVehiculoConfigForm($vehiculoId, $data['config'])
+            );
         }
 
         return $data;
@@ -108,6 +114,26 @@ final class AlertaService
         return $this->repo->getDashboardCounts();
     }
 
+    /** Al finalizar un mantenimiento, cierra alertas del mismo servicio y recalcula. */
+    public function registrarMantenimientoFinalizado(array $mantenimiento, int $userId): void
+    {
+        $servicio = (string) ($mantenimiento['servicio'] ?? '');
+        if ($servicio === '') {
+            $servicio = mantenimiento_inferir_servicio((string) ($mantenimiento['descripcion'] ?? '')) ?? '';
+        }
+        if ($servicio === '') {
+            return;
+        }
+
+        $vehiculoId = (int) ($mantenimiento['vehiculo_id'] ?? 0);
+        if ($vehiculoId <= 0) {
+            return;
+        }
+
+        $this->repo->atenderActivasPorServicio($vehiculoId, $servicio, $userId);
+        $this->sincronizar();
+    }
+
     private function buildVehiculoConfigForm(int $vehiculoId, array $globalConfig): array
     {
         $custom = $this->repo->getVehiculoConfigAll($vehiculoId);
@@ -134,12 +160,7 @@ final class AlertaService
         return $rows;
     }
 
-    private function generarAlertasAceite(): int
-    {
-        return $this->generarAlertasKm('cambio_aceite', 'Cambio de aceite pendiente', 'aceite');
-    }
-
-    private function generarAlertasKm(string $tipoConfig, string $tituloBase, string $busquedaDesc = ''): int
+    private function generarAlertasKm(string $tipoConfig, string $tituloBase): int
     {
         $global = $this->repo->getAlertaConfig($tipoConfig);
         if ($global === null) {
@@ -156,10 +177,7 @@ final class AlertaService
                 continue;
             }
 
-            $ultimo = $this->mantenimientos->getUltimoPreventivo(
-                $vehiculoId,
-                $busquedaDesc !== '' ? $busquedaDesc : $tipoConfig
-            );
+            $ultimo = $this->mantenimientos->getUltimoPorServicio($vehiculoId, $tipoConfig);
 
             $kmBase = $ultimo !== null ? (int) $ultimo['kilometraje'] : 0;
             $kmActual = (int) $vehiculo['kilometraje_actual'];

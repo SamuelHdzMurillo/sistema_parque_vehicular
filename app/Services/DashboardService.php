@@ -57,13 +57,8 @@ final class DashboardService
             $kmActual = (int) $vehiculo['kilometraje_actual'];
 
             foreach ($configs as $config) {
-                $busqueda = match ($config['tipo']) {
-                    'cambio_aceite' => 'aceite',
-                    'afinacion' => 'afinacion',
-                    default => (string) $config['tipo'],
-                };
-
-                $ultimo = $this->repo->getUltimoServicioPreventivo($vehiculoId, $busqueda);
+                $tipo = (string) $config['tipo'];
+                $ultimo = $this->repo->getUltimoServicioPreventivo($vehiculoId, $tipo);
                 $kmBase = $ultimo !== null ? (int) $ultimo['kilometraje'] : 0;
                 $kmDesde = $kmActual - $kmBase;
                 $kmLimite = (int) $config['umbral_verde'];

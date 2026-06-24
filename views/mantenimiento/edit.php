@@ -6,6 +6,7 @@ $proveedores = $proveedores ?? [];
 $responsables = $responsables ?? [];
 $areas = $areas ?? [];
 $tipos = $tipos ?? [];
+$servicios = $servicios ?? [];
 ?>
 <div class="page-header">
     <div>
@@ -23,9 +24,20 @@ $tipos = $tipos ?? [];
         <div class="form-row">
             <div class="form-group">
                 <label class="form-label" for="tipo">Tipo</label>
-                <select id="tipo" name="tipo" class="form-select" required>
+                <select id="tipo" name="tipo" class="form-select" required data-tipo-mantenimiento>
                     <?php foreach ($tipos as $t): ?>
                     <option value="<?= e($t) ?>" <?= ($m['tipo'] ?? '') === $t ? 'selected' : '' ?>><?= e(ucfirst($t)) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="form-group" id="grupo-servicio">
+                <label class="form-label" for="servicio">Servicio realizado</label>
+                <select id="servicio" name="servicio" class="form-select" data-servicio-mantenimiento>
+                    <option value="">— No aplica —</option>
+                    <?php foreach ($servicios as $s): ?>
+                    <option value="<?= e($s['tipo']) ?>" <?= (string) ($m['servicio'] ?? old('servicio', '')) === (string) ($s['tipo'] ?? '') ? 'selected' : '' ?>>
+                        <?= e($s['nombre'] ?? mantenimiento_servicio_label($s['tipo'] ?? '')) ?>
+                    </option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -143,6 +155,22 @@ $tipos = $tipos ?? [];
 <?php App\Core\View::component('modal-proveedor-quick', ['tipo' => 'mantenimiento', 'contexto' => 'mantenimiento']); ?>
 <?php endif; ?>
 
+<script>
+(function () {
+    var tipo = document.querySelector('[data-tipo-mantenimiento]');
+    var servicio = document.querySelector('[data-servicio-mantenimiento]');
+    var grupo = document.getElementById('grupo-servicio');
+    function syncServicio() {
+        if (!tipo || !servicio || !grupo) return;
+        var esPreventivo = tipo.value === 'preventivo';
+        servicio.required = esPreventivo;
+        grupo.style.display = esPreventivo ? '' : 'none';
+        if (!esPreventivo) servicio.value = '';
+    }
+    if (tipo) tipo.addEventListener('change', syncServicio);
+    syncServicio();
+})();
+</script>
 <script>
 (function () {
     var select = document.querySelector('[data-proveedor-select]');

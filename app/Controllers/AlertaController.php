@@ -19,6 +19,8 @@ final class AlertaController extends BaseController
         $page = max(1, (int) $request->input('page', 1));
         $todas = (bool) $request->input('todas');
         $result = $this->alertas->paginate($page, !$todas);
+        $result['counts'] = $this->alertas->getDashboardCounts();
+        $result['solo_pendientes'] = !$todas;
         $this->render('alertas.index', $result);
     }
 

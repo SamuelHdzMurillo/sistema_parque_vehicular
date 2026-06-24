@@ -227,15 +227,36 @@ final class DashboardRepository extends BaseRepository
         );
     }
 
-    public function getUltimoServicioPreventivo(int $vehiculoId, string $busqueda): ?array
+    public function getUltimoServicioPreventivo(int $vehiculoId, string $servicio): ?array
     {
+        $row = $this->fetchOne(
+            'SELECT fecha, kilometraje FROM mantenimientos
+             WHERE vehiculo_id = ? AND estado = "finalizado" AND es_historico = 0 AND servicio = ?
+             ORDER BY fecha DESC, id DESC LIMIT 1',
+            [$vehiculoId, $servicio]
+        );
+
+        if ($row !== null) {
+            return $row;
+        }
+
         return $this->fetchOne(
             'SELECT fecha, kilometraje FROM mantenimientos
              WHERE vehiculo_id = ? AND tipo = "preventivo" AND estado = "finalizado"
-               AND descripcion LIKE ?
-             ORDER BY fecha DESC LIMIT 1',
-            [$vehiculoId, '%' . $busqueda . '%']
+               AND es_historico = 0 AND servicio IS NULL AND descripcion LIKE ?
+             ORDER BY fecha DESC, id DESC LIMIT 1',
+            [$vehiculoId, '%' . $this->legacyBusquedaDashboard($servicio) . '%']
         );
+    }
+
+    private function legacyBusquedaDashboard(string $servicio): string
+    {
+        return match ($servicio) {
+            'cambio_aceite' => 'aceite',
+            'afinacion' => 'afinaci',
+            'llantas' => 'llanta',
+            default => $servicio,
+        };
     }
 
     public function getTopVehiculosCostosos(int $limit = 5): array

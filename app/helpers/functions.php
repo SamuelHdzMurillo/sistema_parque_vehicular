@@ -421,6 +421,187 @@ function semaforo_class(?string $nivel): string
     };
 }
 
+/** Etiqueta legible del nivel de alerta (semáforo). */
+function alerta_nivel_label(?string $nivel): string
+{
+    return match ($nivel) {
+        'verde' => 'Aviso',
+        'amarillo' => 'Atención',
+        'rojo' => 'Urgente',
+        default => 'Sin clasificar',
+    };
+}
+
+/** Breve explicación de para qué sirve cada tipo de alerta. */
+function alerta_tipo_descripcion(string $tipo, string $unidad): string
+{
+    $porTipo = [
+        'cambio_aceite' => 'Recuerda cuándo toca cambiar el aceite del motor.',
+        'afinacion' => 'Avisa cuando el vehículo necesita afinación.',
+        'llantas' => 'Indica cuándo conviene revisar o cambiar llantas.',
+        'bateria' => 'Controla la vida útil estimada de la batería.',
+        'seguro' => 'Te avisa antes de que venza la póliza de seguro.',
+        'tenencia' => 'Te avisa antes de que venza la tenencia.',
+        'verificacion' => 'Te avisa antes de que venza la verificación vehicular.',
+        'licencia' => 'Te avisa antes de que venza la licencia del conductor.',
+    ];
+
+    if (isset($porTipo[$tipo])) {
+        return $porTipo[$tipo];
+    }
+
+    return $unidad === 'km'
+        ? 'Avisa según los kilómetros recorridos desde el último servicio.'
+        : 'Avisa según los días que faltan para vencer un documento.';
+}
+
+/** Orden lógico de tipos de alerta (documentos primero, luego mantenimiento). */
+function alerta_config_tipo_orden(string $tipo): int
+{
+    return match ($tipo) {
+        'seguro' => 10,
+        'tenencia' => 20,
+        'verificacion' => 30,
+        'licencia' => 40,
+        'bateria' => 50,
+        'cambio_aceite' => 110,
+        'afinacion' => 120,
+        'llantas' => 130,
+        default => 999,
+    };
+}
+
+/** @param list<array<string, mixed>> $items */
+function alerta_config_sort(array $items): array
+{
+    usort($items, static function (array $a, array $b): int {
+        $grupoA = ($a['unidad'] ?? '') === 'km' ? 0 : 1;
+        $grupoB = ($b['unidad'] ?? '') === 'km' ? 0 : 1;
+        if ($grupoA !== $grupoB) {
+            return $grupoA <=> $grupoB;
+        }
+
+        $orden = alerta_config_tipo_orden((string) ($a['tipo'] ?? ''))
+            <=> alerta_config_tipo_orden((string) ($b['tipo'] ?? ''));
+        if ($orden !== 0) {
+            return $orden;
+        }
+
+        return strcmp((string) ($a['nombre'] ?? ''), (string) ($b['nombre'] ?? ''));
+    });
+
+    return $items;
+}
+
+/** Peso del nivel para ordenar listas (urgente primero). */
+function alerta_nivel_peso(?string $nivel): int
+{
+    return match ($nivel) {
+        'rojo' => 3,
+        'amarillo' => 2,
+        'verde' => 1,
+        default => 0,
+    };
+}
+
+/** @return array{aviso: int, atencion: int, urgente: int} Umbrales de mantenimiento en km (desde último servicio). */
+function alerta_config_umbrales_km(array $row): array
+{
+    return [
+        'aviso' => (int) ($row['umbral_rojo'] ?? 0),
+        'atencion' => (int) ($row['umbral_amarillo'] ?? 0),
+        'urgente' => (int) ($row['umbral_verde'] ?? 0),
+    ];
+}
+
+/** @return array{aviso: int, atencion: int, urgente: int} Umbrales de documentos en días antes del vencimiento. */
+function alerta_config_umbrales_dias_doc(array $row): array
+{
+    return [
+        'aviso' => (int) ($row['umbral_verde'] ?? 0),
+        'atencion' => (int) ($row['umbral_amarillo'] ?? 0),
+        'urgente' => (int) ($row['umbral_rojo'] ?? 0),
+    ];
+}
+
+function alerta_config_fmt_num(int $n): string
+{
+    return number_format($n, 0, '.', ',');
+}
+
+/** Texto corto para la columna «En la práctica» (mantenimiento). */
+function alerta_config_resumen_km(array $row): string
+{
+    $u = alerta_config_umbrales_km($row);
+    $nombre = (string) ($row['nombre'] ?? 'Servicio');
+
+    return sprintf(
+        '%s: avisa a los %s km, luego a los %s km y urgente a los %s km (desde el último servicio).',
+        $nombre,
+        alerta_config_fmt_num($u['aviso']),
+        alerta_config_fmt_num($u['atencion']),
+        alerta_config_fmt_num($u['urgente'])
+    );
+}
+
+/** Texto corto para documentos. */
+function alerta_config_resumen_doc(array $row): string
+{
+    $u = alerta_config_umbrales_dias_doc($row);
+    $nombre = (string) ($row['nombre'] ?? 'Documento');
+
+    return sprintf(
+        '%s: avisa %s días antes, luego %s días antes y urgente %s días antes de vencer.',
+        $nombre,
+        alerta_config_fmt_num($u['aviso']),
+        alerta_config_fmt_num($u['atencion']),
+        alerta_config_fmt_num($u['urgente'])
+    );
+}
+
+/** Busca una fila de config por tipo. */
+function alerta_config_por_tipo(array $config, string $tipo): ?array
+{
+    foreach ($config as $row) {
+        if (($row['tipo'] ?? '') === $tipo) {
+            return $row;
+        }
+    }
+
+    return null;
+}
+
+function mantenimiento_servicio_label(?string $tipo): string
+{
+    if ($tipo === null || $tipo === '') {
+        return '—';
+    }
+
+    return match ($tipo) {
+        'cambio_aceite' => 'Cambio de aceite',
+        'afinacion' => 'Afinación',
+        'llantas' => 'Revisión de llantas',
+        default => ucfirst(str_replace('_', ' ', $tipo)),
+    };
+}
+
+/** Intenta deducir el servicio desde la descripción (registros antiguos). */
+function mantenimiento_inferir_servicio(string $descripcion): ?string
+{
+    $d = mb_strtolower($descripcion);
+    if (str_contains($d, 'aceite')) {
+        return 'cambio_aceite';
+    }
+    if (str_contains($d, 'afinaci')) {
+        return 'afinacion';
+    }
+    if (str_contains($d, 'llanta')) {
+        return 'llantas';
+    }
+
+    return null;
+}
+
 function vehiculo_estado_badge(string $estado): string
 {
     return match ($estado) {
