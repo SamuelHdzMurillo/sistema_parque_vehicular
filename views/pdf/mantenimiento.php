@@ -20,6 +20,7 @@ ob_start();
         ['label' => 'Vehículo', 'value' => pdf_val($m['numero_economico'] ?? null, '')],
         ['label' => 'Placas', 'value' => pdf_val($m['placas'] ?? null, '')],
         ['label' => 'Tipo de mantenimiento', 'value' => pdf_val(isset($m['tipo']) ? ucfirst($m['tipo']) : null, '')],
+        ['label' => 'Servicios', 'value' => pdf_val(mantenimiento_servicios_labels($m['servicios'] ?? (!empty($m['servicio']) ? [(string) $m['servicio']] : [])), '')],
         ['label' => 'Fecha programada', 'value' => pdf_date($m['fecha'] ?? null)],
         ['label' => 'Kilometraje', 'value' => isset($m['kilometraje']) ? number_format((int) $m['kilometraje']) . ' km' : ''],
         ['label' => 'Proveedor / taller', 'value' => pdf_val($m['proveedor_nombre'] ?? null, '')],

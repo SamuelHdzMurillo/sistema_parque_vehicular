@@ -97,6 +97,65 @@ final class AlertaService
         }
     }
 
+    /** @return array{error: ?string, tipo: ?string} */
+    public function createServicioKm(array $data): array
+    {
+        try {
+            $nombre = trim((string) ($data['nombre'] ?? ''));
+            if ($nombre === '') {
+                return ['error' => 'Indique el nombre del servicio.', 'tipo' => null];
+            }
+
+            $tipo = trim((string) ($data['tipo'] ?? ''));
+            $tipo = $tipo !== '' ? alerta_servicio_slug($tipo) : alerta_servicio_slug($nombre);
+
+            if ($tipo === '' || !preg_match('/^[a-z][a-z0-9_]{1,48}$/', $tipo)) {
+                return [
+                    'error' => 'El código interno debe usar letras minúsculas, números y guión bajo (ej. revision_frenos).',
+                    'tipo' => null,
+                ];
+            }
+
+            if ($this->repo->tipoExists($tipo)) {
+                return ['error' => 'Ya existe un servicio con ese código interno.', 'tipo' => null];
+            }
+
+            $umbralRojo = max(0, (int) ($data['umbral_rojo'] ?? 500));
+            $umbralAmarillo = max(0, (int) ($data['umbral_amarillo'] ?? 2000));
+            $umbralVerde = max(0, (int) ($data['umbral_verde'] ?? 5000));
+
+            if ($umbralRojo > $umbralAmarillo || $umbralAmarillo > $umbralVerde) {
+                return [
+                    'error' => 'Los umbrales deben ir de menor a mayor: aviso ≤ atención ≤ urgente (km).',
+                    'tipo' => null,
+                ];
+            }
+
+            $id = $this->repo->createConfig([
+                'tipo' => $tipo,
+                'nombre' => $nombre,
+                'umbral_verde' => $umbralVerde,
+                'umbral_amarillo' => $umbralAmarillo,
+                'umbral_rojo' => $umbralRojo,
+                'unidad' => 'km',
+                'umbral_verde_dias' => (int) ($data['umbral_verde_dias'] ?? 365),
+                'umbral_amarillo_dias' => (int) ($data['umbral_amarillo_dias'] ?? 180),
+                'umbral_rojo_dias' => (int) ($data['umbral_rojo_dias'] ?? 90),
+                'activo' => 1,
+            ]);
+
+            AuditService::log('CREATE', 'alerta_config', $id, null, [
+                'tipo' => $tipo,
+                'nombre' => $nombre,
+                'unidad' => 'km',
+            ]);
+
+            return ['error' => null, 'tipo' => $tipo];
+        } catch (\Throwable $e) {
+            return ['error' => user_facing_error($e, 'No se pudo agregar el servicio.'), 'tipo' => null];
+        }
+    }
+
     public function updateVehiculoConfig(int $vehiculoId, array $config): void
     {
         foreach ($config as $tipo => $row) {
@@ -118,23 +177,30 @@ final class AlertaService
         return $this->repo->getDashboardCounts();
     }
 
-    /** Al finalizar un mantenimiento, cierra alertas del mismo servicio y recalcula. */
+    /** Al finalizar un mantenimiento, cierra alertas de cada servicio y recalcula. */
     public function registrarMantenimientoFinalizado(array $mantenimiento, int $userId): void
     {
-        $servicio = (string) ($mantenimiento['servicio'] ?? '');
-        if ($servicio === '') {
-            $servicio = mantenimiento_inferir_servicio((string) ($mantenimiento['descripcion'] ?? '')) ?? '';
-        }
-        if ($servicio === '') {
-            return;
-        }
-
         $vehiculoId = (int) ($mantenimiento['vehiculo_id'] ?? 0);
         if ($vehiculoId <= 0) {
             return;
         }
 
-        $this->repo->atenderActivasPorServicio($vehiculoId, $servicio, $userId);
+        $servicios = $mantenimiento['servicios'] ?? [];
+        if (!is_array($servicios) || $servicios === []) {
+            $servicio = (string) ($mantenimiento['servicio'] ?? '');
+            if ($servicio === '') {
+                $servicio = mantenimiento_inferir_servicio((string) ($mantenimiento['descripcion'] ?? '')) ?? '';
+            }
+            $servicios = $servicio !== '' ? [$servicio] : [];
+        }
+
+        if ($servicios === []) {
+            return;
+        }
+
+        foreach ($servicios as $servicio) {
+            $this->repo->atenderActivasPorServicio($vehiculoId, (string) $servicio, $userId);
+        }
         $this->sincronizar();
     }
 
@@ -183,12 +249,16 @@ final class AlertaService
 
             $ultimo = $this->mantenimientos->getUltimoPorServicio($vehiculoId, $tipoConfig);
 
-            $kmBase = $ultimo !== null ? (int) $ultimo['kilometraje'] : 0;
+            if ($ultimo === null) {
+                continue;
+            }
+
+            $kmBase = (int) $ultimo['kilometraje'];
             $kmActual = (int) $vehiculo['kilometraje_actual'];
             $kmDesde = $kmActual - $kmBase;
 
             $diasDesde = 0;
-            if ($ultimo !== null && !empty($ultimo['fecha'])) {
+            if (!empty($ultimo['fecha'])) {
                 $diasDesde = (int) ((strtotime(date('Y-m-d')) - strtotime((string) $ultimo['fecha'])) / 86400);
             }
 

@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Request;
+use App\Services\AlertaService;
 use App\Services\MantenimientoService;
 
 final class MantenimientoController extends BaseController
 {
     public function __construct(
-        private readonly MantenimientoService $mantenimientos = new MantenimientoService()
+        private readonly MantenimientoService $mantenimientos = new MantenimientoService(),
+        private readonly AlertaService $alertas = new AlertaService(),
     ) {
     }
 
@@ -119,5 +121,32 @@ final class MantenimientoController extends BaseController
         $error = $this->mantenimientos->eliminar((int) $id);
         flash($error ? 'error' : 'success', $error ?? 'Mantenimiento eliminado correctamente.');
         $this->redirect($error ? 'mantenimiento/' . $id : 'mantenimiento');
+    }
+
+    public function storeServicio(Request $request): never
+    {
+        $this->validateCsrf($request);
+        if (auth_id() === null) {
+            $this->redirect('login');
+        }
+
+        $nuevo = $request->input('nuevo_servicio', []);
+        if (!is_array($nuevo)) {
+            $nuevo = [];
+        }
+
+        $returnTo = mantenimiento_safe_return_to((string) $request->input('return_to', 'mantenimiento/create'));
+        $result = $this->alertas->createServicioKm($nuevo);
+
+        if ($result['error'] !== null) {
+            flash('error', $result['error']);
+            $this->redirect($returnTo);
+        }
+
+        flash('success', 'Servicio «' . trim((string) ($nuevo['nombre'] ?? '')) . '» agregado. Ya puede seleccionarlo arriba.');
+        $tipo = (string) ($result['tipo'] ?? '');
+        $sep = str_contains($returnTo, '?') ? '&' : '?';
+        $redirect = $tipo !== '' ? $returnTo . $sep . 'servicio=' . rawurlencode($tipo) : $returnTo;
+        $this->redirect($redirect);
     }
 }

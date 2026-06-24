@@ -455,6 +455,22 @@ function alerta_tipo_descripcion(string $tipo, string $unidad): string
         : 'Avisa según los días que faltan para vencer un documento.';
 }
 
+/** Genera un código interno (slug) para un tipo de servicio de alerta. */
+function alerta_servicio_slug(string $text): string
+{
+    static $replacements = [
+        'á' => 'a', 'é' => 'e', 'í' => 'i', 'ó' => 'o', 'ú' => 'u',
+        'ñ' => 'n', 'ü' => 'u',
+    ];
+
+    $text = mb_strtolower(trim($text));
+    $text = strtr($text, $replacements);
+    $text = preg_replace('/[^a-z0-9]+/', '_', $text) ?? '';
+    $text = trim($text, '_');
+
+    return substr($text, 0, 50);
+}
+
 /** Orden lógico de tipos de alerta (documentos primero, luego mantenimiento). */
 function alerta_config_tipo_orden(string $tipo): int
 {
@@ -583,6 +599,41 @@ function mantenimiento_servicio_label(?string $tipo): string
         'llantas' => 'Revisión de llantas',
         default => ucfirst(str_replace('_', ' ', $tipo)),
     };
+}
+
+/** @param list<string> $servicios */
+function mantenimiento_servicios_labels(array $servicios): string
+{
+    if ($servicios === []) {
+        return '—';
+    }
+
+    return implode(', ', array_map(
+        static fn (string $tipo): string => mantenimiento_servicio_label($tipo),
+        $servicios
+    ));
+}
+
+/** Valida ruta de retorno tras agregar un servicio desde mantenimiento. */
+function mantenimiento_safe_return_to(string $returnTo): string
+{
+    $returnTo = trim($returnTo);
+    if ($returnTo === '') {
+        return 'mantenimiento/create';
+    }
+
+    $path = parse_url($returnTo, PHP_URL_PATH);
+    $query = parse_url($returnTo, PHP_URL_QUERY);
+    if (!is_string($path) || $path === '') {
+        return 'mantenimiento/create';
+    }
+
+    $path = ltrim(str_replace('\\', '/', $path), '/');
+    if (!preg_match('#^mantenimiento(?:/create|/\d+/edit)$#', $path)) {
+        return 'mantenimiento/create';
+    }
+
+    return $query !== null && $query !== '' ? $path . '?' . $query : $path;
 }
 
 /** Intenta deducir el servicio desde la descripción (registros antiguos). */

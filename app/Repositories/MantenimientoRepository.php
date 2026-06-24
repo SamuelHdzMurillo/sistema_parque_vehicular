@@ -8,7 +8,7 @@ final class MantenimientoRepository extends BaseRepository
 {
     public function findById(int $id): ?array
     {
-        return $this->fetchOne(
+        $row = $this->fetchOne(
             'SELECT m.*, v.numero_economico, v.placas, v.kilometraje_actual,
                     p.razon_social AS proveedor_nombre,
                     p.rfc AS proveedor_rfc,
@@ -25,6 +25,80 @@ final class MantenimientoRepository extends BaseRepository
              WHERE m.id = ?',
             [$id]
         );
+
+        if ($row === null) {
+            return null;
+        }
+
+        $row['servicios'] = $this->getServicios($id);
+
+        return $row;
+    }
+
+    /** @return list<string> */
+    public function getServicios(int $mantenimientoId): array
+    {
+        $rows = $this->fetchAll(
+            'SELECT servicio FROM mantenimiento_servicios WHERE mantenimiento_id = ? ORDER BY servicio ASC',
+            [$mantenimientoId]
+        );
+
+        if ($rows !== []) {
+            return array_column($rows, 'servicio');
+        }
+
+        $legacy = $this->fetchOne(
+            'SELECT servicio FROM mantenimientos WHERE id = ? AND servicio IS NOT NULL AND servicio != ""',
+            [$mantenimientoId]
+        );
+
+        return $legacy !== null && !empty($legacy['servicio'])
+            ? [(string) $legacy['servicio']]
+            : [];
+    }
+
+    /** @param list<string> $servicios */
+    public function syncServicios(int $mantenimientoId, array $servicios): void
+    {
+        $this->execute('DELETE FROM mantenimiento_servicios WHERE mantenimiento_id = ?', [$mantenimientoId]);
+
+        foreach ($servicios as $servicio) {
+            $servicio = trim((string) $servicio);
+            if ($servicio === '') {
+                continue;
+            }
+            $this->execute(
+                'INSERT IGNORE INTO mantenimiento_servicios (mantenimiento_id, servicio) VALUES (?, ?)',
+                [$mantenimientoId, $servicio]
+            );
+        }
+    }
+
+    /**
+     * @param list<int> $ids
+     * @return array<int, list<string>>
+     */
+    public function getServiciosByMantenimientoIds(array $ids): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $rows = $this->fetchAll(
+            "SELECT mantenimiento_id, servicio FROM mantenimiento_servicios
+             WHERE mantenimiento_id IN ({$placeholders})
+             ORDER BY mantenimiento_id ASC, servicio ASC",
+            $ids
+        );
+
+        $map = [];
+        foreach ($rows as $row) {
+            $mid = (int) $row['mantenimiento_id'];
+            $map[$mid][] = (string) $row['servicio'];
+        }
+
+        return $map;
     }
 
     public function create(array $data): int
@@ -197,6 +271,16 @@ final class MantenimientoRepository extends BaseRepository
             $queryParams
         );
 
+        $ids = array_map(static fn (array $row): int => (int) $row['id'], $rows);
+        $serviciosMap = $this->getServiciosByMantenimientoIds($ids);
+        foreach ($rows as &$row) {
+            $mid = (int) $row['id'];
+            $row['servicios'] = $serviciosMap[$mid] ?? (
+                !empty($row['servicio']) ? [(string) $row['servicio']] : []
+            );
+        }
+        unset($row);
+
         return ['data' => $rows, 'total' => $total, 'page' => $page, 'per_page' => $perPage];
     }
 
@@ -235,18 +319,22 @@ final class MantenimientoRepository extends BaseRepository
     public function getUltimoPorServicio(int $vehiculoId, string $servicio): ?array
     {
         $keyword = $this->legacyBusquedaDescripcion($servicio);
-        $params = [$vehiculoId, $servicio];
-        $where = 'vehiculo_id = ? AND estado = "finalizado" AND es_historico = 0 AND (servicio = ?';
+        $params = [$vehiculoId, $servicio, $servicio];
+        $match = '(ms.servicio = ? OR m.servicio = ?';
 
         if ($keyword !== null) {
-            $where .= ' OR descripcion LIKE ?';
+            $match .= ' OR m.descripcion LIKE ?';
             $params[] = '%' . $keyword . '%';
         }
 
-        $where .= ')';
+        $match .= ')';
 
         return $this->fetchOne(
-            "SELECT * FROM mantenimientos WHERE {$where} ORDER BY fecha DESC, id DESC LIMIT 1",
+            "SELECT m.* FROM mantenimientos m
+             LEFT JOIN mantenimiento_servicios ms ON ms.mantenimiento_id = m.id
+             WHERE m.vehiculo_id = ? AND m.estado = 'finalizado' AND m.es_historico = 0 AND {$match}
+             ORDER BY m.fecha DESC, m.id DESC
+             LIMIT 1",
             $params
         );
     }
@@ -254,18 +342,22 @@ final class MantenimientoRepository extends BaseRepository
     public function findAbiertoPorServicio(int $vehiculoId, string $servicio): ?array
     {
         $keyword = $this->legacyBusquedaDescripcion($servicio);
-        $params = [$vehiculoId, $servicio];
-        $where = 'vehiculo_id = ? AND estado NOT IN ("finalizado", "cancelado") AND (servicio = ?';
+        $params = [$vehiculoId, $servicio, $servicio];
+        $match = '(ms.servicio = ? OR m.servicio = ?';
 
         if ($keyword !== null) {
-            $where .= ' OR (servicio IS NULL AND descripcion LIKE ?)';
+            $match .= ' OR (m.servicio IS NULL AND m.descripcion LIKE ?)';
             $params[] = '%' . $keyword . '%';
         }
 
-        $where .= ')';
+        $match .= ')';
 
         return $this->fetchOne(
-            "SELECT id, folio, estado, servicio FROM mantenimientos WHERE {$where} ORDER BY id DESC LIMIT 1",
+            "SELECT m.id, m.folio, m.estado, m.servicio FROM mantenimientos m
+             LEFT JOIN mantenimiento_servicios ms ON ms.mantenimiento_id = m.id
+             WHERE m.vehiculo_id = ? AND m.estado NOT IN ('finalizado', 'cancelado') AND {$match}
+             ORDER BY m.id DESC
+             LIMIT 1",
             $params
         );
     }

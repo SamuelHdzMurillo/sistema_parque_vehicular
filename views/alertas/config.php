@@ -126,6 +126,49 @@ $configVehKm = array_values(array_filter($vehiculo_config, fn ($r) => ($r['unida
     </form>
 </div>
 
+<?php if (can('alertas.config')): ?>
+<div class="card mt-2">
+    <div class="card-header"><h2 class="alerta-config-seccion mb-0">Agregar servicio de mantenimiento</h2></div>
+    <form action="<?= url('alertas/config') ?>" method="post" class="card-body alerta-config-nuevo-servicio">
+        <?= csrf_field() ?>
+        <input type="hidden" name="accion" value="crear_servicio_km">
+        <p class="text-muted mb-2">
+            Los servicios que agregue aquí aparecerán como opciones al registrar mantenimiento preventivo
+            y generarán alertas por kilometraje.
+        </p>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label" for="nuevo_servicio_nombre">Nombre del servicio <span class="required">*</span></label>
+                <input type="text" id="nuevo_servicio_nombre" name="nuevo_servicio[nombre]" class="form-control"
+                       placeholder="Ej. Revisión de frenos" required maxlength="100">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="nuevo_servicio_tipo">Código interno</label>
+                <input type="text" id="nuevo_servicio_tipo" name="nuevo_servicio[tipo]" class="form-control"
+                       placeholder="revision_frenos" maxlength="50" pattern="[a-z][a-z0-9_]*"
+                       title="Letras minúsculas, números y guión bajo. Si lo deja vacío se genera del nombre.">
+                <small class="form-hint text-muted">Opcional. Debe ser único en el sistema.</small>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label" for="nuevo_umbral_rojo"><span class="badge badge-success">Aviso</span> (km)</label>
+                <input type="number" id="nuevo_umbral_rojo" name="nuevo_servicio[umbral_rojo]" class="form-control" min="0" value="500">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="nuevo_umbral_amarillo"><span class="badge badge-warning">Atención</span> (km)</label>
+                <input type="number" id="nuevo_umbral_amarillo" name="nuevo_servicio[umbral_amarillo]" class="form-control" min="0" value="2000">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="nuevo_umbral_verde"><span class="badge badge-danger">Urgente</span> (km)</label>
+                <input type="number" id="nuevo_umbral_verde" name="nuevo_servicio[umbral_verde]" class="form-control" min="0" value="5000">
+            </div>
+        </div>
+        <button type="submit" class="btn btn-accent">+ Agregar servicio</button>
+    </form>
+</div>
+<?php endif; ?>
+
 <details class="card alerta-config-vehiculo-panel">
     <summary class="card-header alerta-config-vehiculo-summary">
         <strong>Reglas solo para un vehículo</strong>

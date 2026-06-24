@@ -248,6 +248,35 @@ final class AlertaRepository extends BaseRepository
         );
     }
 
+    public function tipoExists(string $tipo): bool
+    {
+        return $this->fetchOne('SELECT id FROM alerta_config WHERE tipo = ?', [$tipo]) !== null;
+    }
+
+    public function createConfig(array $data): int
+    {
+        $this->execute(
+            'INSERT INTO alerta_config (
+                tipo, nombre, umbral_verde, umbral_amarillo, umbral_rojo, unidad,
+                umbral_verde_dias, umbral_amarillo_dias, umbral_rojo_dias, activo
+             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [
+                $data['tipo'],
+                $data['nombre'],
+                (int) ($data['umbral_verde'] ?? 0),
+                (int) ($data['umbral_amarillo'] ?? 0),
+                (int) ($data['umbral_rojo'] ?? 0),
+                $data['unidad'] ?? 'km',
+                $this->nullableInt($data['umbral_verde_dias'] ?? null),
+                $this->nullableInt($data['umbral_amarillo_dias'] ?? null),
+                $this->nullableInt($data['umbral_rojo_dias'] ?? null),
+                isset($data['activo']) ? (int) $data['activo'] : 1,
+            ]
+        );
+
+        return (int) $this->lastInsertId();
+    }
+
     public function updateConfig(int $id, array $data): bool
     {
         return $this->execute(

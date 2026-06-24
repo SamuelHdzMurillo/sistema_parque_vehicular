@@ -7,6 +7,19 @@ $responsables = $responsables ?? [];
 $areas = $areas ?? [];
 $tipos = $tipos ?? [];
 $servicios = $servicios ?? [];
+$serviciosSel = old('servicios', $m['servicios'] ?? []);
+if (!is_array($serviciosSel)) {
+    $serviciosSel = $serviciosSel !== '' ? [(string) $serviciosSel] : [];
+}
+if ($serviciosSel === [] && !empty($m['servicio'])) {
+    $serviciosSel = [(string) $m['servicio']];
+}
+$preServicioGet = $_GET['servicio'] ?? null;
+if ($preServicioGet !== null && $preServicioGet !== '' && !in_array((string) $preServicioGet, $serviciosSel, true)) {
+    $serviciosSel[] = (string) $preServicioGet;
+}
+$puedeAgregarServicio = !empty($puede_agregar_servicio) || can('mantenimiento.create') || can('alertas.config');
+$returnToServicio = 'mantenimiento/' . (int) ($m['id'] ?? 0) . '/edit';
 ?>
 <div class="page-header">
     <div>
@@ -37,15 +50,16 @@ $servicios = $servicios ?? [];
                 </select>
             </div>
             <div class="form-group" id="grupo-servicio">
-                <label class="form-label" for="servicio">Servicio realizado</label>
-                <select id="servicio" name="servicio" class="form-select" data-servicio-mantenimiento>
-                    <option value="">— No aplica —</option>
-                    <?php foreach ($servicios as $s): ?>
-                    <option value="<?= e($s['tipo']) ?>" <?= (string) ($m['servicio'] ?? old('servicio', '')) === (string) ($s['tipo'] ?? '') ? 'selected' : '' ?>>
-                        <?= e($s['nombre'] ?? mantenimiento_servicio_label($s['tipo'] ?? '')) ?>
-                    </option>
-                    <?php endforeach; ?>
-                </select>
+                <label class="form-label">Servicios realizados <span class="required">*</span></label>
+                <?php App\Core\View::component('mantenimiento-servicios-picker', [
+                    'servicios' => $servicios,
+                    'selected' => $serviciosSel,
+                    'required' => true,
+                    'puedeAgregar' => $puedeAgregarServicio,
+                    'returnTo' => $returnToServicio,
+                    'openAgregar' => false,
+                    'formId' => 'mantenimiento-servicio-form',
+                ]); ?>
             </div>
             <div class="form-group">
                 <label class="form-label" for="fecha">Fecha</label>
@@ -155,6 +169,12 @@ $servicios = $servicios ?? [];
             <a href="<?= url('mantenimiento/' . $m['id']) ?>" class="btn btn-secondary">Cancelar</a>
         </div>
     </form>
+    <?php if ($puedeAgregarServicio): ?>
+    <form id="mantenimiento-servicio-form" action="<?= url('mantenimiento/servicios') ?>" method="post" class="sr-only" aria-hidden="true" tabindex="-1">
+        <?= csrf_field() ?>
+        <input type="hidden" name="return_to" value="<?= e($returnToServicio) ?>">
+    </form>
+    <?php endif; ?>
 </div>
 
 <?php if (can('proveedores.create')): ?>
@@ -164,17 +184,33 @@ $servicios = $servicios ?? [];
 <script>
 (function () {
     var tipo = document.querySelector('[data-tipo-mantenimiento]');
-    var servicio = document.querySelector('[data-servicio-mantenimiento]');
     var grupo = document.getElementById('grupo-servicio');
+    var checks = document.querySelectorAll('[data-servicios-mantenimiento] input[type="checkbox"]');
     function syncServicio() {
-        if (!tipo || !servicio || !grupo) return;
+        if (!tipo || !grupo) return;
         var esPreventivo = tipo.value === 'preventivo';
-        servicio.required = esPreventivo;
         grupo.style.display = esPreventivo ? '' : 'none';
-        if (!esPreventivo) servicio.value = '';
+        if (!esPreventivo) {
+            checks.forEach(function (cb) {
+                cb.checked = false;
+                var chip = cb.parentElement && cb.parentElement.querySelector('.servicios-picker-chip');
+                if (chip) chip.classList.remove('is-selected');
+            });
+        }
     }
     if (tipo) tipo.addEventListener('change', syncServicio);
     syncServicio();
+    var form = grupo ? grupo.closest('form') : null;
+    if (form) {
+        form.addEventListener('submit', function (e) {
+            if (tipo && tipo.value !== 'preventivo') return;
+            var alguno = Array.prototype.some.call(checks, function (cb) { return cb.checked; });
+            if (!alguno) {
+                e.preventDefault();
+                alert('Seleccione al menos un servicio tocando las etiquetas.');
+            }
+        });
+    }
 })();
 </script>
 <script>

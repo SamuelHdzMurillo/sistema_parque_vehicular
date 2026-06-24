@@ -38,6 +38,7 @@ final class MantenimientoService
             'servicios' => $this->alertas->getServiciosKm(),
             'estados' => ['pendiente', 'programado', 'autorizado', 'en_proceso', 'finalizado', 'cancelado'],
             'folio_sugerido' => $this->repo->generateFolio(),
+            'puede_agregar_servicio' => can('mantenimiento.create') || can('alertas.config'),
         ];
     }
 
@@ -49,14 +50,16 @@ final class MantenimientoService
     public function create(array $data, int $userId): int
     {
         $data = $this->normalizeHistorico($data);
-        $data = $this->normalizeServicio($data);
+        $data = $this->normalizeServicios($data);
         $this->assertKilometrajeValido($data);
         $files = $this->extractFiles($data);
+        $servicios = $data['servicios'] ?? [];
         $data['folio'] = $this->repo->generateFolio();
         $data['created_by'] = $userId;
         $data['responsable_id'] = (int) ($data['responsable_id'] ?? $userId);
         $data['estado'] = !empty($data['es_historico']) ? 'finalizado' : ($data['estado'] ?? 'pendiente');
         $id = $this->repo->create($data);
+        $this->repo->syncServicios($id, $servicios);
 
         $rutas = $this->storeFacturaFiles($id, $files);
         if ($rutas !== []) {
@@ -84,12 +87,21 @@ final class MantenimientoService
             return false;
         }
         $data = $this->normalizeHistorico(array_merge($before, $data));
-        $data = $this->normalizeServicio($data);
+        $data = $this->normalizeServicios($data);
         $this->assertKilometrajeValido($data);
         $files = $this->extractFiles($data);
+        $servicios = $data['servicios'] ?? [];
         $rutas = $this->storeFacturaFiles($id, $files);
         $result = $this->repo->update($id, array_merge($before, $data, $rutas));
         if ($result) {
+            $this->repo->syncServicios($id, $servicios);
+            if (($data['estado'] ?? '') === 'finalizado') {
+                $finalizado = $this->repo->findById($id);
+                $userId = auth_id() ?? (int) ($before['responsable_id'] ?? 0);
+                if ($finalizado !== null && $userId > 0) {
+                    $this->alertaService->registrarMantenimientoFinalizado($finalizado, $userId);
+                }
+            }
             AuditService::log('UPDATE', 'mantenimientos', $id, $before, array_merge($data, $rutas));
         }
         return $result;
@@ -268,16 +280,40 @@ final class MantenimientoService
         }
     }
 
-    private function normalizeServicio(array $data): array
+    private function normalizeServicios(array $data): array
     {
-        $servicio = trim((string) ($data['servicio'] ?? ''));
-        $data['servicio'] = $servicio !== '' ? $servicio : null;
+        $serviciosRaw = $data['servicios'] ?? [];
+        if (!is_array($serviciosRaw)) {
+            $serviciosRaw = $serviciosRaw !== null && $serviciosRaw !== '' ? [(string) $serviciosRaw] : [];
+        }
+        if ($serviciosRaw === [] && !empty($data['servicio'])) {
+            $serviciosRaw = [(string) $data['servicio']];
+        }
 
-        if (($data['tipo'] ?? '') === 'preventivo' && $data['servicio'] === null) {
-            throw new \RuntimeException(
-                'Seleccione qué servicio preventivo se realizó (cambio de aceite, afinación, llantas…). '
-                . 'Debe coincidir con los tipos configurados en Alertas.'
-            );
+        $validos = array_column($this->alertas->getServiciosKm(), 'tipo');
+        $servicios = [];
+        foreach ($serviciosRaw as $item) {
+            $item = trim((string) $item);
+            if ($item === '' || !in_array($item, $validos, true)) {
+                continue;
+            }
+            if (!in_array($item, $servicios, true)) {
+                $servicios[] = $item;
+            }
+        }
+
+        if (($data['tipo'] ?? '') === 'preventivo') {
+            if ($servicios === []) {
+                throw new \RuntimeException(
+                    'Seleccione al menos un servicio preventivo (cambio de aceite, afinación, llantas…). '
+                    . 'Deben coincidir con los tipos configurados en Alertas.'
+                );
+            }
+            $data['servicios'] = $servicios;
+            $data['servicio'] = $servicios[0];
+        } else {
+            $data['servicios'] = [];
+            $data['servicio'] = null;
         }
 
         return $data;

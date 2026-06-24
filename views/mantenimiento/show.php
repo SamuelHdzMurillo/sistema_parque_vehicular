@@ -44,8 +44,10 @@ $m = $mantenimiento ?? [];
             <div class="meta-item"><label>Folio de servicio</label><span><strong><?= e($m['folio'] ?? '—') ?></strong></span></div>
             <div class="meta-item"><label>Vehículo</label><span><?= e($m['numero_economico'] ?? '—') ?></span></div>
             <div class="meta-item"><label>Tipo</label><span><?= e(ucfirst($m['tipo'] ?? '')) ?></span></div>
-            <?php if (!empty($m['servicio'])): ?>
-            <div class="meta-item"><label>Servicio</label><span><?= e(mantenimiento_servicio_label($m['servicio'])) ?></span></div>
+            <?php
+            $serviciosM = $m['servicios'] ?? (!empty($m['servicio']) ? [(string) $m['servicio']] : []);
+            if (!empty($serviciosM)): ?>
+            <div class="meta-item"><label>Servicios</label><span><?= e(mantenimiento_servicios_labels($serviciosM)) ?></span></div>
             <?php endif; ?>
             <div class="meta-item"><label>Fecha</label><span><?= format_date($m['fecha'] ?? null) ?></span></div>
             <div class="meta-item"><label>Kilometraje</label><span><?= number_format((int) ($m['kilometraje'] ?? 0)) ?></span></div>

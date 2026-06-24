@@ -230,10 +230,12 @@ final class DashboardRepository extends BaseRepository
     public function getUltimoServicioPreventivo(int $vehiculoId, string $servicio): ?array
     {
         $row = $this->fetchOne(
-            'SELECT fecha, kilometraje FROM mantenimientos
-             WHERE vehiculo_id = ? AND estado = "finalizado" AND es_historico = 0 AND servicio = ?
-             ORDER BY fecha DESC, id DESC LIMIT 1',
-            [$vehiculoId, $servicio]
+            'SELECT m.fecha, m.kilometraje FROM mantenimientos m
+             LEFT JOIN mantenimiento_servicios ms ON ms.mantenimiento_id = m.id
+             WHERE m.vehiculo_id = ? AND m.estado = "finalizado" AND m.es_historico = 0
+               AND (ms.servicio = ? OR m.servicio = ?)
+             ORDER BY m.fecha DESC, m.id DESC LIMIT 1',
+            [$vehiculoId, $servicio, $servicio]
         );
 
         if ($row !== null) {

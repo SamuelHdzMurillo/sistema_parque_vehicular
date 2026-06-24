@@ -46,6 +46,19 @@ final class AlertaController extends BaseController
         if ($request->isPost()) {
             $this->validateCsrf($request);
 
+            if ((string) $request->input('accion', '') === 'crear_servicio_km') {
+                $nuevo = $request->input('nuevo_servicio', []);
+                if (!is_array($nuevo)) {
+                    $nuevo = [];
+                }
+                $result = $this->alertas->createServicioKm($nuevo);
+                flash(
+                    $result['error'] ? 'error' : 'success',
+                    $result['error'] ?? 'Servicio agregado. Ya aparece en Mantenimiento y en las alertas.'
+                );
+                $this->redirect('alertas/config');
+            }
+
             $vehiculoId = (int) $request->input('vehiculo_id', 0);
             $vehiculoConfig = $request->input('vehiculo_config', []);
 

@@ -100,6 +100,7 @@ $router->post('danios/{id}/fotos/{fotoId}/delete', [DanioController::class, 'del
 // ——— Mantenimiento ———
 $router->get('mantenimiento', [MantenimientoController::class, 'index'], $perm('mantenimiento.read'));
 $router->get('mantenimiento/create', [MantenimientoController::class, 'create'], $perm('mantenimiento.create'));
+$router->post('mantenimiento/servicios', [MantenimientoController::class, 'storeServicio'], $perm('mantenimiento.create'));
 $router->post('mantenimiento', [MantenimientoController::class, 'store'], $perm('mantenimiento.create'));
 $router->get('mantenimiento/{id}', [MantenimientoController::class, 'show'], $perm('mantenimiento.read'));
 $router->get('mantenimiento/{id}/edit', [MantenimientoController::class, 'edit'], $perm('mantenimiento.update'));

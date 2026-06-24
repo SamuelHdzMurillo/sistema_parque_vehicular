@@ -31,7 +31,7 @@
                 <tr>
                     <td><strong><?= e($m['folio']) ?></strong></td>
                     <td><?= e($m['numero_economico'] ?? '—') ?></td>
-                    <td><?= !empty($m['servicio']) ? e(mantenimiento_servicio_label($m['servicio'])) : '—' ?></td>
+                    <td><?= e(mantenimiento_servicios_labels($m['servicios'] ?? (!empty($m['servicio']) ? [(string) $m['servicio']] : []))) ?></td>
                     <td><?= e(ucfirst($m['tipo'])) ?></td>
                     <td><?= format_date($m['fecha']) ?></td>
                     <td><?= e($m['proveedor_nombre'] ?? $m['razon_social'] ?? '—') ?></td>

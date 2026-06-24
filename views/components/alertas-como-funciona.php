@@ -11,9 +11,10 @@ $seguro = alerta_config_por_tipo($configDocs, 'seguro') ?? ($configDocs[0] ?? nu
         <section class="alerta-como-funciona-bloque">
             <h3>Mantenimiento (kilómetros)</h3>
             <ol class="alerta-como-funciona-pasos">
-                <li>Registre el servicio en <strong>Mantenimiento</strong> y elija el <strong>servicio realizado</strong> (aceite, afinación, llantas…).</li>
-                <li>Al <strong>finalizar</strong> el mantenimiento, el sistema reinicia el contador de km para ese servicio.</li>
-                <li>Cuando el vehículo recorra los km configurados abajo, aparecerá la alerta otra vez.</li>
+                <li>Registre el servicio en <strong>Mantenimiento</strong> y elija uno o más <strong>servicios realizados</strong> (aceite, afinación, llantas…).</li>
+                <li>¿Necesita otro tipo de servicio? En <strong>Ajustes de alertas</strong> use «Agregar servicio de mantenimiento».</li>
+                <li>Al <strong>finalizar</strong> el mantenimiento, el sistema reinicia el contador de km para cada servicio seleccionado.</li>
+                <li>Las alertas solo aparecen <strong>después</strong> del primer mantenimiento finalizado de cada tipo; luego cuentan km y días desde ese registro.</li>
             </ol>
 
             <?php if ($aceite !== null): ?>
