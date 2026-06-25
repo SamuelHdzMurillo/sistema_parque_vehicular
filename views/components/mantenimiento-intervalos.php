@@ -9,7 +9,7 @@ $visible = !empty($visible);
 $hayServicios = $servicios !== [];
 $haySeleccionados = array_filter($selectedServicios, static fn ($s) => trim((string) $s) !== '') !== [];
 ?>
-<div id="mantenimiento-intervalos-wrap" class="mantenimiento-intervalos-wrap card card--nested mt-2 mb-2" <?= $visible ? '' : 'hidden' ?>>
+<div id="mantenimiento-intervalos-wrap" class="mantenimiento-intervalos-wrap card card--nested mt-2" <?= $visible ? '' : 'hidden' ?>>
     <div class="card-body">
         <h3 class="h4 mb-1">¿Cuándo toca el próximo servicio?</h3>
         <p class="text-muted mb-2">Indique en cuántos kilómetros o meses debe realizarse el siguiente servicio (al menos uno por servicio seleccionado).</p>

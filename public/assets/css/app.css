@@ -1165,9 +1165,6 @@ a:hover { color: var(--color-primary-hover); text-decoration: underline; }
     border-color: color-mix(in srgb, var(--success) 25%, transparent);
 }
 
-#grupo-servicio {
-    grid-column: 1 / -1;
-}
 
 .servicios-picker-box {
     padding: .85rem;
@@ -1325,6 +1322,62 @@ details[open] > .servicios-picker-item--add .servicios-picker-chip--add {
 
 .mantenimiento-intervalo-fields {
     margin-bottom: 0;
+}
+
+/* ——— Formulario mantenimiento ——— */
+.mantenimiento-form .mantenimiento-form-section {
+    margin-bottom: 1.75rem;
+    padding-bottom: 1.75rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.mantenimiento-form .mantenimiento-form-section:last-of-type {
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 0;
+}
+
+.mantenimiento-form-section-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin: 0 0 1.1rem;
+    color: var(--text-primary);
+}
+
+.mantenimiento-form .form-row--2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.mantenimiento-form .form-row--3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.mantenimiento-form .form-historico-note {
+    padding: .85rem 1rem;
+    border-radius: var(--radius);
+    background: var(--bg-subtle, rgba(0, 0, 0, 0.02));
+    border: 1px solid var(--border-color);
+}
+
+.mantenimiento-form .form-historico-note .form-group {
+    margin-bottom: 0;
+}
+
+.mantenimiento-form .form-folio-display {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.mantenimiento-form .form-fieldset {
+    margin-top: 0;
+}
+
+@media (max-width: 768px) {
+    .mantenimiento-form .form-row--2,
+    .mantenimiento-form .form-row--3 {
+        grid-template-columns: 1fr;
+    }
 }
 
 .alertas-list {
