@@ -1303,6 +1303,30 @@ details[open] > .servicios-picker-item--add .servicios-picker-chip--add {
     border-color: #555;
 }
 
+.mantenimiento-intervalos-wrap.card--nested {
+    border: 1px solid var(--border-color);
+    background: var(--bg-subtle, rgba(0, 0, 0, 0.02));
+}
+
+.mantenimiento-intervalo-row {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.mantenimiento-intervalo-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.mantenimiento-intervalo-label {
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.mantenimiento-intervalo-fields {
+    margin-bottom: 0;
+}
+
 .alertas-list {
     display: flex;
     flex-direction: column;

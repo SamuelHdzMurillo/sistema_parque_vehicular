@@ -31,6 +31,7 @@ final class MantenimientoRepository extends BaseRepository
         }
 
         $row['servicios'] = $this->getServicios($id);
+        $row['servicios_intervalos'] = $this->getServiciosIntervalos($id);
 
         return $row;
     }
@@ -38,13 +39,9 @@ final class MantenimientoRepository extends BaseRepository
     /** @return list<string> */
     public function getServicios(int $mantenimientoId): array
     {
-        $rows = $this->fetchAll(
-            'SELECT servicio FROM mantenimiento_servicios WHERE mantenimiento_id = ? ORDER BY servicio ASC',
-            [$mantenimientoId]
-        );
-
-        if ($rows !== []) {
-            return array_column($rows, 'servicio');
+        $detalle = $this->getServiciosIntervalos($mantenimientoId);
+        if ($detalle !== []) {
+            return array_column($detalle, 'servicio');
         }
 
         $legacy = $this->fetchOne(
@@ -57,8 +54,38 @@ final class MantenimientoRepository extends BaseRepository
             : [];
     }
 
-    /** @param list<string> $servicios */
-    public function syncServicios(int $mantenimientoId, array $servicios): void
+    /**
+     * @return list<array{servicio: string, intervalo_km: ?int, intervalo_dias: ?int}>
+     */
+    public function getServiciosIntervalos(int $mantenimientoId): array
+    {
+        $rows = $this->fetchAll(
+            'SELECT servicio, intervalo_km, intervalo_dias
+             FROM mantenimiento_servicios
+             WHERE mantenimiento_id = ?
+             ORDER BY servicio ASC',
+            [$mantenimientoId]
+        );
+
+        $result = [];
+        foreach ($rows as $row) {
+            $result[] = [
+                'servicio' => (string) $row['servicio'],
+                'intervalo_km' => isset($row['intervalo_km']) && $row['intervalo_km'] !== null
+                    ? (int) $row['intervalo_km'] : null,
+                'intervalo_dias' => isset($row['intervalo_dias']) && $row['intervalo_dias'] !== null
+                    ? (int) $row['intervalo_dias'] : null,
+            ];
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param list<string> $servicios
+     * @param array<string, array{intervalo_km?: ?int, intervalo_dias?: ?int}> $intervalos
+     */
+    public function syncServicios(int $mantenimientoId, array $servicios, array $intervalos = []): void
     {
         $this->execute('DELETE FROM mantenimiento_servicios WHERE mantenimiento_id = ?', [$mantenimientoId]);
 
@@ -67,11 +94,28 @@ final class MantenimientoRepository extends BaseRepository
             if ($servicio === '') {
                 continue;
             }
+
+            $cfg = $intervalos[$servicio] ?? [];
+            $intervaloKm = $this->nullablePositiveInt($cfg['intervalo_km'] ?? null);
+            $intervaloDias = $this->nullablePositiveInt($cfg['intervalo_dias'] ?? null);
+
             $this->execute(
-                'INSERT IGNORE INTO mantenimiento_servicios (mantenimiento_id, servicio) VALUES (?, ?)',
-                [$mantenimientoId, $servicio]
+                'INSERT INTO mantenimiento_servicios (mantenimiento_id, servicio, intervalo_km, intervalo_dias)
+                 VALUES (?, ?, ?, ?)',
+                [$mantenimientoId, $servicio, $intervaloKm, $intervaloDias]
             );
         }
+    }
+
+    private function nullablePositiveInt(mixed $value): ?int
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        $int = (int) $value;
+
+        return $int > 0 ? $int : null;
     }
 
     /**
@@ -330,7 +374,8 @@ final class MantenimientoRepository extends BaseRepository
         $match .= ')';
 
         return $this->fetchOne(
-            "SELECT m.* FROM mantenimientos m
+            "SELECT m.*, ms.intervalo_km, ms.intervalo_dias
+             FROM mantenimientos m
              LEFT JOIN mantenimiento_servicios ms ON ms.mantenimiento_id = m.id
              WHERE m.vehiculo_id = ? AND m.estado = 'finalizado' AND {$match}
              ORDER BY m.fecha DESC, m.id DESC

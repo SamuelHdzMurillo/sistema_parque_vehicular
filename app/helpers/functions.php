@@ -756,7 +756,95 @@ function mantenimiento_inferir_servicio(string $descripcion): ?string
     return null;
 }
 
-/** Intervalo en días para calcular cuándo toca el siguiente servicio (primer aviso). */
+/** Intervalo en km guardado en el último mantenimiento. */
+function mantenimiento_intervalo_km(?array $ultimo): ?int
+{
+    if ($ultimo === null) {
+        return null;
+    }
+
+    $km = $ultimo['intervalo_km'] ?? null;
+
+    return ($km !== null && (int) $km > 0) ? (int) $km : null;
+}
+
+/** Intervalo en días guardado en el último mantenimiento. */
+function mantenimiento_intervalo_dias(?array $ultimo): ?int
+{
+    if ($ultimo === null) {
+        return null;
+    }
+
+    $dias = $ultimo['intervalo_dias'] ?? null;
+
+    return ($dias !== null && (int) $dias > 0) ? (int) $dias : null;
+}
+
+/** Meses equivalentes al intervalo en días (para formularios). */
+function mantenimiento_intervalo_meses(?array $ultimo): ?int
+{
+    $dias = mantenimiento_intervalo_dias($ultimo);
+    if ($dias === null) {
+        return null;
+    }
+
+    return (int) round($dias / 30);
+}
+
+/** Texto legible del próximo servicio programado. */
+function mantenimiento_intervalo_display(?int $intervaloKm, ?int $intervaloDias): string
+{
+    $partes = [];
+    if ($intervaloKm !== null && $intervaloKm > 0) {
+        $partes[] = number_format($intervaloKm, 0, '.', ',') . ' km';
+    }
+    if ($intervaloDias !== null && $intervaloDias > 0) {
+        $meses = (int) round($intervaloDias / 30);
+        $partes[] = $meses . ' mes' . ($meses === 1 ? '' : 'es');
+    }
+
+    return $partes !== [] ? implode(' · ', $partes) : '—';
+}
+
+/**
+ * Evalúa alertas de mantenimiento según intervalos del último servicio.
+ *
+ * @return array{nivel: string, motivo: string}|null
+ */
+function alerta_evaluar_intervalos(int $kmDesde, int $diasDesde, ?int $intervaloKm, ?int $intervaloDias): ?array
+{
+    $pctMax = 0.0;
+    $motivos = [];
+
+    if ($intervaloKm !== null && $intervaloKm > 0) {
+        $pct = ($kmDesde / $intervaloKm) * 100;
+        $pctMax = max($pctMax, $pct);
+        if ($pct >= 70) {
+            $motivos[] = sprintf('%s km desde el último servicio', number_format($kmDesde, 0, '.', ','));
+        }
+    }
+
+    if ($intervaloDias !== null && $intervaloDias > 0) {
+        $pct = ($diasDesde / $intervaloDias) * 100;
+        $pctMax = max($pctMax, $pct);
+        if ($pct >= 70) {
+            $motivos[] = sprintf('%d día(s) desde el último servicio', $diasDesde);
+        }
+    }
+
+    if ($pctMax < 70 || $motivos === []) {
+        return null;
+    }
+
+    $nivel = $pctMax >= 100 ? 'rojo' : ($pctMax >= 85 ? 'amarillo' : 'verde');
+
+    return [
+        'nivel' => $nivel,
+        'motivo' => implode(' · ', $motivos),
+    ];
+}
+
+/** @deprecated Usar mantenimiento_intervalo_dias() */
 function alerta_intervalo_dias(array $config): ?int
 {
     $intervalo = $config['intervalo_dias'] ?? null;
@@ -764,20 +852,10 @@ function alerta_intervalo_dias(array $config): ?int
         return (int) $intervalo;
     }
 
-    $dias = $config['umbral_rojo_dias'] ?? null;
-    if ($dias !== null && (int) $dias > 0) {
-        return (int) $dias;
-    }
-
-    if (($config['unidad'] ?? '') === 'dias') {
-        $dias = $config['umbral_rojo'] ?? null;
-        return ($dias !== null && (int) $dias > 0) ? (int) $dias : null;
-    }
-
     return null;
 }
 
-/** Intervalo en km para calcular el kilometraje del próximo servicio (primer aviso). */
+/** @deprecated Usar mantenimiento_intervalo_km() */
 function alerta_intervalo_km(array $config): ?int
 {
     $intervalo = $config['intervalo_km'] ?? null;
@@ -785,19 +863,17 @@ function alerta_intervalo_km(array $config): ?int
         return (int) $intervalo;
     }
 
-    $umbrales = alerta_config_umbrales_km($config);
-    $km = (int) ($umbrales['aviso'] ?? 0);
-
-    return $km > 0 ? $km : null;
+    return null;
 }
 
 /**
- * Calcula la última fecha de servicio y la próxima fecha programada según la config.
+ * Calcula la última fecha de servicio y la próxima fecha programada.
  *
  * @return array{ultima: ?string, proxima: ?string}
  */
-function alerta_mantenimiento_fechas(?array $ultimo, array $config, ?array $vehiculo = null): array
+function alerta_mantenimiento_fechas(?array $ultimo, ?array $vehiculo = null): array
 {
+    unset($vehiculo);
     $ultima = null;
     if ($ultimo !== null && !empty($ultimo['fecha'])) {
         $ultima = substr((string) $ultimo['fecha'], 0, 10);
@@ -805,7 +881,7 @@ function alerta_mantenimiento_fechas(?array $ultimo, array $config, ?array $vehi
 
     $proxima = null;
     if ($ultima !== null) {
-        $intervalDias = alerta_intervalo_dias($config);
+        $intervalDias = mantenimiento_intervalo_dias($ultimo);
         if ($intervalDias !== null) {
             $proxima = date('Y-m-d', strtotime($ultima . ' + ' . $intervalDias . ' days'));
         }
@@ -815,9 +891,9 @@ function alerta_mantenimiento_fechas(?array $ultimo, array $config, ?array $vehi
 }
 
 /** Kilometraje estimado del próximo servicio. */
-function alerta_proximo_km(?array $ultimo, array $config): ?int
+function alerta_proximo_km(?array $ultimo): ?int
 {
-    $intervalo = alerta_intervalo_km($config);
+    $intervalo = mantenimiento_intervalo_km($ultimo);
     if ($intervalo === null) {
         return null;
     }

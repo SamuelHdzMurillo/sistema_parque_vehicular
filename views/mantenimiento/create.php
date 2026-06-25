@@ -20,8 +20,12 @@ if ($oldServicios === [] && $preServicio !== null && $preServicio !== '') {
 }
 $responsableActual = old('responsable_id', auth_id());
 $puedeAgregarResponsable = can('usuarios.create') || can('mantenimiento.create');
-$puedeAgregarServicio = !empty($puede_agregar_servicio) || can('mantenimiento.create') || can('alertas.config');
+$puedeAgregarServicio = !empty($puede_agregar_servicio) || can('mantenimiento.create');
 $returnToServicio = 'mantenimiento/create';
+$oldIntervalos = old('intervalos', []);
+if (!is_array($oldIntervalos)) {
+    $oldIntervalos = [];
+}
 ?>
 <div class="page-header">
     <div>
@@ -71,6 +75,14 @@ $returnToServicio = 'mantenimiento/create';
                     'formId' => 'mantenimiento-servicio-form',
                 ]); ?>
             </div>
+        </div>
+        <?php App\Core\View::component('mantenimiento-intervalos', [
+            'servicios' => $servicios,
+            'intervalos' => $oldIntervalos,
+            'selectedServicios' => $oldServicios,
+            'visible' => old('tipo', 'preventivo') === 'preventivo',
+        ]); ?>
+        <div class="form-row">
             <div class="form-group">
                 <label class="form-label" for="fecha">Fecha <span class="required">*</span></label>
                 <input type="date" id="fecha" name="fecha" class="form-control" required value="<?= e((string) old('fecha', date('Y-m-d'))) ?>">

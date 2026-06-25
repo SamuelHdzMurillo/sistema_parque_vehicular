@@ -121,13 +121,8 @@ final class AlertaRepository extends BaseRepository
                 continue;
             }
 
-            $config = $this->getEffectiveConfig((int) $doc['vehiculo_id'], $tipoAlerta);
-            if ($config === null) {
-                continue;
-            }
-
             $diasRestantes = (int) ((strtotime($doc['fecha_vencimiento']) - strtotime(date('Y-m-d'))) / 86400);
-            $nivel = $this->calcularNivelDias($diasRestantes, $config);
+            $nivel = $this->calcularNivelDocumento($diasRestantes);
 
             if ($nivel === null) {
                 continue;
@@ -404,17 +399,18 @@ final class AlertaRepository extends BaseRepository
         };
     }
 
-    private function calcularNivelDias(int $diasRestantes, array $config): ?string
+    private function calcularNivelDocumento(int $diasRestantes): ?string
     {
-        if ($diasRestantes < 0 || $diasRestantes <= (int) $config['umbral_rojo']) {
+        if ($diasRestantes < 0 || $diasRestantes <= 0) {
             return 'rojo';
         }
-        if ($diasRestantes <= (int) $config['umbral_amarillo']) {
+        if ($diasRestantes <= 30) {
             return 'amarillo';
         }
-        if ($diasRestantes <= (int) $config['umbral_verde']) {
+        if ($diasRestantes <= 60) {
             return 'verde';
         }
+
         return null;
     }
 

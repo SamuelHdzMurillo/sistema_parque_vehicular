@@ -138,8 +138,6 @@ $router->post('herramientas/vehiculo/{vehiculoId}', [HerramientaController::clas
 // ——— Alertas ———
 $router->get('alertas', [AlertaController::class, 'index'], $perm('alertas.read'));
 $router->post('alertas/{id}/atender', [AlertaController::class, 'atender'], $perm('alertas.read'));
-$router->get('alertas/config', [AlertaController::class, 'config'], $perm('alertas.config'));
-$router->post('alertas/config', [AlertaController::class, 'config'], $perm('alertas.config'));
 
 // ——— Reportes ———
 $router->get('reportes', [ReporteController::class, 'index'], $perm('dashboard.read'));

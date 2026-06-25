@@ -52,43 +52,4 @@ final class AlertaController extends BaseController
         flash($error ? 'error' : 'success', $error ?? 'Alerta atendida correctamente.');
         $this->redirect('alertas');
     }
-
-    public function config(Request $request): never
-    {
-        if ($request->isPost()) {
-            $this->validateCsrf($request);
-
-            if ((string) $request->input('accion', '') === 'crear_servicio_km') {
-                $nuevo = $request->input('nuevo_servicio', []);
-                if (!is_array($nuevo)) {
-                    $nuevo = [];
-                }
-                $result = $this->alertas->createServicioKm($nuevo);
-                flash(
-                    $result['error'] ? 'error' : 'success',
-                    $result['error'] ?? 'Servicio agregado. Ya aparece en Mantenimiento y en las alertas.'
-                );
-                $this->redirect('alertas/config');
-            }
-
-            $vehiculoId = (int) $request->input('vehiculo_id', 0);
-            $vehiculoConfig = $request->input('vehiculo_config', []);
-
-            if ($vehiculoId > 0 && is_array($vehiculoConfig)) {
-                $this->alertas->updateVehiculoConfig($vehiculoId, $vehiculoConfig);
-                flash('success', 'Configuración del vehículo guardada.');
-                $this->redirect('alertas/config?vehiculo_id=' . $vehiculoId);
-            }
-
-            $config = $request->input('config', []);
-            if (is_array($config)) {
-                $this->alertas->updateConfig($config);
-            }
-            flash('success', 'Configuración global de alertas guardada.');
-            $this->redirect('alertas/config');
-        }
-
-        $vehiculoId = (int) $request->input('vehiculo_id', 0);
-        $this->render('alertas.config', $this->alertas->getConfigPageData($vehiculoId > 0 ? $vehiculoId : null));
-    }
 }

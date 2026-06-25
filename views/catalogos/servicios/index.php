@@ -6,7 +6,7 @@ $data = $data ?? [];
     <div>
         <ul class="breadcrumb"><li><a href="<?= url('catalogos') ?>">Catálogos</a></li><li>/ Servicios</li></ul>
         <h1 class="page-title">Servicios de mantenimiento</h1>
-        <p class="page-subtitle">Tipos de servicio preventivo para mantenimientos y alertas por kilometraje</p>
+        <p class="page-subtitle">Tipos de servicio preventivo disponibles al registrar mantenimientos</p>
     </div>
     <?php if (can('catalogos.create')): ?>
     <div class="page-actions"><a href="<?= url('catalogos/servicios/create') ?>" class="btn btn-primary">+ Nuevo servicio</a></div>
@@ -41,24 +41,17 @@ $data = $data ?? [];
                 <tr>
                     <th>Código</th>
                     <th>Nombre</th>
-                    <th>Umbrales (km)</th>
                     <th>Estado</th>
                     <th></th>
                 </tr>
             </thead>
             <tbody>
                 <?php if (empty($data)): ?>
-                <tr><td colspan="5" class="text-center text-muted">Sin servicios registrados</td></tr>
+                <tr><td colspan="4" class="text-center text-muted">Sin servicios registrados</td></tr>
                 <?php else: foreach ($data as $s): ?>
                 <tr>
                     <td><code><?= e($s['tipo']) ?></code></td>
                     <td><strong><?= e($s['nombre']) ?></strong></td>
-                    <td class="text-muted">
-                        <span class="badge badge-danger" title="Urgente"><?= number_format((int) $s['umbral_rojo']) ?></span>
-                        <span class="badge badge-warning" title="Atención"><?= number_format((int) $s['umbral_amarillo']) ?></span>
-                        <span class="badge badge-success" title="Aviso"><?= number_format((int) $s['umbral_verde']) ?></span>
-                        <small>km</small>
-                    </td>
                     <td>
                         <?php if ((int) $s['activo'] === 1): ?>
                         <span class="badge badge-success">Activo</span>
@@ -92,12 +85,8 @@ $data = $data ?? [];
 <div class="card mt-2">
     <div class="card-body">
         <p class="text-muted mb-0">
-            Los umbrales indican cuántos kilómetros desde el último servicio generan alertas:
-            <span class="badge badge-success">aviso</span>,
-            <span class="badge badge-warning">atención</span> y
-            <span class="badge badge-danger">urgente</span>.
-            Para ajustes globales de documentos y alertas por vehículo, use
-            <a href="<?= url('alertas/config') ?>">Ajustes de alertas</a>.
+            Al registrar un mantenimiento preventivo, el usuario indica cuántos kilómetros o meses faltan para el próximo servicio de cada tipo.
+            Esos datos generan las alertas automáticamente.
         </p>
     </div>
 </div>

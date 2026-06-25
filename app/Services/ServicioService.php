@@ -127,16 +127,11 @@ final class ServicioService
             return 'El código interno debe usar letras minúsculas, números y guión bajo (ej. revision_frenos).';
         }
 
-        $umbrales = $this->sanitizeUmbrales($data);
-        if (is_string($umbrales)) {
-            return $umbrales;
-        }
-
-        return array_merge([
+        return [
             'tipo' => $tipo,
             'nombre' => $nombre,
             'activo' => isset($data['activo']) ? (int) (bool) $data['activo'] : 1,
-        ], $umbrales);
+        ];
     }
 
     private function sanitizeForUpdate(array $data): array|string
@@ -146,39 +141,9 @@ final class ServicioService
             return 'El nombre del servicio es obligatorio.';
         }
 
-        $umbrales = $this->sanitizeUmbrales($data);
-        if (is_string($umbrales)) {
-            return $umbrales;
-        }
-
-        return array_merge([
+        return [
             'nombre' => $nombre,
             'activo' => isset($data['activo']) ? (int) (bool) $data['activo'] : 1,
-        ], $umbrales);
-    }
-
-    private function sanitizeUmbrales(array $data): array|string
-    {
-        $umbralRojo = max(0, (int) ($data['umbral_rojo'] ?? 500));
-        $umbralAmarillo = max(0, (int) ($data['umbral_amarillo'] ?? 2000));
-        $umbralVerde = max(0, (int) ($data['umbral_verde'] ?? 5000));
-
-        if ($umbralRojo > $umbralAmarillo || $umbralAmarillo > $umbralVerde) {
-            return 'Los umbrales de km deben ir de menor a mayor: aviso ≤ atención ≤ urgente.';
-        }
-
-        return [
-            'umbral_verde' => $umbralVerde,
-            'umbral_amarillo' => $umbralAmarillo,
-            'umbral_rojo' => $umbralRojo,
-            'umbral_verde_dias' => $this->nullableIntField($data['umbral_verde_dias'] ?? 365),
-            'umbral_amarillo_dias' => $this->nullableIntField($data['umbral_amarillo_dias'] ?? 180),
-            'umbral_rojo_dias' => $this->nullableIntField($data['umbral_rojo_dias'] ?? 90),
         ];
-    }
-
-    private function nullableIntField(mixed $value): ?int
-    {
-        return $value === null || $value === '' ? null : (int) $value;
     }
 }

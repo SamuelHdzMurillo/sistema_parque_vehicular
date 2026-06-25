@@ -102,12 +102,7 @@ final class AlertaService
 
             foreach ($serviciosKm as $cfg) {
                 $tipo = (string) $cfg['tipo'];
-                $config = $this->repo->getEffectiveConfig($vehiculoId, $tipo);
-                if ($config === null) {
-                    continue;
-                }
-
-                $fila = $this->buildFilaMantenimiento($vehiculo, $tipo, $config);
+                $fila = $this->buildFilaMantenimiento($vehiculo, $tipo, $cfg);
                 if (!empty($fila['sin_alta'])) {
                     continue;
                 }
@@ -161,34 +156,6 @@ final class AlertaService
         ];
     }
 
-    public function getConfigPageData(?int $vehiculoId = null): array
-    {
-        $data = [
-            'config' => alerta_config_sort($this->repo->getAllConfig()),
-            'vehiculos' => $this->catalogos->getVehiculosCatalogo(),
-            'vehiculo_id' => $vehiculoId,
-            'vehiculo_config' => [],
-        ];
-
-        if ($vehiculoId !== null && $vehiculoId > 0) {
-            $data['vehiculo_config'] = alerta_config_sort(
-                $this->buildVehiculoConfigForm($vehiculoId, $data['config'])
-            );
-        }
-
-        return $data;
-    }
-
-    public function updateConfig(array $config): void
-    {
-        foreach ($config as $id => $row) {
-            if (!is_array($row)) {
-                continue;
-            }
-            $this->repo->updateConfig((int) $id, $row);
-        }
-    }
-
     /** @return array{error: ?string, tipo: ?string} */
     public function createServicioKm(array $data): array
     {
@@ -196,22 +163,6 @@ final class AlertaService
             return (new ServicioService())->createWithTipo($data);
         } catch (\Throwable $e) {
             return ['error' => user_facing_error($e, 'No se pudo agregar el servicio.'), 'tipo' => null];
-        }
-    }
-
-    public function updateVehiculoConfig(int $vehiculoId, array $config): void
-    {
-        foreach ($config as $tipo => $row) {
-            if (!is_array($row) || $tipo === '') {
-                continue;
-            }
-
-            if (empty($row['personalizado'])) {
-                $this->repo->deleteVehiculoConfig($vehiculoId, (string) $tipo);
-                continue;
-            }
-
-            $this->repo->upsertVehiculoConfig($vehiculoId, (string) $tipo, $row);
         }
     }
 
@@ -253,36 +204,9 @@ final class AlertaService
         $this->sincronizar();
     }
 
-    private function buildVehiculoConfigForm(int $vehiculoId, array $globalConfig): array
-    {
-        $custom = $this->repo->getVehiculoConfigAll($vehiculoId);
-        $rows = [];
-
-        foreach ($globalConfig as $global) {
-            $tipo = (string) $global['tipo'];
-            $override = $custom[$tipo] ?? null;
-            $rows[] = [
-                'tipo' => $tipo,
-                'nombre' => $global['nombre'],
-                'unidad' => $global['unidad'],
-                'personalizado' => $override !== null,
-                'umbral_verde' => $override['umbral_verde'] ?? $global['umbral_verde'],
-                'umbral_amarillo' => $override['umbral_amarillo'] ?? $global['umbral_amarillo'],
-                'umbral_rojo' => $override['umbral_rojo'] ?? $global['umbral_rojo'],
-                'umbral_verde_dias' => $override['umbral_verde_dias'] ?? $global['umbral_verde_dias'] ?? '',
-                'umbral_amarillo_dias' => $override['umbral_amarillo_dias'] ?? $global['umbral_amarillo_dias'] ?? '',
-                'umbral_rojo_dias' => $override['umbral_rojo_dias'] ?? $global['umbral_rojo_dias'] ?? '',
-                'activo' => $override !== null ? (int) ($override['activo'] ?? 1) : (int) ($global['activo'] ?? 1),
-            ];
-        }
-
-        return $rows;
-    }
-
     private function generarAlertasKm(string $tipoConfig, string $tituloBase): int
     {
-        $global = $this->repo->getAlertaConfig($tipoConfig);
-        if ($global === null) {
+        if ($this->repo->getAlertaConfig($tipoConfig) === null) {
             return 0;
         }
 
@@ -291,11 +215,6 @@ final class AlertaService
 
         foreach ($vehiculos as $vehiculo) {
             $vehiculoId = (int) $vehiculo['id'];
-            $config = $this->repo->getEffectiveConfig($vehiculoId, $tipoConfig);
-            if ($config === null) {
-                continue;
-            }
-
             $ultimo = $this->mantenimientos->getUltimoPorServicio($vehiculoId, $tipoConfig);
 
             if ($ultimo === null) {
@@ -307,30 +226,25 @@ final class AlertaService
                 continue;
             }
 
-            $kmBase = (int) $ultimo['kilometraje'];
-            $kmActual = (int) $vehiculo['kilometraje_actual'];
-            $kmDesde = $kmActual - $kmBase;
+            $intervaloKm = mantenimiento_intervalo_km($ultimo);
+            $intervaloDias = mantenimiento_intervalo_dias($ultimo);
+            if ($intervaloKm === null && $intervaloDias === null) {
+                continue;
+            }
 
+            $kmDesde = max(0, (int) $vehiculo['kilometraje_actual'] - (int) $ultimo['kilometraje']);
             $diasDesde = 0;
             if (!empty($ultimo['fecha'])) {
                 $diasDesde = (int) ((strtotime(date('Y-m-d')) - strtotime((string) $ultimo['fecha'])) / 86400);
             }
 
-            $evaluacion = $this->evaluarUmbralesMantenimiento(
-                $kmDesde,
-                $diasDesde,
-                $config,
-                $ultimo,
-                $kmActual
-            );
+            $evaluacion = alerta_evaluar_intervalos($kmDesde, $diasDesde, $intervaloKm, $intervaloDias);
             if ($evaluacion === null) {
                 continue;
             }
 
-            $mensaje = $this->buildMensajeMantenimiento(
-                (string) $config['nombre'],
-                $evaluacion['motivo']
-            );
+            $nombreServicio = mantenimiento_servicio_label($tipoConfig);
+            $mensaje = $this->buildMensajeMantenimiento($nombreServicio, $evaluacion['motivo']);
 
             $activa = $this->repo->findActive($vehiculoId, $tipoConfig);
             if ($activa !== null) {
@@ -351,110 +265,28 @@ final class AlertaService
         return $generadas;
     }
 
-    /**
-     * Evalúa km y/o días con lógica OR: basta que se cumpla uno para generar alerta.
-     *
-     * @return array{nivel: string, motivo: string}|null
-     */
-    private function evaluarUmbralesMantenimiento(
-        int $kmDesde,
-        int $diasDesde,
-        array $config,
-        ?array $ultimo,
-        int $kmActual
-    ): ?array {
-        $nivelKm = $this->calcularNivelAcumulado($kmDesde, $config, 'km');
-        $nivelDias = null;
-
-        if ($this->tieneUmbralesDias($config)) {
-            $nivelDias = $this->calcularNivelAcumulado($diasDesde, $config, 'dias');
-        }
-
-        $nivel = $this->nivelMasGrave($nivelKm, $nivelDias);
-        if ($nivel === null) {
-            return null;
-        }
-
-        $motivos = [];
-        if ($nivelKm !== null) {
-            $motivos[] = sprintf('%s km desde el último servicio', number_format($kmDesde, 0, '.', ','));
-        }
-        if ($nivelDias !== null) {
-            $motivos[] = sprintf('%d día(s) desde el último servicio', $diasDesde);
-        }
-
-        return [
-            'nivel' => $nivel,
-            'motivo' => implode(' · ', $motivos),
-        ];
-    }
-
-    private function calcularNivelAcumulado(int $valor, array $config, string $modo): ?string
-    {
-        $prefix = $modo === 'dias' ? 'umbral_verde_dias' : 'umbral_verde';
-        $verde = $config[$prefix] ?? null;
-        $amarillo = $config[$modo === 'dias' ? 'umbral_amarillo_dias' : 'umbral_amarillo'] ?? null;
-        $rojo = $config[$modo === 'dias' ? 'umbral_rojo_dias' : 'umbral_rojo'] ?? null;
-
-        if ($verde === null && $amarillo === null && $rojo === null) {
-            return null;
-        }
-
-        if ($verde !== null && $valor >= (int) $verde) {
-            return 'rojo';
-        }
-        if ($amarillo !== null && $valor >= (int) $amarillo) {
-            return 'amarillo';
-        }
-        if ($rojo !== null && $valor >= (int) $rojo) {
-            return 'verde';
-        }
-
-        return null;
-    }
-
-    private function tieneUmbralesDias(array $config): bool
-    {
-        return ($config['umbral_verde_dias'] ?? null) !== null
-            || ($config['umbral_amarillo_dias'] ?? null) !== null
-            || ($config['umbral_rojo_dias'] ?? null) !== null;
-    }
-
-    private function nivelMasGrave(?string $a, ?string $b): ?string
-    {
-        $peso = ['verde' => 1, 'amarillo' => 2, 'rojo' => 3];
-        $pa = $a !== null ? ($peso[$a] ?? 0) : 0;
-        $pb = $b !== null ? ($peso[$b] ?? 0) : 0;
-
-        if ($pa === 0 && $pb === 0) {
-            return null;
-        }
-
-        return $pa >= $pb ? $a : $b;
-    }
-
     private function buildMensajeMantenimiento(string $nombreServicio, string $motivo): string
     {
         return sprintf('%s · %s', $nombreServicio, $motivo);
     }
 
     /** @return array<string, mixed> */
-    private function buildFilaMantenimiento(array $vehiculo, string $tipo, array $config): array
+    private function buildFilaMantenimiento(array $vehiculo, string $tipo, array $catalogo): array
     {
         $vehiculoId = (int) $vehiculo['id'];
         $ultimo = $this->mantenimientos->getUltimoPorServicio($vehiculoId, $tipo);
-        $fechas = alerta_mantenimiento_fechas($ultimo, $config, $vehiculo);
+        $fechas = alerta_mantenimiento_fechas($ultimo);
 
         $fila = [
             'vehiculo_id' => $vehiculoId,
             'numero_economico' => (string) ($vehiculo['numero_economico'] ?? ''),
             'tipo' => $tipo,
-            'servicio_nombre' => (string) ($config['nombre'] ?? mantenimiento_servicio_label($tipo)),
+            'servicio_nombre' => (string) ($catalogo['nombre'] ?? mantenimiento_servicio_label($tipo)),
             'categoria' => 'mantenimiento',
             'sin_alta' => $ultimo === null,
             'fecha_ultimo_mantenimiento' => $fechas['ultima'],
             'fecha_proximo_mantenimiento' => $fechas['proxima'],
-            'proximo_km' => alerta_proximo_km($ultimo, $config),
+            'proximo_km' => alerta_proximo_km($ultimo),
             'ultimo_km' => $ultimo !== null ? (int) $ultimo['kilometraje'] : null,
             'mantenimiento_id' => $ultimo['id'] ?? null,
             'mantenimiento_folio' => $ultimo['folio'] ?? null,
@@ -478,12 +310,11 @@ final class AlertaService
             $fila['km_desde'] = $kmDesde;
             $fila['dias_desde'] = $diasDesde;
 
-            $evaluacion = $this->evaluarUmbralesMantenimiento(
+            $evaluacion = alerta_evaluar_intervalos(
                 $kmDesde,
                 $diasDesde,
-                $config,
-                $ultimo,
-                $kmActual
+                mantenimiento_intervalo_km($ultimo),
+                mantenimiento_intervalo_dias($ultimo)
             );
             $fila['nivel'] = $evaluacion['nivel'] ?? null;
         } else {
@@ -503,17 +334,17 @@ final class AlertaService
     {
         $tipo = (string) ($alerta['tipo'] ?? '');
         $vehiculoId = (int) ($alerta['vehiculo_id'] ?? 0);
-        $config = $vehiculoId > 0 ? $this->repo->getEffectiveConfig($vehiculoId, $tipo) : null;
-        $alerta['servicio_nombre'] = (string) ($config['nombre'] ?? mantenimiento_servicio_label($tipo));
+        $catalogo = $this->repo->getAlertaConfig($tipo);
+        $alerta['servicio_nombre'] = (string) ($catalogo['nombre'] ?? mantenimiento_servicio_label($tipo));
 
-        if ($config !== null && ($config['unidad'] ?? '') === 'km') {
+        if ($catalogo !== null && ($catalogo['unidad'] ?? '') === 'km') {
             $vehiculo = $this->vehiculos->findById($vehiculoId);
             $ultimo = $this->mantenimientos->getUltimoPorServicio($vehiculoId, $tipo);
-            $fechas = alerta_mantenimiento_fechas($ultimo, $config, $vehiculo);
+            $fechas = alerta_mantenimiento_fechas($ultimo);
             $alerta['categoria'] = 'mantenimiento';
             $alerta['fecha_ultimo_mantenimiento'] = $fechas['ultima'];
             $alerta['fecha_proximo_mantenimiento'] = $fechas['proxima'];
-            $alerta['proximo_km'] = alerta_proximo_km($ultimo, $config);
+            $alerta['proximo_km'] = alerta_proximo_km($ultimo);
             $alerta['mantenimiento_id'] = $ultimo['id'] ?? null;
             $alerta['mantenimiento_folio'] = $ultimo['folio'] ?? null;
             $alerta['ultimo_km'] = $ultimo !== null ? (int) $ultimo['kilometraje'] : null;

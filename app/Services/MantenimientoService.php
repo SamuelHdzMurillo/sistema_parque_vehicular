@@ -38,7 +38,7 @@ final class MantenimientoService
             'servicios' => $this->alertas->getServiciosKm(),
             'estados' => ['pendiente', 'programado', 'autorizado', 'en_proceso', 'finalizado', 'cancelado'],
             'folio_sugerido' => $this->repo->generateFolio(),
-            'puede_agregar_servicio' => can('mantenimiento.create') || can('alertas.config'),
+            'puede_agregar_servicio' => can('mantenimiento.create'),
         ];
     }
 
@@ -54,12 +54,16 @@ final class MantenimientoService
         $this->assertKilometrajeValido($data);
         $files = $this->extractFiles($data);
         $servicios = $data['servicios'] ?? [];
+        $intervalos = $this->parseIntervalosFromData($data);
+        if (($data['tipo'] ?? '') === 'preventivo') {
+            $this->assertIntervalosValidos($servicios, $intervalos);
+        }
         $data['folio'] = $this->repo->generateFolio();
         $data['created_by'] = $userId;
         $data['responsable_id'] = (int) ($data['responsable_id'] ?? $userId);
         $data['estado'] = !empty($data['es_historico']) ? 'finalizado' : ($data['estado'] ?? 'pendiente');
         $id = $this->repo->create($data);
-        $this->repo->syncServicios($id, $servicios);
+        $this->repo->syncServicios($id, $servicios, $intervalos);
 
         $rutas = $this->storeFacturaFiles($id, $files);
         if ($rutas !== []) {
@@ -91,10 +95,14 @@ final class MantenimientoService
         $this->assertKilometrajeValido($data);
         $files = $this->extractFiles($data);
         $servicios = $data['servicios'] ?? [];
+        $intervalos = $this->parseIntervalosFromData($data);
+        if (($data['tipo'] ?? '') === 'preventivo') {
+            $this->assertIntervalosValidos($servicios, $intervalos);
+        }
         $rutas = $this->storeFacturaFiles($id, $files);
         $result = $this->repo->update($id, array_merge($before, $data, $rutas));
         if ($result) {
-            $this->repo->syncServicios($id, $servicios);
+            $this->repo->syncServicios($id, $servicios, $intervalos);
             if (($data['estado'] ?? '') === 'finalizado') {
                 $finalizado = $this->repo->findById($id);
                 $userId = auth_id() ?? (int) ($before['responsable_id'] ?? 0);
@@ -305,8 +313,7 @@ final class MantenimientoService
         if (($data['tipo'] ?? '') === 'preventivo') {
             if ($servicios === []) {
                 throw new \RuntimeException(
-                    'Seleccione al menos un servicio preventivo (cambio de aceite, afinación, llantas…). '
-                    . 'Deben coincidir con los tipos configurados en Alertas.'
+                    'Seleccione al menos un servicio preventivo (cambio de aceite, afinación, llantas…).'
                 );
             }
             $data['servicios'] = $servicios;
@@ -348,6 +355,58 @@ final class MantenimientoService
                 'El kilometraje (' . number_format($km) . ' km) no puede ser menor al actual del vehículo ('
                 . number_format($kmActual) . ' km). Marque «Mantenimiento anterior al kilometraje actual» si el servicio fue con menor kilometraje.'
             );
+        }
+    }
+
+    /**
+     * @return array<string, array{intervalo_km: ?int, intervalo_dias: ?int}>
+     */
+    private function parseIntervalosFromData(array $data): array
+    {
+        $raw = $data['intervalos'] ?? [];
+        if (!is_array($raw)) {
+            return [];
+        }
+
+        $result = [];
+        foreach ($raw as $servicio => $vals) {
+            if (!is_array($vals)) {
+                continue;
+            }
+            $servicio = trim((string) $servicio);
+            if ($servicio === '') {
+                continue;
+            }
+
+            $km = isset($vals['km']) && $vals['km'] !== '' ? (int) $vals['km'] : null;
+            $meses = isset($vals['meses']) && $vals['meses'] !== '' ? (int) $vals['meses'] : null;
+            $dias = ($meses !== null && $meses > 0) ? $meses * 30 : null;
+
+            $result[$servicio] = [
+                'intervalo_km' => ($km !== null && $km > 0) ? $km : null,
+                'intervalo_dias' => $dias,
+            ];
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param list<string> $servicios
+     * @param array<string, array{intervalo_km: ?int, intervalo_dias: ?int}> $intervalos
+     */
+    private function assertIntervalosValidos(array $servicios, array $intervalos): void
+    {
+        foreach ($servicios as $servicio) {
+            $cfg = $intervalos[$servicio] ?? [];
+            $km = (int) ($cfg['intervalo_km'] ?? 0);
+            $dias = (int) ($cfg['intervalo_dias'] ?? 0);
+            if ($km <= 0 && $dias <= 0) {
+                throw new \RuntimeException(
+                    'Indique en cuántos kilómetros o meses toca el próximo servicio de «'
+                    . mantenimiento_servicio_label($servicio) . '».'
+                );
+            }
         }
     }
 }

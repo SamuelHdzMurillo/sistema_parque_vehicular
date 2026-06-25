@@ -14,7 +14,7 @@ $esMatriz = $modo === 'matriz';
         <h1 class="page-title">Alertas</h1>
         <p class="page-subtitle">
             <?php if ($esMatriz): ?>
-            Mantenimiento por vehículo — último servicio y cuándo toca otra vez
+            Mantenimiento por vehículo — según los km o meses indicados al registrar cada servicio
             <?php elseif ($totalPendientes > 0): ?>
             Historial de alertas atendidas y pendientes
             <?php else: ?>
@@ -23,9 +23,6 @@ $esMatriz = $modo === 'matriz';
         </p>
     </div>
     <div class="page-actions">
-        <?php if (can('alertas.config')): ?>
-        <a href="<?= url('alertas/config') ?>" class="btn btn-secondary">Ajustes</a>
-        <?php endif; ?>
         <?php if ($esMatriz): ?>
         <?php if ($solo_pendientes): ?>
         <a href="<?= e(alerta_index_url(['pendientes' => null])) ?>" class="btn btn-sm btn-info">Ver todos los vehículos</a>

@@ -49,6 +49,21 @@ $m = $mantenimiento ?? [];
             if (!empty($serviciosM)): ?>
             <div class="meta-item"><label>Servicios</label><span><?= e(mantenimiento_servicios_labels($serviciosM)) ?></span></div>
             <?php endif; ?>
+            <?php if (($m['tipo'] ?? '') === 'preventivo' && !empty($m['servicios_intervalos'])): ?>
+            <div class="meta-item meta-item--full"><label>Próximo servicio programado</label>
+                <ul class="mb-0 pl-3">
+                    <?php foreach ($m['servicios_intervalos'] as $si): ?>
+                    <li>
+                        <strong><?= e(mantenimiento_servicio_label((string) ($si['servicio'] ?? ''))) ?>:</strong>
+                        <?= e(mantenimiento_intervalo_display(
+                            isset($si['intervalo_km']) ? (int) $si['intervalo_km'] : null,
+                            isset($si['intervalo_dias']) ? (int) $si['intervalo_dias'] : null
+                        )) ?>
+                    </li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+            <?php endif; ?>
             <div class="meta-item"><label>Fecha</label><span><?= format_date($m['fecha'] ?? null) ?></span></div>
             <div class="meta-item"><label>Kilometraje</label><span><?= number_format((int) ($m['kilometraje'] ?? 0)) ?></span></div>
             <div class="meta-item"><label>Proveedor</label><span><?= e($m['proveedor_nombre'] ?? $m['razon_social'] ?? '—') ?></span></div>

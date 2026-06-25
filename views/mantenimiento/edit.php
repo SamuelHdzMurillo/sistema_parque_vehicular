@@ -18,8 +18,25 @@ $preServicioGet = $_GET['servicio'] ?? null;
 if ($preServicioGet !== null && $preServicioGet !== '' && !in_array((string) $preServicioGet, $serviciosSel, true)) {
     $serviciosSel[] = (string) $preServicioGet;
 }
-$puedeAgregarServicio = !empty($puede_agregar_servicio) || can('mantenimiento.create') || can('alertas.config');
+$puedeAgregarServicio = !empty($puede_agregar_servicio) || can('mantenimiento.create');
 $returnToServicio = 'mantenimiento/' . (int) ($m['id'] ?? 0) . '/edit';
+$oldIntervalos = old('intervalos', []);
+if (!is_array($oldIntervalos)) {
+    $oldIntervalos = [];
+}
+if ($oldIntervalos === []) {
+    foreach ($m['servicios_intervalos'] ?? [] as $si) {
+        $tipoSi = (string) ($si['servicio'] ?? '');
+        if ($tipoSi === '') {
+            continue;
+        }
+        $dias = isset($si['intervalo_dias']) ? (int) $si['intervalo_dias'] : 0;
+        $oldIntervalos[$tipoSi] = [
+            'km' => isset($si['intervalo_km']) && $si['intervalo_km'] !== null ? (string) $si['intervalo_km'] : '',
+            'meses' => $dias > 0 ? (string) (int) round($dias / 30) : '',
+        ];
+    }
+}
 ?>
 <div class="page-header">
     <div>
@@ -61,6 +78,14 @@ $returnToServicio = 'mantenimiento/' . (int) ($m['id'] ?? 0) . '/edit';
                     'formId' => 'mantenimiento-servicio-form',
                 ]); ?>
             </div>
+        </div>
+        <?php App\Core\View::component('mantenimiento-intervalos', [
+            'servicios' => $servicios,
+            'intervalos' => $oldIntervalos,
+            'selectedServicios' => $serviciosSel,
+            'visible' => ($m['tipo'] ?? '') === 'preventivo',
+        ]); ?>
+        <div class="form-row">
             <div class="form-group">
                 <label class="form-label" for="fecha">Fecha</label>
                 <input type="date" id="fecha" name="fecha" class="form-control" value="<?= e($m['fecha'] ?? '') ?>" required>

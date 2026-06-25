@@ -49,8 +49,7 @@ final class ServicioRepository extends BaseRepository
 
         $queryParams = array_merge($params, [$perPage, $offset]);
         $rows = $this->fetchAll(
-            "SELECT id, tipo, nombre, umbral_verde, umbral_amarillo, umbral_rojo,
-                    umbral_verde_dias, umbral_amarillo_dias, umbral_rojo_dias, activo
+            "SELECT id, tipo, nombre, activo
              FROM alerta_config
              {$where}
              ORDER BY nombre ASC
@@ -67,16 +66,10 @@ final class ServicioRepository extends BaseRepository
             'INSERT INTO alerta_config (
                 tipo, nombre, umbral_verde, umbral_amarillo, umbral_rojo, unidad,
                 umbral_verde_dias, umbral_amarillo_dias, umbral_rojo_dias, activo
-             ) VALUES (?, ?, ?, ?, ?, "km", ?, ?, ?, ?)',
+             ) VALUES (?, ?, 0, 0, 0, "km", NULL, NULL, NULL, ?)',
             [
                 $data['tipo'],
                 $data['nombre'],
-                (int) $data['umbral_verde'],
-                (int) $data['umbral_amarillo'],
-                (int) $data['umbral_rojo'],
-                $this->nullableInt($data['umbral_verde_dias'] ?? null),
-                $this->nullableInt($data['umbral_amarillo_dias'] ?? null),
-                $this->nullableInt($data['umbral_rojo_dias'] ?? null),
                 (int) ($data['activo'] ?? 1),
             ]
         );
@@ -87,19 +80,9 @@ final class ServicioRepository extends BaseRepository
     public function update(int $id, array $data): bool
     {
         return $this->execute(
-            'UPDATE alerta_config SET
-                nombre = ?, umbral_verde = ?, umbral_amarillo = ?, umbral_rojo = ?,
-                umbral_verde_dias = ?, umbral_amarillo_dias = ?, umbral_rojo_dias = ?,
-                activo = ?
-             WHERE id = ? AND unidad = "km"',
+            'UPDATE alerta_config SET nombre = ?, activo = ? WHERE id = ? AND unidad = "km"',
             [
                 $data['nombre'],
-                (int) $data['umbral_verde'],
-                (int) $data['umbral_amarillo'],
-                (int) $data['umbral_rojo'],
-                $this->nullableInt($data['umbral_verde_dias'] ?? null),
-                $this->nullableInt($data['umbral_amarillo_dias'] ?? null),
-                $this->nullableInt($data['umbral_rojo_dias'] ?? null),
                 (int) ($data['activo'] ?? 1),
                 $id,
             ]
