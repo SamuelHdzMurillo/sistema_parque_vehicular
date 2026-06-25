@@ -21,7 +21,7 @@ ob_start();
         ['label' => 'Reportado por', 'value' => pdf_val($d['reportado_por_nombre'] ?? null, '')],
     ]);
     ?>
-    <p style="margin:6px 0 2px;font-size:8px;color:#64748b;text-transform:uppercase;">Descripción detallada</p>
+    <p class="block-caption">Descripción detallada</p>
     <div class="text-block"><?= e(pdf_val($d['descripcion'] ?? null)) ?: '&nbsp;' ?></div>
 </div>
 
@@ -37,7 +37,7 @@ ob_start();
             ?>
             <td style="width:25%;padding:3px;vertical-align:top;text-align:center;">
                 <?php if ($uri !== ''): ?>
-                <img src="<?= $uri ?>" style="width:100%;height:90px;object-fit:cover;border:1px solid #cbd5e1;border-radius:3px;">
+                <img src="<?= $uri ?>" style="width:100%;height:90px;object-fit:cover;border:2px solid #000;">
                 <?php endif; ?>
             </td>
             <?php if (($i + 1) % 4 === 0): ?></tr><tr><?php endif; ?>
@@ -45,7 +45,7 @@ ob_start();
         </tr>
     </table>
     <?php else: ?>
-    <p style="font-size:9px;color:#64748b;margin:0 0 6px;">
+    <p style="font-size:9px;font-weight:bold;color:#000;margin:0 0 6px;">
         Sin fotografías registradas. Adjunte fotografías del daño al entregar este formato.
     </p>
     <?php endif; ?>

@@ -55,9 +55,6 @@ final class PdfExporter implements ExporterInterface
         $institution = htmlspecialchars((string) config('app', 'institution'), ENT_QUOTES, 'UTF-8');
         $generated = htmlspecialchars(date('d/m/Y H:i'), ENT_QUOTES, 'UTF-8');
         $titleEsc = htmlspecialchars($title, ENT_QUOTES, 'UTF-8');
-        $greenDark = pdf_brand('green_dark', '#237F3A');
-        $green = pdf_brand('green', '#76BC43');
-        $orange = pdf_brand('orange', '#F17829');
         $logoUri = pdf_logo_data_uri();
         $logoSize = brand_logo_pdf_size();
         $logoHtml = $logoUri !== ''
@@ -83,16 +80,16 @@ final class PdfExporter implements ExporterInterface
         <!DOCTYPE html>
         <html lang="es">
         <head><meta charset="UTF-8"><style>
-            body { font-family: DejaVu Sans, sans-serif; font-size: 10px; color: #212529; }
-            .pdf-header { border-bottom: 2px solid {$orange}; padding-bottom: 8px; margin-bottom: 12px; }
+            body { font-family: DejaVu Sans, sans-serif; font-size: 10px; color: #000; }
+            .pdf-header { border-bottom: 3px solid #000; padding-bottom: 8px; margin-bottom: 12px; }
             .header-table { width: 100%; border-collapse: collapse; }
             .header-table td { vertical-align: middle; }
-            .report-title { font-size: 13px; font-weight: bold; color: {$greenDark}; text-align: right; margin: 0; }
-            .report-meta { font-size: 9px; color: #6c757d; text-align: right; margin-top: 2px; }
+            .report-title { font-size: 14px; font-weight: bold; color: #000; text-align: right; margin: 0; }
+            .report-meta { font-size: 9.5px; font-weight: bold; color: #000; text-align: right; margin-top: 2px; }
             table.data { width: 100%; border-collapse: collapse; }
-            table.data th { background: #f5f5f5; text-align: left; padding: 6px; border: 1px solid #ccc; font-weight: bold; }
-            table.data td { padding: 5px; border: 1px solid #ccc; }
-            .footer { margin-top: 12px; font-size: 8px; color: #6c757d; border-top: 1px solid #ccc; padding-top: 6px; }
+            table.data th { background: #d9d9d9; text-align: left; padding: 6px; border: 1.5px solid #000; font-weight: bold; color: #000; }
+            table.data td { padding: 5px; border: 1.5px solid #000; }
+            .footer { margin-top: 12px; font-size: 8px; font-weight: bold; color: #000; border-top: 2px solid #000; padding-top: 6px; }
         </style></head>
         <body>
             <div class="pdf-header">

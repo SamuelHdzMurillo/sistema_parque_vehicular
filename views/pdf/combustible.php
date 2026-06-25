@@ -31,7 +31,7 @@ ob_start();
     ]);
     ?>
     <?php if (!empty($c['observaciones'])): ?>
-    <p style="margin:4px 0 2px;font-size:7.5px;color:#64748b;text-transform:uppercase;">Observaciones</p>
+    <p class="block-caption">Observaciones</p>
     <div class="text-block"><?= e(pdf_val($c['observaciones'] ?? null)) ?></div>
     <?php endif; ?>
 </div>

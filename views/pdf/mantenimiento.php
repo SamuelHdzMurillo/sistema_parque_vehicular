@@ -28,10 +28,10 @@ ob_start();
         ['label' => 'Responsable', 'value' => pdf_val($m['responsable_nombre'] ?? null, '')],
     ]);
     ?>
-    <p style="margin:4px 0 2px;font-size:7.5px;color:#64748b;text-transform:uppercase;">Descripción del trabajo</p>
+    <p class="block-caption">Descripción del trabajo</p>
     <div class="text-block"><?= e(pdf_val($m['descripcion'] ?? null)) ?: '&nbsp;' ?></div>
     <?php if (!empty($m['observaciones'])): ?>
-    <p style="margin:4px 0 2px;font-size:7.5px;color:#64748b;text-transform:uppercase;">Observaciones</p>
+    <p class="block-caption">Observaciones</p>
     <div class="text-block"><?= e(pdf_val($m['observaciones'] ?? null)) ?></div>
     <?php endif; ?>
 </div>

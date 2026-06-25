@@ -51,7 +51,7 @@ ob_start();
     .luz-list { font-size: 9.5px; line-height: 1.45; }
     .luz-item { white-space: nowrap; }
     .luz-item img { vertical-align: middle; }
-    .luz-none { font-size: 9.5px; font-style: italic; color: #555; }
+    .luz-none { font-size: 9.5px; font-style: italic; color: #000; }
 </style>
 
 <div class="section">
@@ -66,7 +66,7 @@ ob_start();
         ['label' => 'Fecha registro', 'value' => $i ? format_datetime($i['created_at'] ?? null) : ''],
     ]);
     ?>
-    <p style="margin:6px 0 2px;font-size:8px;color:#64748b;text-transform:uppercase;">Observaciones generales</p>
+    <p class="block-caption">Observaciones generales</p>
     <div class="text-block"><?= e(pdf_val($i['observaciones_generales'] ?? null)) ?: '&nbsp;' ?></div>
 </div>
 
@@ -91,9 +91,9 @@ ob_start();
             ?>
             <tr>
                 <td><?= e($item['nombre']) ?></td>
-                <td class="center"><?= $cal === 'bueno' ? '●' : '○' ?></td>
-                <td class="center"><?= $cal === 'regular' ? '●' : '○' ?></td>
-                <td class="center"><?= $cal === 'malo' ? '●' : '○' ?></td>
+                <td class="center"><?= $cal === 'bueno' ? '■' : '□' ?></td>
+                <td class="center"><?= $cal === 'regular' ? '■' : '□' ?></td>
+                <td class="center"><?= $cal === 'malo' ? '■' : '□' ?></td>
                 <td><?= e($saved['observaciones'] ?? '') ?></td>
             </tr>
             <?php endforeach; ?>

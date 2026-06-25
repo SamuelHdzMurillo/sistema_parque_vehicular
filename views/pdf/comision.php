@@ -70,15 +70,22 @@ ob_start();
         padding: 2px 8px 4px 0;
         width: 33.33%;
     }
-    .cmp .lbl { display: block; font-size: 8.5px; color: #6c757d; text-transform: uppercase; letter-spacing: .2px; }
+    .cmp .lbl {
+        display: block;
+        font-size: 8.5px;
+        font-weight: bold;
+        color: #000;
+        text-transform: uppercase;
+        letter-spacing: .2px;
+    }
     .cmp .val {
         display: block; font-size: 11px; min-height: 14px;
-        border-bottom: 1px solid #ccc; padding-bottom: 1px;
+        border-bottom: 1.5px solid #000; padding-bottom: 1px;
     }
     .cmp .inline-block { margin-top: 2px; }
     .cmp .inline-block .lbl { margin-bottom: 1px; }
     .cmp .inline-block .box {
-        border: 1px solid #ccc; padding: 5px 6px; min-height: 14px; font-size: 11px;
+        border: 1.5px solid #000; padding: 5px 6px; min-height: 14px; font-size: 11px;
     }
     .cmp .two-col td { width: 50%; vertical-align: top; padding-right: 10px; }
     .cmp .firmas-table { margin-top: 8px; }
@@ -86,14 +93,26 @@ ob_start();
     .cmp .firma-espacio { height: 50px; }
     .cmp .firma-img { max-height: 46px; }
     .cmp .firma-nombre { font-size: 10px; margin-top: 3px; }
-    .cmp .luz-block-label { font-size: 8.5px; color: #6c757d; text-transform: uppercase; margin: 3px 0 1px; }
+    .cmp .luz-block-label {
+        font-size: 8.5px;
+        font-weight: bold;
+        color: #000;
+        text-transform: uppercase;
+        margin: 3px 0 1px;
+    }
     .cmp .luz-list { font-size: 10px; line-height: 1.45; }
     .cmp .luz-item { white-space: nowrap; }
     .cmp .luz-item img { vertical-align: middle; }
-    .cmp .luz-none { font-size: 10.5px; font-style: italic; color: #555; }
+    .cmp .luz-none { font-size: 10.5px; font-style: italic; color: #000; }
     .cmp .leyenda {
-        margin-top: 6px; border: 1px solid #999; background: #f8f8f8;
-        padding: 5px 8px; font-size: 9.5px; line-height: 1.4; text-align: justify;
+        margin-top: 6px;
+        border: 2px solid #000;
+        background: #fff;
+        padding: 5px 8px;
+        font-size: 9.5px;
+        font-weight: bold;
+        line-height: 1.4;
+        text-align: justify;
     }
 </style>
 
@@ -159,7 +178,7 @@ $filaCampos = static function (array $campos, callable $campo, int $cols = 3): v
             ['Kilometraje', isset($um['kilometraje']) ? number_format((int) $um['kilometraje']) . ' km' : ''],
         ], $campo); ?>
         <?php else: ?>
-        <div class="box" style="border:1px solid #ccc;padding:4px 6px;font-size:11px;">Sin mantenimientos finalizados registrados para este vehículo.</div>
+        <div class="box" style="border:1.5px solid #000;padding:4px 6px;font-size:11px;">Sin mantenimientos finalizados registrados para este vehículo.</div>
         <?php endif; ?>
     </div>
 
