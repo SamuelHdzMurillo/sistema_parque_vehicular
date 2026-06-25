@@ -149,12 +149,9 @@ ob_start();
 <?php endif; ?>
 
 <div class="section">
-    <div class="section-title">Firmas de conformidad</div>
     <?php
     pdf_render_firmas([
-        ['label' => 'Firma responsable inspección', 'nombre' => $i['responsable_nombre'] ?? '', 'firma' => $i['firma_digital'] ?? null],
-        ['label' => 'Firma del conductor', 'nombre' => ''],
-        ['label' => 'Vo. Bo. supervisor', 'nombre' => ''],
+        ['label' => 'Responsable de la inspección', 'nombre' => $i['responsable_nombre'] ?? '', 'firma' => $i['firma_digital'] ?? null],
     ]);
     ?>
 </div>
