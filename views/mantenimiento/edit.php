@@ -55,8 +55,12 @@ if ($oldIntervalos === []) {
         <section class="mantenimiento-form-section">
             <h2 class="mantenimiento-form-section-title">Datos generales</h2>
             <div class="form-group">
-                <label class="form-label">Folio de servicio</label>
-                <p class="form-folio-display"><?= e($m['folio'] ?? '—') ?></p>
+                <label class="form-label" for="folio">Folio de servicio</label>
+                <input type="text" id="folio" name="folio" class="form-control"
+                       pattern="MNT-\d{4}-\d+"
+                       title="Formato: MNT-AAAA-NNN (ejemplo: MNT-2026-001)"
+                       value="<?= e((string) old('folio', $m['folio'] ?? '')) ?>" required>
+                <small class="form-hint text-muted">Formato MNT-AAAA-NNN. Debe ser único en el sistema.</small>
             </div>
             <div class="form-row form-row--2">
                 <div class="form-group mb-0">

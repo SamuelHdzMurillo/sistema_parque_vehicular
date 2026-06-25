@@ -27,6 +27,18 @@ ob_start();
         ['label' => 'Costo estimado', 'value' => pdf_money($m['costo'] ?? null)],
         ['label' => 'Responsable', 'value' => pdf_val($m['responsable_nombre'] ?? null, '')],
     ]);
+    if ($m !== null && ($m['tipo'] ?? '') === 'preventivo' && !empty($m['servicios_intervalos'])) {
+        echo '<p class="block-caption">Próximo servicio programado</p>';
+        $proximos = [];
+        foreach ($m['servicios_intervalos'] as $si) {
+            foreach (mantenimiento_proximo_servicio_campos($m, $si) as $campo) {
+                $proximos[] = $campo;
+            }
+        }
+        if ($proximos !== []) {
+            pdf_render_fields($proximos);
+        }
+    }
     ?>
     <p class="block-caption">Descripción del trabajo</p>
     <div class="text-block"><?= e(pdf_val($m['descripcion'] ?? null)) ?: '&nbsp;' ?></div>

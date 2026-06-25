@@ -58,7 +58,7 @@ final class MantenimientoService
         if (($data['tipo'] ?? '') === 'preventivo') {
             $this->assertIntervalosValidos($servicios, $intervalos);
         }
-        $data['folio'] = $this->repo->generateFolio();
+        $data['folio'] = $this->resolveFolio($data['folio'] ?? null);
         $data['created_by'] = $userId;
         $data['responsable_id'] = (int) ($data['responsable_id'] ?? $userId);
         $data['estado'] = !empty($data['es_historico']) ? 'finalizado' : ($data['estado'] ?? 'pendiente');
@@ -99,6 +99,7 @@ final class MantenimientoService
         if (($data['tipo'] ?? '') === 'preventivo') {
             $this->assertIntervalosValidos($servicios, $intervalos);
         }
+        $data['folio'] = $this->resolveFolio($data['folio'] ?? $before['folio'], $id);
         $rutas = $this->storeFacturaFiles($id, $files);
         $result = $this->repo->update($id, array_merge($before, $data, $rutas));
         if ($result) {
@@ -389,6 +390,27 @@ final class MantenimientoService
         }
 
         return $result;
+    }
+
+    private function resolveFolio(?string $input, ?int $excludeId = null): string
+    {
+        $folio = trim((string) ($input ?? ''));
+        if ($folio === '') {
+            return $this->repo->generateFolio();
+        }
+        if (!preg_match('/^MNT-\d{4}-\d+$/i', $folio)) {
+            throw new \RuntimeException(
+                'El folio debe tener el formato MNT-AAAA-NNN (ejemplo: MNT-2026-001).'
+            );
+        }
+        if (preg_match('/^MNT-(\d{4})-(\d+)$/i', $folio, $m)) {
+            $folio = sprintf('MNT-%s-%03d', $m[1], (int) $m[2]);
+        }
+        if ($this->repo->folioExists($folio, $excludeId)) {
+            throw new \RuntimeException('El folio "' . $folio . '" ya está registrado. Elija otro.');
+        }
+
+        return $folio;
     }
 
     /**

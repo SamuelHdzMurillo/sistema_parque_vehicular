@@ -52,13 +52,20 @@ $m = $mantenimiento ?? [];
             <?php if (($m['tipo'] ?? '') === 'preventivo' && !empty($m['servicios_intervalos'])): ?>
             <div class="meta-item meta-item--full"><label>Próximo servicio programado</label>
                 <ul class="mb-0 pl-3">
-                    <?php foreach ($m['servicios_intervalos'] as $si): ?>
+                    <?php foreach ($m['servicios_intervalos'] as $si):
+                        $partesProximo = mantenimiento_proximo_servicio_partes($m, $si);
+                    ?>
                     <li>
-                        <strong><?= e(mantenimiento_servicio_label((string) ($si['servicio'] ?? ''))) ?>:</strong>
-                        <?= e(mantenimiento_intervalo_display(
-                            isset($si['intervalo_km']) ? (int) $si['intervalo_km'] : null,
-                            isset($si['intervalo_dias']) ? (int) $si['intervalo_dias'] : null
-                        )) ?>
+                        <strong><?= e(mantenimiento_servicio_label((string) ($si['servicio'] ?? ''))) ?></strong>
+                        <?php if ($partesProximo !== []): ?>
+                        <ul class="mb-0 pl-3">
+                            <?php foreach ($partesProximo as $parte): ?>
+                            <li><?= e($parte) ?></li>
+                            <?php endforeach; ?>
+                        </ul>
+                        <?php else: ?>
+                        <span class="text-muted"> —</span>
+                        <?php endif; ?>
                     </li>
                     <?php endforeach; ?>
                 </ul>

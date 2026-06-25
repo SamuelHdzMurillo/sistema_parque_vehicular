@@ -41,9 +41,13 @@ if (!is_array($oldIntervalos)) {
             <h2 class="mantenimiento-form-section-title">Datos generales</h2>
             <?php if ($folioSugerido !== ''): ?>
             <div class="form-group">
-                <label class="form-label">Folio de servicio</label>
-                <p class="form-folio-display"><?= e($folioSugerido) ?></p>
-                <small class="form-hint text-muted">Se asignará automáticamente al guardar (orden de servicio / oficio).</small>
+                <label class="form-label" for="folio">Folio de servicio</label>
+                <input type="text" id="folio" name="folio" class="form-control"
+                       pattern="MNT-\d{4}-\d+"
+                       title="Formato: MNT-AAAA-NNN (ejemplo: MNT-2026-001)"
+                       placeholder="<?= e($folioSugerido) ?> (automático si se deja vacío)"
+                       value="<?= e((string) old('folio', '')) ?>">
+                <small class="form-hint text-muted">Propuesto: <strong><?= e($folioSugerido) ?></strong>. Deje vacío para asignarlo automáticamente.</small>
             </div>
             <?php endif; ?>
             <div class="form-row form-row--2">

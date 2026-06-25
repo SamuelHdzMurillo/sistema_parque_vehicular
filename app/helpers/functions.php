@@ -807,6 +807,95 @@ function mantenimiento_intervalo_display(?int $intervaloKm, ?int $intervaloDias)
 }
 
 /**
+ * Calcula la fecha y el kilometraje del próximo servicio a partir de un mantenimiento.
+ *
+ * @param array<string, mixed> $mant
+ * @param array{servicio?: string, intervalo_km?: ?int, intervalo_dias?: ?int} $intervalo
+ * @return array{fecha: ?string, km: ?int}
+ */
+function mantenimiento_proximo_servicio(array $mant, array $intervalo): array
+{
+    $fechaBase = !empty($mant['fecha']) ? substr((string) $mant['fecha'], 0, 10) : null;
+    $kmBase = (int) ($mant['kilometraje'] ?? 0);
+
+    $proximaFecha = null;
+    $intervaloDias = isset($intervalo['intervalo_dias']) && (int) $intervalo['intervalo_dias'] > 0
+        ? (int) $intervalo['intervalo_dias'] : null;
+    if ($fechaBase !== null && $intervaloDias !== null) {
+        $proximaFecha = date('Y-m-d', strtotime($fechaBase . ' + ' . $intervaloDias . ' days'));
+    }
+
+    $proximoKm = null;
+    $intervaloKm = isset($intervalo['intervalo_km']) && (int) $intervalo['intervalo_km'] > 0
+        ? (int) $intervalo['intervalo_km'] : null;
+    if ($intervaloKm !== null) {
+        $proximoKm = $kmBase + $intervaloKm;
+    }
+
+    return ['fecha' => $proximaFecha, 'km' => $proximoKm];
+}
+
+/**
+ * Texto legible de cuándo toca el próximo servicio (fecha y/o kilometraje).
+ *
+ * @param array<string, mixed> $mant
+ * @param array{servicio?: string, intervalo_km?: ?int, intervalo_dias?: ?int} $intervalo
+ */
+function mantenimiento_proximo_servicio_display(array $mant, array $intervalo): string
+{
+    $partes = mantenimiento_proximo_servicio_partes($mant, $intervalo);
+
+    return $partes !== [] ? implode(' · ', $partes) : '—';
+}
+
+/**
+ * @param array<string, mixed> $mant
+ * @param array{servicio?: string, intervalo_km?: ?int, intervalo_dias?: ?int} $intervalo
+ * @return list<string>
+ */
+function mantenimiento_proximo_servicio_partes(array $mant, array $intervalo): array
+{
+    $calc = mantenimiento_proximo_servicio($mant, $intervalo);
+    $partes = [];
+    if ($calc['fecha'] !== null) {
+        $partes[] = 'Próxima fecha: ' . format_date($calc['fecha']);
+    }
+    if ($calc['km'] !== null) {
+        $partes[] = 'Próximo kilometraje: ' . number_format($calc['km'], 0, '.', ',') . ' km';
+    }
+
+    return $partes;
+}
+
+/**
+ * Campos etiquetados para PDF / detalle del próximo servicio por tipo.
+ *
+ * @param array<string, mixed> $mant
+ * @param array{servicio?: string, intervalo_km?: ?int, intervalo_dias?: ?int} $intervalo
+ * @return list<array{label: string, value: string}>
+ */
+function mantenimiento_proximo_servicio_campos(array $mant, array $intervalo): array
+{
+    $calc = mantenimiento_proximo_servicio($mant, $intervalo);
+    $servicio = mantenimiento_servicio_label((string) ($intervalo['servicio'] ?? ''));
+    $campos = [];
+    if ($calc['fecha'] !== null) {
+        $campos[] = [
+            'label' => $servicio . ' — Próxima fecha',
+            'value' => format_date($calc['fecha']),
+        ];
+    }
+    if ($calc['km'] !== null) {
+        $campos[] = [
+            'label' => $servicio . ' — Próximo kilometraje',
+            'value' => number_format($calc['km'], 0, '.', ',') . ' km',
+        ];
+    }
+
+    return $campos;
+}
+
+/**
  * Evalúa alertas de mantenimiento según intervalos del último servicio.
  *
  * @return array{nivel: string, motivo: string}|null

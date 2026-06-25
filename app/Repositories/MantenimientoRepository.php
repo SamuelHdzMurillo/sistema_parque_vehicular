@@ -183,17 +183,30 @@ final class MantenimientoRepository extends BaseRepository
         return (int) $this->lastInsertId();
     }
 
+    public function folioExists(string $folio, ?int $excludeId = null): bool
+    {
+        $params = [$folio];
+        $sql = 'SELECT COUNT(*) AS c FROM mantenimientos WHERE folio = ?';
+        if ($excludeId !== null) {
+            $sql .= ' AND id != ?';
+            $params[] = $excludeId;
+        }
+
+        return ((int) ($this->fetchOne($sql, $params)['c'] ?? 0)) > 0;
+    }
+
     public function update(int $id, array $data): bool
     {
         return $this->execute(
             'UPDATE mantenimientos SET
-                tipo = ?, servicio = ?, fecha = ?, kilometraje = ?, es_historico = ?, proveedor_id = ?, descripcion = ?, costo = ?,
+                folio = ?, tipo = ?, servicio = ?, fecha = ?, kilometraje = ?, es_historico = ?, proveedor_id = ?, descripcion = ?, costo = ?,
                 factura_folio = ?, factura_uuid = ?, factura_fecha = ?,
                 factura_subtotal = ?, factura_iva = ?, factura_total = ?,
                 factura_ruta = ?, xml_ruta = ?, pdf_ruta = ?, responsable_id = ?,
                 observaciones = ?, estado = ?, updated_at = NOW()
              WHERE id = ?',
             [
+                $data['folio'],
                 $data['tipo'],
                 $this->nullableStr($data['servicio'] ?? null),
                 $data['fecha'],
