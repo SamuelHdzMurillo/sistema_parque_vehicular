@@ -107,11 +107,19 @@ final class AlertaService
                     continue;
                 }
 
-                $filas[] = $this->buildFilaMantenimiento($vehiculo, $tipo, $config);
+                $fila = $this->buildFilaMantenimiento($vehiculo, $tipo, $config);
+                if (!empty($fila['sin_alta'])) {
+                    continue;
+                }
+                $filas[] = $fila;
             }
 
             foreach ($this->repo->findPendientesDocumentoPorVehiculo($vehiculoId) as $alerta) {
                 $filas[] = $this->enriquecerFila($alerta);
+            }
+
+            if ($filas === []) {
+                continue;
             }
 
             $nivelMax = alerta_nivel_max_filas($filas);
