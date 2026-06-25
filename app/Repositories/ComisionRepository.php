@@ -23,6 +23,17 @@ final class ComisionRepository extends BaseRepository
         'bajo' => 'Bajo',
     ];
 
+    /** @var list<array{codigo: string, nombre: string}> */
+    public const HERRAMIENTAS = [
+        ['codigo' => 'gato', 'nombre' => 'Gato hidráulico'],
+        ['codigo' => 'cruceta', 'nombre' => 'Cruceta'],
+        ['codigo' => 'extintor', 'nombre' => 'Extintor'],
+        ['codigo' => 'botiquin', 'nombre' => 'Botiquín'],
+        ['codigo' => 'triangulos', 'nombre' => 'Triángulos'],
+        ['codigo' => 'linterna', 'nombre' => 'Linterna'],
+        ['codigo' => 'llanta_refaccion', 'nombre' => 'Llanta de refacción'],
+    ];
+
     public function findById(int $id): ?array
     {
         return $this->fetchOne(
@@ -117,6 +128,37 @@ final class ComisionRepository extends BaseRepository
             $this->execute(
                 'INSERT INTO comision_niveles_liquidos (comision_id, momento, liquido_codigo, nivel) VALUES (?, ?, ?, ?)',
                 [$comisionId, $momento, (string) $codigo, (string) $nivel]
+            );
+        }
+    }
+
+    /** @return array{salida: list<string>, regreso: list<string>} */
+    public function getHerramientas(int $comisionId): array
+    {
+        $rows = $this->fetchAll(
+            'SELECT momento, tipo FROM comision_herramientas WHERE comision_id = ? ORDER BY tipo ASC',
+            [$comisionId]
+        );
+        $herramientas = ['salida' => [], 'regreso' => []];
+        foreach ($rows as $row) {
+            $momento = $row['momento'] === 'regreso' ? 'regreso' : 'salida';
+            $herramientas[$momento][] = $row['tipo'];
+        }
+        return $herramientas;
+    }
+
+    /** @param list<string> $tipos */
+    public function saveHerramientas(int $comisionId, string $momento, array $tipos): void
+    {
+        $momento = $momento === 'regreso' ? 'regreso' : 'salida';
+        $this->execute(
+            'DELETE FROM comision_herramientas WHERE comision_id = ? AND momento = ?',
+            [$comisionId, $momento]
+        );
+        foreach ($tipos as $tipo) {
+            $this->execute(
+                'INSERT INTO comision_herramientas (comision_id, momento, tipo) VALUES (?, ?, ?)',
+                [$comisionId, $momento, (string) $tipo]
             );
         }
     }

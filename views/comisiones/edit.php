@@ -208,6 +208,23 @@ if ($nombreRegreso !== '') {
             </div>
         </div>
 
+        <?php
+        $herramientasCatalogo = $herramientas_catalogo ?? [];
+        $herramientasSalida = $c['herramientas_salida'] ?? [];
+        if (!is_array($herramientasSalida)) {
+            $herramientasSalida = [];
+        }
+        if ($herramientasSalida === [] && !empty($vehiculo_herramientas_preset) && is_array($vehiculo_herramientas_preset)) {
+            $herramientasSalida = $vehiculo_herramientas_preset;
+        }
+        App\Core\View::component('herramientas-checklist', [
+            'name' => 'herramientas_salida[]',
+            'label' => 'Herramientas entregadas en salida',
+            'catalogo' => $herramientasCatalogo,
+            'selected' => $herramientasSalida,
+        ]);
+        ?>
+
         <?php if ($esFinalizada): ?>
         <hr style="margin:1.5rem 0;border:none;border-top:1px solid var(--border-color)">
         <h3 style="margin:0 0 1rem;font-size:1rem">Datos de regreso</h3>
@@ -276,6 +293,22 @@ if ($nombreRegreso !== '') {
                 <?php endforeach; ?>
             </div>
         </div>
+
+        <?php
+        $herramientasRegreso = $c['herramientas_regreso'] ?? [];
+        if (!is_array($herramientasRegreso)) {
+            $herramientasRegreso = [];
+        }
+        if ($herramientasRegreso === [] && !empty($c['herramientas_salida']) && is_array($c['herramientas_salida'])) {
+            $herramientasRegreso = $c['herramientas_salida'];
+        }
+        App\Core\View::component('herramientas-checklist', [
+            'name' => 'herramientas_regreso[]',
+            'label' => 'Herramientas que regresaron',
+            'catalogo' => $herramientasCatalogo,
+            'selected' => $herramientasRegreso,
+        ]);
+        ?>
         <?php endif; ?>
 
         <?php App\Core\View::component('combustible-fraccion-select', [

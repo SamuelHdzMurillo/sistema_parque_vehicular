@@ -696,3 +696,37 @@
 #14 C:\xampp\htdocs\sistema_parque_vehicular\public\index.php(13): App\Core\Application->run()
 #15 {main}
 ---
+[2026-06-25 10:41:55] PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'sicv_cecyte_bcs.comision_herramientas' doesn't exist | GET /sistema_parque_vehicular/public/comisiones/23 | user:1
+#0 C:\xampp\htdocs\sistema_parque_vehicular\app\Repositories\BaseRepository.php(21): PDO->prepare('SELECT momento,...')
+#1 C:\xampp\htdocs\sistema_parque_vehicular\app\Repositories\ComisionRepository.php(138): App\Repositories\BaseRepository->fetchAll('SELECT momento,...', Array)
+#2 C:\xampp\htdocs\sistema_parque_vehicular\app\Services\ComisionService.php(62): App\Repositories\ComisionRepository->getHerramientas(23)
+#3 C:\xampp\htdocs\sistema_parque_vehicular\app\Controllers\ComisionController.php(60): App\Services\ComisionService->find(23)
+#4 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(93): App\Controllers\ComisionController->show(Object(App\Core\Request), '23')
+#5 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(67): App\Core\Router->invokeHandler(Array, Array, Object(App\Core\Request))
+#6 C:\xampp\htdocs\sistema_parque_vehicular\app\Middlewares\PermissionMiddleware.php(24): App\Core\Router->App\Core\{closure}()
+#7 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(85): App\Middlewares\PermissionMiddleware->handle(Object(App\Core\Request), Object(Closure))
+#8 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(66): App\Core\Router->runMiddleware(Object(App\Middlewares\PermissionMiddleware), Object(App\Core\Request), Object(Closure))
+#9 C:\xampp\htdocs\sistema_parque_vehicular\app\Middlewares\AuthMiddleware.php(18): App\Core\Router->App\Core\{closure}()
+#10 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(85): App\Middlewares\AuthMiddleware->handle(Object(App\Core\Request), Object(Closure))
+#11 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(66): App\Core\Router->runMiddleware(Object(App\Middlewares\AuthMiddleware), Object(App\Core\Request), Object(Closure))
+#12 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(70): App\Core\Router->App\Core\{closure}()
+#13 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Application.php(36): App\Core\Router->dispatch(Object(App\Core\Request))
+#14 C:\xampp\htdocs\sistema_parque_vehicular\public\index.php(13): App\Core\Application->run()
+#15 {main}
+---
+[2026-06-25 10:47:49] InvalidArgumentException: Km salida menor al actual del vehículo. | POST /sistema_parque_vehicular/public/comisiones/25/iniciar | user:1
+#0 C:\xampp\htdocs\sistema_parque_vehicular\app\Services\ComisionService.php(607): App\Services\ComisionService->validateInicio(2, 12979, 25)
+#1 C:\xampp\htdocs\sistema_parque_vehicular\app\Controllers\ComisionController.php(129): App\Services\ComisionService->iniciar(25)
+#2 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(93): App\Controllers\ComisionController->iniciar(Object(App\Core\Request), '25')
+#3 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(67): App\Core\Router->invokeHandler(Array, Array, Object(App\Core\Request))
+#4 C:\xampp\htdocs\sistema_parque_vehicular\app\Middlewares\PermissionMiddleware.php(24): App\Core\Router->App\Core\{closure}()
+#5 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(85): App\Middlewares\PermissionMiddleware->handle(Object(App\Core\Request), Object(Closure))
+#6 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(66): App\Core\Router->runMiddleware(Object(App\Middlewares\PermissionMiddleware), Object(App\Core\Request), Object(Closure))
+#7 C:\xampp\htdocs\sistema_parque_vehicular\app\Middlewares\AuthMiddleware.php(18): App\Core\Router->App\Core\{closure}()
+#8 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(85): App\Middlewares\AuthMiddleware->handle(Object(App\Core\Request), Object(Closure))
+#9 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(66): App\Core\Router->runMiddleware(Object(App\Middlewares\AuthMiddleware), Object(App\Core\Request), Object(Closure))
+#10 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(70): App\Core\Router->App\Core\{closure}()
+#11 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Application.php(36): App\Core\Router->dispatch(Object(App\Core\Request))
+#12 C:\xampp\htdocs\sistema_parque_vehicular\public\index.php(13): App\Core\Application->run()
+#13 {main}
+---

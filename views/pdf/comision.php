@@ -12,6 +12,23 @@ foreach ($lucesCatalogo as $luz) {
 
 $liquidosCatalogo = $liquidos_catalogo ?? [];
 $nivelOpciones = $nivel_opciones ?? [];
+$herramientasCatalogo = $herramientas_catalogo ?? [];
+$herramientasByCodigo = [];
+foreach ($herramientasCatalogo as $herr) {
+    $herramientasByCodigo[$herr['codigo']] = $herr['nombre'];
+}
+
+$renderHerramientasPdf = static function (array $tipos) use ($herramientasByCodigo): string {
+    if ($tipos === []) {
+        return '<span class="luz-none">Ninguna registrada.</span>';
+    }
+    $parts = [];
+    foreach ($tipos as $tipo) {
+        $nombre = $herramientasByCodigo[$tipo] ?? ucfirst(str_replace('_', ' ', (string) $tipo));
+        $parts[] = '<span class="luz-item">' . e($nombre) . '</span>';
+    }
+    return '<span class="luz-list">' . implode(' &nbsp; ', $parts) . '</span>';
+};
 
 $renderNivelesPdf = static function (array $niveles) use ($liquidosCatalogo, $nivelOpciones): string {
     if ($niveles === []) {
@@ -197,6 +214,8 @@ $filaCampos = static function (array $campos, callable $campo, int $cols = 3): v
         <?= $renderNivelesPdf($c['niveles_salida'] ?? []) ?>
         <div class="luz-block-label">Luces del tablero encendidas (salida)</div>
         <?= $renderLucesPdf($c['luces_salida'] ?? []) ?>
+        <div class="luz-block-label">Herramientas entregadas en salida</div>
+        <?= $renderHerramientasPdf($c['herramientas_salida'] ?? []) ?>
         <?php pdf_render_firmas([
             ['label' => 'Firma del conductor', 'nombre' => $c['conductor_nombre'] ?? ''],
             ['label' => 'Firma responsable vehículo', 'nombre' => $c['responsable_nombre'] ?? ''],
@@ -220,10 +239,11 @@ $filaCampos = static function (array $campos, callable $campo, int $cols = 3): v
         <?= $renderNivelesPdf($c['niveles_regreso'] ?? []) ?>
         <div class="luz-block-label">Luces del tablero encendidas (regreso)</div>
         <?= $renderLucesPdf($c['luces_regreso'] ?? []) ?>
+        <div class="luz-block-label">Herramientas que regresaron</div>
+        <?= $renderHerramientasPdf($c['herramientas_regreso'] ?? []) ?>
         <?php pdf_render_firmas([
             ['label' => 'Firma conductor (regreso)', 'nombre' => $c['conductor_nombre'] ?? '', 'firma' => $c['firma_digital'] ?? null],
-            ['label' => 'Recibe vehículo', 'nombre' => $c['responsable_regreso_nombre'] ?? ($c['responsable_nombre'] ?? '')],
-            ['label' => 'Vo. Bo. transporte', 'nombre' => ''],
+            ['label' => 'Recibe vehículo', 'nombre' => ''],
         ]); ?>
     </div>
     <?php endif; ?>

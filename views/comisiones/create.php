@@ -202,6 +202,23 @@ if ($nombreRegreso !== '') {
                 <?php endforeach; ?>
             </div>
         </div>
+        <?php
+        $herramientasCatalogo = $herramientas_catalogo ?? [];
+        $herramientasSalida = old('herramientas_salida', []);
+        if (!is_array($herramientasSalida)) {
+            $herramientasSalida = [];
+        }
+        if ($herramientasSalida === [] && !empty($vehiculo_herramientas_preset) && is_array($vehiculo_herramientas_preset)) {
+            $herramientasSalida = $vehiculo_herramientas_preset;
+        }
+        App\Core\View::component('herramientas-checklist', [
+            'name' => 'herramientas_salida[]',
+            'label' => 'Herramientas entregadas en salida',
+            'catalogo' => $herramientasCatalogo,
+            'selected' => $herramientasSalida,
+            'hint' => 'Marque las herramientas que se entregan con el vehículo. Se preseleccionan las que están presentes en el inventario.',
+        ]);
+        ?>
         <?php App\Core\View::component('combustible-fraccion-select', [
             'id' => 'combustible_salida',
             'name' => 'combustible_salida',

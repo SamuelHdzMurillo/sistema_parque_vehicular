@@ -9,6 +9,11 @@ foreach ($lucesTablero as $luz) {
 }
 $liquidos = $liquidos ?? [];
 $nivelOpciones = $nivel_opciones ?? [];
+$herramientasCatalogo = $herramientas_catalogo ?? [];
+$herramientasByCodigo = [];
+foreach ($herramientasCatalogo as $herr) {
+    $herramientasByCodigo[$herr['codigo']] = $herr['nombre'];
+}
 $estados = ['borrador' => 'Borrador', 'en_curso' => 'En curso', 'finalizada' => 'Finalizada', 'cancelada' => 'Cancelada'];
 $minKmRegreso = max((int) ($c['km_salida'] ?? 0), (int) ($c['kilometraje_actual'] ?? 0));
 
@@ -55,6 +60,19 @@ $renderLuces = static function (array $codigos) use ($lucesById): string {
             . '<span class="dash-light-name">' . e($luz['nombre']) . '</span>'
             . '<span class="dash-light-status">Encendida</span>'
             . '</div>';
+    }
+    $html .= '</div>';
+    return $html;
+};
+
+$renderHerramientas = static function (array $tipos, string $estadoLabel = 'Entregada') use ($herramientasByCodigo): string {
+    if ($tipos === []) {
+        return '<p class="text-muted" style="margin:0">Ninguna registrada.</p>';
+    }
+    $html = '<div class="meta-grid">';
+    foreach ($tipos as $tipo) {
+        $nombre = $herramientasByCodigo[$tipo] ?? ucfirst(str_replace('_', ' ', (string) $tipo));
+        $html .= '<div class="meta-item"><label>' . e($nombre) . '</label><span>' . e($estadoLabel) . '</span></div>';
     }
     $html .= '</div>';
     return $html;
@@ -141,6 +159,9 @@ $renderLuces = static function (array $codigos) use ($lucesById): string {
             <h4 style="margin:1.25rem 0 .5rem;font-size:.9rem">Niveles de líquidos</h4>
             <?= $renderNiveles($c['niveles_salida'] ?? []) ?>
 
+            <h4 style="margin:1.25rem 0 .5rem;font-size:.9rem">Herramientas entregadas en salida</h4>
+            <?= $renderHerramientas($c['herramientas_salida'] ?? []) ?>
+
             <?php if (!empty($c['doc_salida_ruta'])): ?>
             <p class="mt-2">
                 <a href="<?= e(url('storage/uploads/' . ltrim($c['doc_salida_ruta'], '/'))) ?>" target="_blank" class="btn btn-sm btn-secondary">Ver PDF de salida cargado</a>
@@ -162,6 +183,9 @@ $renderLuces = static function (array $codigos) use ($lucesById): string {
 
             <h4 style="margin:1.25rem 0 .5rem;font-size:.9rem">Niveles de líquidos</h4>
             <?= $renderNiveles($c['niveles_regreso'] ?? []) ?>
+
+            <h4 style="margin:1.25rem 0 .5rem;font-size:.9rem">Herramientas que regresaron</h4>
+            <?= $renderHerramientas($c['herramientas_regreso'] ?? [], 'Regresó') ?>
 
             <?php if (!empty($c['firma_digital'])): ?>
             <h4 style="margin:1.25rem 0 .5rem;font-size:.9rem">Firma digital del conductor</h4>
@@ -254,6 +278,19 @@ $renderLuces = static function (array $codigos) use ($lucesById): string {
                         <?php endforeach; ?>
                     </div>
                 </div>
+                <?php
+                $herramientasRegreso = old('herramientas_regreso', $c['herramientas_salida'] ?? []);
+                if (!is_array($herramientasRegreso)) {
+                    $herramientasRegreso = [];
+                }
+                App\Core\View::component('herramientas-checklist', [
+                    'name' => 'herramientas_regreso[]',
+                    'label' => 'Herramientas que regresaron',
+                    'catalogo' => $herramientasCatalogo,
+                    'selected' => $herramientasRegreso,
+                    'hint' => 'Marque las herramientas que regresan con el vehículo. Por defecto se asumen las entregadas en salida.',
+                ]);
+                ?>
                 <div class="form-group">
                     <label class="form-label">Firma digital del conductor (regreso)</label>
                     <div class="signature-pad-wrapper" data-signature-pad>

@@ -8,6 +8,7 @@ use App\Helpers\FileUploader;
 use App\Repositories\CatalogoRepository;
 use App\Repositories\ComisionRepository;
 use App\Repositories\DocumentoRepository;
+use App\Repositories\HerramientaRepository;
 use App\Repositories\InspeccionRepository;
 use App\Repositories\MantenimientoRepository;
 use App\Repositories\VehiculoRepository;
@@ -20,6 +21,7 @@ final class ComisionService
         private readonly DocumentoRepository $documentos = new DocumentoRepository(),
         private readonly CatalogoRepository $catalogos = new CatalogoRepository(),
         private readonly MantenimientoRepository $mantenimientos = new MantenimientoRepository(),
+        private readonly HerramientaRepository $herramientas = new HerramientaRepository(),
     ) {
     }
 
@@ -40,6 +42,7 @@ final class ComisionService
             'luces_tablero' => InspeccionRepository::LUCES_TABLERO,
             'liquidos' => ComisionRepository::LIQUIDOS,
             'nivel_opciones' => ComisionRepository::NIVEL_OPCIONES,
+            'herramientas_catalogo' => ComisionRepository::HERRAMIENTAS,
             'folio_sugerido' => $this->repo->generateFolio(),
         ];
     }
@@ -56,6 +59,9 @@ final class ComisionService
         $niveles = $this->repo->getNiveles($id);
         $comision['niveles_salida'] = $niveles['salida'];
         $comision['niveles_regreso'] = $niveles['regreso'];
+        $herramientas = $this->repo->getHerramientas($id);
+        $comision['herramientas_salida'] = $herramientas['salida'];
+        $comision['herramientas_regreso'] = $herramientas['regreso'];
         return $comision;
     }
 
@@ -89,6 +95,27 @@ final class ComisionService
         return ComisionRepository::NIVEL_OPCIONES;
     }
 
+    public function getHerramientasCatalog(): array
+    {
+        return ComisionRepository::HERRAMIENTAS;
+    }
+
+    /** @return list<string> */
+    public function getHerramientasVehiculoPreset(int $vehiculoId): array
+    {
+        $rows = $this->herramientas->getByVehiculo($vehiculoId);
+        $valid = array_column(ComisionRepository::HERRAMIENTAS, 'codigo');
+        $preset = [];
+        foreach ($rows as $row) {
+            $tipo = (string) ($row['tipo'] ?? '');
+            $estado = (string) ($row['estado'] ?? '');
+            if (in_array($tipo, $valid, true) && $estado === 'presente') {
+                $preset[] = $tipo;
+            }
+        }
+        return $preset;
+    }
+
     public function create(array $data, int $userId): int
     {
         $data['created_by'] = $userId;
@@ -105,6 +132,10 @@ final class ComisionService
         $this->repo->saveLuces($id, 'salida', $lucesSalida);
         $this->vehiculos->syncLucesTablero((int) $data['vehiculo_id'], $lucesSalida, 'comision', $id);
         $this->repo->saveNiveles($id, 'salida', $this->parseNiveles($data, 'niveles_salida'));
+        $herramientasSalida = array_key_exists('herramientas_salida', $data)
+            ? $this->parseHerramientas($data, 'herramientas_salida')
+            : $this->getHerramientasVehiculoPreset((int) $data['vehiculo_id']);
+        $this->repo->saveHerramientas($id, 'salida', $herramientasSalida);
         AuditService::log('CREATE', 'comisiones', $id, null, $data);
         return $id;
     }
@@ -194,11 +225,15 @@ final class ComisionService
             if (array_key_exists('niveles_salida', $data)) {
                 $this->repo->saveNiveles($id, 'salida', $this->parseNiveles($data, 'niveles_salida'));
             }
+            if (array_key_exists('herramientas_salida', $data)) {
+                $this->repo->saveHerramientas($id, 'salida', $this->parseHerramientas($data, 'herramientas_salida'));
+            }
             if ($before['estado'] === 'finalizada') {
                 $lucesRegreso = $this->parseLuces($data, 'luces_regreso');
                 $this->repo->saveLuces($id, 'regreso', $lucesRegreso);
                 $this->vehiculos->syncLucesTablero((int) $merged['vehiculo_id'], $lucesRegreso, 'comision', $id);
                 $this->repo->saveNiveles($id, 'regreso', $this->parseNiveles($data, 'niveles_regreso'));
+                $this->repo->saveHerramientas($id, 'regreso', $this->parseHerramientas($data, 'herramientas_regreso'));
             }
 
             $this->repo->commit();
@@ -359,6 +394,24 @@ final class ComisionService
             }
         }
         return $niveles;
+    }
+
+    /** @return list<string> */
+    private function parseHerramientas(array $data, string $campo): array
+    {
+        $selected = $data[$campo] ?? [];
+        if (!is_array($selected)) {
+            return [];
+        }
+        $validTipos = array_column(ComisionRepository::HERRAMIENTAS, 'codigo');
+        $tipos = [];
+        foreach ($selected as $tipo) {
+            $tipo = (string) $tipo;
+            if (in_array($tipo, $validTipos, true)) {
+                $tipos[] = $tipo;
+            }
+        }
+        return array_values(array_unique($tipos));
     }
 
     private function normalizeResponsableRegreso(array $data): array
@@ -635,6 +688,10 @@ final class ComisionService
             $this->repo->saveLuces($id, 'regreso', $lucesRegreso);
             $this->vehiculos->syncLucesTablero((int) $comision['vehiculo_id'], $lucesRegreso, 'comision', $id);
             $this->repo->saveNiveles($id, 'regreso', $this->parseNiveles($data, 'niveles_regreso'));
+            $herramientasRegreso = array_key_exists('herramientas_regreso', $data)
+                ? $this->parseHerramientas($data, 'herramientas_regreso')
+                : $this->repo->getHerramientas($id)['salida'];
+            $this->repo->saveHerramientas($id, 'regreso', $herramientasRegreso);
 
             if (!$this->vehiculos->updateKilometraje((int) $comision['vehiculo_id'], $kmRegreso, auth_id())) {
                 throw new \RuntimeException(sprintf(

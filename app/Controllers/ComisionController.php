@@ -28,6 +28,7 @@ final class ComisionController extends BaseController
         $vehiculoId = $request->input('vehiculo_id') ?? old('vehiculo_id');
         if (is_string($vehiculoId) && $vehiculoId !== '' && ctype_digit($vehiculoId)) {
             $data['vehiculo_luces_preset'] = $this->comisiones->getLucesVehiculo((int) $vehiculoId);
+            $data['vehiculo_herramientas_preset'] = $this->comisiones->getHerramientasVehiculoPreset((int) $vehiculoId);
         }
         $this->render('comisiones.create', $data);
     }
@@ -68,6 +69,7 @@ final class ComisionController extends BaseController
             'luces_tablero' => $this->comisiones->getLucesCatalog(),
             'liquidos' => $this->comisiones->getLiquidosCatalog(),
             'nivel_opciones' => $this->comisiones->getNivelOpciones(),
+            'herramientas_catalogo' => $this->comisiones->getHerramientasCatalog(),
         ]);
     }
 
@@ -95,6 +97,9 @@ final class ComisionController extends BaseController
         $data = array_merge($this->comisiones->getFormData(), ['comision' => $comision]);
         if (($comision['luces_salida'] ?? []) === []) {
             $data['vehiculo_luces_preset'] = $this->comisiones->getLucesVehiculo((int) $comision['vehiculo_id']);
+        }
+        if (($comision['herramientas_salida'] ?? []) === []) {
+            $data['vehiculo_herramientas_preset'] = $this->comisiones->getHerramientasVehiculoPreset((int) $comision['vehiculo_id']);
         }
         $this->render('comisiones.edit', $data);
     }

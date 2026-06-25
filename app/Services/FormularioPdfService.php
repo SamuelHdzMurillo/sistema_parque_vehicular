@@ -41,6 +41,9 @@ final class FormularioPdfService
             $niveles = $this->comisiones->getNiveles((int) $data['id']);
             $data['niveles_salida'] = $niveles['salida'];
             $data['niveles_regreso'] = $niveles['regreso'];
+            $herramientas = $this->comisiones->getHerramientas((int) $data['id']);
+            $data['herramientas_salida'] = $herramientas['salida'];
+            $data['herramientas_regreso'] = $herramientas['regreso'];
         }
         $sufijo = $parte !== 'completo' ? '_' . $parte : '';
         $this->stream(
@@ -52,6 +55,7 @@ final class FormularioPdfService
                 'luces_catalogo' => InspeccionRepository::LUCES_TABLERO,
                 'liquidos_catalogo' => ComisionRepository::LIQUIDOS,
                 'nivel_opciones' => ComisionRepository::NIVEL_OPCIONES,
+                'herramientas_catalogo' => ComisionRepository::HERRAMIENTAS,
             ],
             'comision_' . ($data['folio'] ?? 'formato') . $sufijo,
             'portrait'
