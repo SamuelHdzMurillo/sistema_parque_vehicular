@@ -74,7 +74,10 @@ $parteLabel = match ($parte) {
 };
 
 $pdfTitle = 'Orden de Comisión Vehicular' . $parteLabel;
-$pdfSubtitle = $c ? ('Folio: ' . ($c['folio'] ?? '')) : 'Formato en blanco — Salida y regreso';
+$pdfSubtitle = $c ? ('Número de oficio de comisión: ' . ($c['folio'] ?? '')) : 'Formato en blanco — Salida y regreso';
+
+$leyendaEntrega = 'El vehículo debe entregarse en las mismas condiciones físicas y mecánicas en que fue recibido al término de la comisión en el edificio de Dirección General de CECyTE BCS. '
+    . 'De no ser así, el responsable asignado se hará cargo de los daños, faltantes o desperfectos ocasionados.';
 
 ob_start();
 ?>
@@ -183,7 +186,7 @@ $filaCampos = static function (array $campos, callable $campo, int $cols = 3): v
     <div class="section">
         <div class="section-title">Datos de la comisión</div>
         <?php $filaCampos([
-            ['Folio', pdf_val($c['folio'] ?? null)],
+            ['Número de oficio de comisión', pdf_val($c['folio'] ?? null)],
             ['Fecha de la revista', pdf_date($c['fecha'] ?? null)],
             ['Hora de la comisión', pdf_time($c['hora_salida'] ?? null)],
             ['Identificador', pdf_val($c['numero_economico'] ?? null)],
@@ -248,10 +251,7 @@ $filaCampos = static function (array $campos, callable $campo, int $cols = 3): v
             ['label' => 'Autoriza salida (supervisor)', 'nombre' => ''],
         ]); ?>
         <?php if ($esCompleto): ?>
-        <div class="leyenda">
-            El vehículo debe entregarse en las mismas condiciones físicas y mecánicas en que fue recibido.
-            De no ser así, el responsable asignado se hará cargo de los daños, faltantes o desperfectos ocasionados.
-        </div>
+        <div class="leyenda"><?= e($leyendaEntrega) ?></div>
         <?php endif; ?>
     </div>
     <?php endif; ?>
@@ -261,7 +261,7 @@ $filaCampos = static function (array $campos, callable $campo, int $cols = 3): v
         <?php if ($esCompleto): ?>
         <div class="mini-header">
             <strong>Control de regreso</strong><br>
-            <span><strong>Folio:</strong> <?= e(pdf_val($c['folio'] ?? null)) ?: '—' ?></span>
+            <span><strong>Número de oficio de comisión:</strong> <?= e(pdf_val($c['folio'] ?? null)) ?: '—' ?></span>
             <span><strong>Vehículo:</strong> <?= e(pdf_val($c['numero_economico'] ?? null)) ?: '—' ?></span>
             <span><strong>Placas:</strong> <?= e(pdf_val($c['placas'] ?? null)) ?: '—' ?></span>
             <span><strong>Conductor:</strong> <?= e(pdf_val($c['conductor_nombre'] ?? null)) ?: '—' ?></span>
@@ -271,7 +271,7 @@ $filaCampos = static function (array $campos, callable $campo, int $cols = 3): v
         <div class="section">
             <div class="section-title">Datos de la comisión</div>
             <?php $filaCampos([
-                ['Folio', pdf_val($c['folio'] ?? null)],
+                ['Número de oficio de comisión', pdf_val($c['folio'] ?? null)],
                 ['Fecha de la revista', pdf_date($c['fecha'] ?? null)],
                 ['Identificador', pdf_val($c['numero_economico'] ?? null)],
                 ['Placas', pdf_val($c['placas'] ?? null)],
@@ -316,20 +316,14 @@ $filaCampos = static function (array $campos, callable $campo, int $cols = 3): v
                 ['label' => 'Recibe vehículo', 'nombre' => ''],
             ]); ?>
             <?php if ($esCompleto): ?>
-            <div class="leyenda">
-                El vehículo debe entregarse en las mismas condiciones físicas y mecánicas en que fue recibido.
-                De no ser así, el responsable asignado se hará cargo de los daños, faltantes o desperfectos ocasionados.
-            </div>
+            <div class="leyenda"><?= e($leyendaEntrega) ?></div>
             <?php endif; ?>
         </div>
     </div>
     <?php endif; ?>
 
     <?php if (!$esCompleto): ?>
-    <div class="leyenda">
-        El vehículo debe entregarse en las mismas condiciones físicas y mecánicas en que fue recibido.
-        De no ser así, el responsable asignado se hará cargo de los daños, faltantes o desperfectos ocasionados.
-    </div>
+    <div class="leyenda"><?= e($leyendaEntrega) ?></div>
     <?php endif; ?>
 </div>
 <?php
