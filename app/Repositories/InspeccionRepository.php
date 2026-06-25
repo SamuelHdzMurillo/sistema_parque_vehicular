@@ -107,19 +107,39 @@ final class InspeccionRepository extends BaseRepository
         return null;
     }
 
+    public function generateFolio(): string
+    {
+        $year = date('Y');
+        $prefix = "INS-{$year}-";
+        $rows = $this->fetchAll(
+            'SELECT folio FROM inspecciones WHERE folio LIKE ?',
+            ["{$prefix}%"]
+        );
+        $maxSeq = 0;
+        foreach ($rows as $row) {
+            if (preg_match('/(\d+)$/', (string) $row['folio'], $m)) {
+                $maxSeq = max($maxSeq, (int) $m[1]);
+            }
+        }
+
+        return $prefix . str_pad((string) ($maxSeq + 1), 4, '0', STR_PAD_LEFT);
+    }
+
     public function createWithItems(array $data, array $items, array $lucesTablero = []): int
     {
         $this->db->beginTransaction();
         try {
             $this->execute(
                 'INSERT INTO inspecciones (
-                    vehiculo_id, responsable_id, kilometraje, fecha, observaciones_generales,
-                    firma_digital, resultado_general
-                 ) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                    folio, vehiculo_id, responsable_id, kilometraje, nivel_combustible, fecha,
+                    observaciones_generales, firma_digital, resultado_general
+                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
                 [
+                    $data['folio'],
                     (int) $data['vehiculo_id'],
                     (int) $data['responsable_id'],
                     (int) $data['kilometraje'],
+                    $data['nivel_combustible'] ?? null,
                     $data['fecha'],
                     $data['observaciones_generales'] ?? null,
                     $data['firma_digital'] ?? null,
@@ -188,7 +208,7 @@ final class InspeccionRepository extends BaseRepository
 
         $queryParams = array_merge($params, [$perPage, $offset]);
         $rows = $this->fetchAll(
-            "SELECT i.id, i.fecha, i.kilometraje, i.resultado_general,
+            "SELECT i.id, i.folio, i.fecha, i.kilometraje, i.nivel_combustible, i.resultado_general,
                     v.numero_economico,
                     CONCAT(u.nombre, ' ', u.apellido_paterno) AS responsable_nombre,
                     (SELECT COUNT(*) FROM inspeccion_items ii WHERE ii.inspeccion_id = i.id AND ii.calificacion = 'malo') AS items_malo

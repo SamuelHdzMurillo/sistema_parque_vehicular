@@ -107,6 +107,25 @@ final class DanioRepository extends BaseRepository
         );
     }
 
+    /** Daños del vehículo aún sin resolver (opcionalmente hasta una fecha/hora). */
+    public function getAbiertosPorVehiculo(int $vehiculoId, ?string $hasta = null): array
+    {
+        $params = [$vehiculoId];
+        $sql = 'SELECT d.id, d.tipo_dano, d.ubicacion, d.descripcion, d.estado, d.created_at
+                FROM danios d
+                WHERE d.vehiculo_id = ?
+                  AND d.estado NOT IN ("reparado", "cerrado_sin_accion")';
+
+        if ($hasta !== null && $hasta !== '') {
+            $sql .= ' AND d.created_at <= ?';
+            $params[] = $hasta;
+        }
+
+        $sql .= ' ORDER BY d.created_at DESC';
+
+        return $this->fetchAll($sql, $params);
+    }
+
     public function paginate(int $page = 1, int $perPage = 15, array $filters = []): array
     {
         $offset = ($page - 1) * $perPage;

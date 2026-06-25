@@ -1099,6 +1099,21 @@ function combustible_porcentaje_a_fraccion(mixed $porcentaje): string
     return combustible_cuartos_a_fraccion($cuartos);
 }
 
+/** Folio legible de una inspección (almacenado o derivado del id). */
+function inspeccion_folio(array $inspeccion): string
+{
+    $folio = trim((string) ($inspeccion['folio'] ?? ''));
+    if ($folio !== '') {
+        return $folio;
+    }
+
+    $id = (int) ($inspeccion['id'] ?? 0);
+    $fecha = (string) ($inspeccion['fecha'] ?? '');
+    $year = $fecha !== '' ? date('Y', strtotime($fecha)) : date('Y');
+
+    return 'INS-' . $year . '-' . str_pad((string) $id, 4, '0', STR_PAD_LEFT);
+}
+
 function combustible_fraccion_etiqueta(mixed $valor): string
 {
     if ($valor === null || $valor === '') {

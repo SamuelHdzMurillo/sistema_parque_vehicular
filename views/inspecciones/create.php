@@ -46,6 +46,13 @@ if ($selectedLuces === [] && !empty($vehiculo_luces_preset) && is_array($vehicul
                     <small class="form-hint text-muted" data-km-hint>Seleccione un vehículo para ver el kilometraje actual.</small>
                 </div>
             </div>
+        <?php App\Core\View::component('combustible-fraccion-select', [
+            'id' => 'nivel_combustible',
+            'name' => 'nivel_combustible',
+            'label' => 'Nivel de combustible (gasolina)',
+            'valuePorcentaje' => old_nonempty('nivel_combustible', 100),
+            'required' => false,
+        ]); ?>
         </div>
     </div>
 

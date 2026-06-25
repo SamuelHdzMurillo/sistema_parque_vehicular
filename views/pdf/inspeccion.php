@@ -3,9 +3,10 @@ require_once view_path('pdf/helpers.php');
 
 $i = $inspeccion ?? null;
 $checklistItems = $items ?? [];
+$daniosAbiertos = $danios_abiertos ?? [];
 $pdfTitle = 'Bitácora de Inspección Vehicular';
 $pdfSubtitle = $i
-    ? ('Vehículo ' . ($i['numero_economico'] ?? '') . ' · ' . pdf_date($i['fecha'] ?? null))
+    ? ('Folio: ' . inspeccion_folio($i) . ' · Vehículo ' . ($i['numero_economico'] ?? ''))
     : 'Formato en blanco — Checklist de 11 ítems';
 
 $itemsByCode = [];
@@ -58,15 +59,54 @@ ob_start();
     <div class="section-title">Datos de la inspección</div>
     <?php
     pdf_render_fields([
-        ['label' => 'Identificador', 'value' => pdf_val($i['numero_economico'] ?? null, '')],
-        ['label' => 'Fecha', 'value' => pdf_date($i['fecha'] ?? null)],
-        ['label' => 'Kilometraje', 'value' => isset($i['kilometraje']) ? number_format((int) $i['kilometraje']) . ' km' : ''],
-        ['label' => 'Responsable', 'value' => pdf_val($i['responsable_nombre'] ?? null, '')],
+        ['label' => 'Folio del documento', 'value' => $i ? inspeccion_folio($i) : ''],
+        ['label' => 'Identificador vehículo', 'value' => pdf_val($i['numero_economico'] ?? null, '')],
+        ['label' => 'Fecha de inspección', 'value' => pdf_date($i['fecha'] ?? null)],
+        ['label' => 'Fecha de registro en sistema', 'value' => $i ? format_datetime($i['created_at'] ?? null) : ''],
+        ['label' => 'Kilometraje al inspeccionar', 'value' => isset($i['kilometraje']) ? number_format((int) $i['kilometraje']) . ' km' : ''],
+        ['label' => 'Nivel de combustible (gasolina)', 'value' => isset($i['nivel_combustible']) ? combustible_fraccion_etiqueta($i['nivel_combustible']) : ''],
+        ['label' => 'Responsable de la inspección', 'value' => pdf_val($i['responsable_nombre'] ?? null, '')],
         ['label' => 'Resultado general', 'value' => pdf_val(isset($i['resultado_general']) ? ucfirst($i['resultado_general']) : null, '')],
-        ['label' => 'Fecha registro', 'value' => $i ? format_datetime($i['created_at'] ?? null) : ''],
     ]);
     ?>
-    <p class="block-caption">Observaciones generales</p>
+</div>
+
+<div class="section">
+    <div class="section-title">Daños no resueltos del vehículo</div>
+    <table class="data">
+        <thead>
+            <tr>
+                <th>No.</th>
+                <th>Tipo</th>
+                <th>Ubicación</th>
+                <th>Estado</th>
+                <th>Fecha de reporte</th>
+                <th>Descripción</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php if ($daniosAbiertos !== []): ?>
+                <?php foreach ($daniosAbiertos as $d): ?>
+                <tr>
+                    <td><?= (int) ($d['id'] ?? 0) ?></td>
+                    <td><?= e(ucfirst((string) ($d['tipo_dano'] ?? ''))) ?></td>
+                    <td><?= e(pdf_val($d['ubicacion'] ?? null)) ?: '&nbsp;' ?></td>
+                    <td><?= e(ucfirst(str_replace('_', ' ', (string) ($d['estado'] ?? '')))) ?></td>
+                    <td><?= e(format_datetime($d['created_at'] ?? null)) ?></td>
+                    <td><?= e(pdf_val($d['descripcion'] ?? null)) ?: '&nbsp;' ?></td>
+                </tr>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <tr>
+                    <td colspan="6" style="font-style:italic;">Sin daños pendientes de reparación al momento de la inspección.</td>
+                </tr>
+            <?php endif; ?>
+        </tbody>
+    </table>
+</div>
+
+<div class="section">
+    <div class="section-title">Observaciones generales</div>
     <div class="text-block"><?= e(pdf_val($i['observaciones_generales'] ?? null)) ?: '&nbsp;' ?></div>
 </div>
 

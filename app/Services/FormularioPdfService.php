@@ -65,18 +65,22 @@ final class FormularioPdfService
     public function inspeccion(?int $id = null): never
     {
         $data = null;
+        $daniosAbiertos = [];
         if ($id !== null) {
             $data = $this->inspecciones->findWithItems($id);
             if ($data === null) {
                 http_response_code(404);
                 exit('Inspección no encontrada.');
             }
+            $hasta = (string) ($data['created_at'] ?? ($data['fecha'] . ' 23:59:59'));
+            $daniosAbiertos = $this->danios->getAbiertosPorVehiculo((int) $data['vehiculo_id'], $hasta);
         }
         $this->stream('pdf.inspeccion', [
             'inspeccion' => $data,
             'items' => InspeccionRepository::INSPECCION_ITEMS,
             'luces_tablero' => InspeccionRepository::LUCES_TABLERO,
-        ], 'inspeccion_' . ($data['numero_economico'] ?? 'formato'), 'portrait');
+            'danios_abiertos' => $daniosAbiertos,
+        ], 'inspeccion_' . ($data !== null ? inspeccion_folio($data) : 'formato'), 'portrait');
     }
 
     public function mantenimiento(?int $id = null): never

@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Helpers\FileUploader;
 use App\Repositories\AlertaRepository;
 use App\Repositories\CatalogoRepository;
+use App\Repositories\DanioRepository;
 use App\Repositories\InspeccionRepository;
 use App\Repositories\VehiculoRepository;
 
@@ -17,6 +18,7 @@ final class InspeccionService
         private readonly VehiculoRepository $vehiculos = new VehiculoRepository(),
         private readonly AlertaRepository $alertas = new AlertaRepository(),
         private readonly CatalogoRepository $catalogos = new CatalogoRepository(),
+        private readonly DanioRepository $danios = new DanioRepository(),
     ) {
     }
 
@@ -50,7 +52,10 @@ final class InspeccionService
         if ($data === null) {
             return null;
         }
-        return ['inspeccion' => $data];
+        $hasta = (string) ($data['created_at'] ?? ($data['fecha'] . ' 23:59:59'));
+        $daniosAbiertos = $this->danios->getAbiertosPorVehiculo((int) $data['vehiculo_id'], $hasta);
+
+        return ['inspeccion' => $data, 'danios_abiertos' => $daniosAbiertos];
     }
 
     public function eliminar(int $id): ?string
@@ -93,6 +98,8 @@ final class InspeccionService
             $data['firma_digital'] = FileUploader::saveBase64Signature((string) $data['firma_data'], 'firmas/inspecciones');
         }
         $data['resultado_general'] = $this->calcularResultadoGeneral($items);
+        $data['folio'] = $this->repo->generateFolio();
+        $data['nivel_combustible'] = $this->parseNivelCombustible($data);
         $id = $this->repo->createWithItems($data, $items, $lucesTablero);
         $this->vehiculos->updateKilometraje((int) $data['vehiculo_id'], (int) $data['kilometraje'], $userId);
         $this->vehiculos->syncLucesTablero((int) $data['vehiculo_id'], $lucesTablero, 'inspeccion', $id);
@@ -133,6 +140,23 @@ final class InspeccionService
         }
 
         return array_values(array_unique($luces));
+    }
+
+    private function parseNivelCombustible(array $data): ?float
+    {
+        $raw = trim((string) ($data['nivel_combustible'] ?? ''));
+        if ($raw === '') {
+            return null;
+        }
+
+        $porcentaje = combustible_fraccion_a_porcentaje($raw);
+        if ($porcentaje === null) {
+            throw new \InvalidArgumentException(
+                'El combustible debe indicarse en porcentaje: 0, 25, 50, 75 o 100.'
+            );
+        }
+
+        return $porcentaje;
     }
 
     private function calcularResultadoGeneral(array $items): string

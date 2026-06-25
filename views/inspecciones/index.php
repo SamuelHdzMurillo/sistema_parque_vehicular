@@ -11,16 +11,18 @@
 <div class="card">
     <div class="table-responsive">
         <table class="table">
-            <thead><tr><th>Fecha</th><th>Vehículo</th><th>Responsable</th><th>Km</th><th>Resultado</th><th></th></tr></thead>
+            <thead><tr><th>Folio</th><th>Fecha inspección</th><th>Vehículo</th><th>Responsable</th><th>Km</th><th>Combustible</th><th>Resultado</th><th></th></tr></thead>
             <tbody>
                 <?php if (empty($data)): ?>
-                <tr><td colspan="6" class="text-center text-muted">Sin inspecciones</td></tr>
+                <tr><td colspan="8" class="text-center text-muted">Sin inspecciones</td></tr>
                 <?php else: foreach ($data as $i): ?>
                 <tr>
+                    <td><strong><?= e(inspeccion_folio($i)) ?></strong></td>
                     <td><?= format_date($i['fecha']) ?></td>
                     <td><?= e($i['numero_economico'] ?? '—') ?></td>
                     <td><?= e($i['responsable_nombre'] ?? '—') ?></td>
                     <td><?= number_format((int) ($i['kilometraje'] ?? 0)) ?></td>
+                    <td><?= e(combustible_fraccion_etiqueta($i['nivel_combustible'] ?? null)) ?></td>
                     <td><span class="badge <?= ($i['resultado_general'] ?? '') === 'aprobada' ? 'badge-success' : (($i['resultado_general'] ?? '') === 'rechazada' ? 'badge-danger' : 'badge-warning') ?>"><?= e(ucfirst($i['resultado_general'] ?? '')) ?></span></td>
                     <td><a href="<?= url('inspecciones/' . $i['id']) ?>" class="btn btn-sm btn-info">Ver</a></td>
                 </tr>
