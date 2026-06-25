@@ -10,6 +10,7 @@ use App\Repositories\AreaRepository;
 use App\Repositories\CatalogoRepository;
 use App\Repositories\ConductorRepository;
 use App\Repositories\PlantelRepository;
+use App\Repositories\ServicioRepository;
 
 final class CatalogoController extends BaseController
 {
@@ -18,12 +19,14 @@ final class CatalogoController extends BaseController
         $planteles = new PlantelRepository();
         $areas = new AreaRepository();
         $conductores = new ConductorRepository();
+        $servicios = new ServicioRepository();
 
         $this->render('catalogos.index', [
             'stats' => [
                 'planteles' => (int) ($planteles->paginate(1, 1)['total'] ?? 0),
                 'areas' => (int) ($areas->paginate(1, 1)['total'] ?? 0),
                 'conductores' => (int) ($conductores->paginate(1, 1)['total'] ?? 0),
+                'servicios' => (int) ($servicios->paginate(1, 1)['total'] ?? 0),
             ],
         ]);
     }

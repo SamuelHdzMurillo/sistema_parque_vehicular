@@ -5,7 +5,7 @@ $stats = $stats ?? [];
 <div class="page-header">
     <div>
         <h1 class="page-title">Catálogos del sistema</h1>
-        <p class="page-subtitle">Planteles, áreas solicitantes y conductores para comisiones</p>
+        <p class="page-subtitle">Planteles, áreas solicitantes, conductores y servicios de mantenimiento</p>
     </div>
 </div>
 
@@ -26,6 +26,11 @@ $stats = $stats ?? [];
         <span class="dash-kpi-label">Conductores</span>
         <span class="dash-kpi-value text-success"><?= (int) ($stats['conductores'] ?? 0) ?></span>
         <span class="dash-kpi-note">en catálogo activo</span>
+    </div>
+    <div class="dash-kpi">
+        <span class="dash-kpi-label">Servicios</span>
+        <span class="dash-kpi-value text-warning"><?= (int) ($stats['servicios'] ?? 0) ?></span>
+        <span class="dash-kpi-note">mantenimiento preventivo</span>
     </div>
 </div>
 
@@ -71,6 +76,25 @@ $stats = $stats ?? [];
                     <a href="<?= url('catalogos/areas') ?>" class="btn btn-primary btn-sm">Ver áreas</a>
                     <?php if (can('catalogos.create')): ?>
                     <a href="<?= url('catalogos/areas/create') ?>" class="btn btn-accent btn-sm">+ Nueva</a>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <h3>Servicios</h3>
+                    <p class="card-header-hint">Mantenimiento preventivo</p>
+                </div>
+                <span class="badge badge-warning"><?= (int) ($stats['servicios'] ?? 0) ?></span>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-2">Cambio de aceite, afinación, llantas, etc. Se usan en mantenimientos y alertas por km.</p>
+                <div class="d-flex gap-1 flex-wrap">
+                    <a href="<?= url('catalogos/servicios') ?>" class="btn btn-primary btn-sm">Ver servicios</a>
+                    <?php if (can('catalogos.create')): ?>
+                    <a href="<?= url('catalogos/servicios/create') ?>" class="btn btn-accent btn-sm">+ Nuevo</a>
                     <?php endif; ?>
                 </div>
             </div>
