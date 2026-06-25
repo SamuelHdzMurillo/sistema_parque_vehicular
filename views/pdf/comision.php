@@ -65,6 +65,7 @@ $renderLucesPdf = static function (array $codigos) use ($lucesById): string {
 
 $mostrarSalida = in_array($parte, ['salida', 'completo'], true);
 $mostrarRegreso = in_array($parte, ['regreso', 'completo'], true);
+$esCompleto = $mostrarSalida && $mostrarRegreso;
 
 $parteLabel = match ($parte) {
     'salida' => ' — Control de salida',
@@ -78,7 +79,7 @@ $pdfSubtitle = $c ? ('Folio: ' . ($c['folio'] ?? '')) : 'Formato en blanco — S
 ob_start();
 ?>
 <style>
-    /* Estilos compactos para que la comisión quepa en una sola página */
+    /* Estilos compactos: salida en hoja 1 y regreso en hoja 2 (documento completo) */
     .cmp .section { margin-top: 5px; margin-bottom: 2px; }
     .cmp .section-title { font-size: 11px; padding-bottom: 2px; margin-bottom: 3px; }
     .cmp .grid { width: 100%; border-collapse: collapse; }
@@ -130,6 +131,29 @@ ob_start();
         font-weight: bold;
         line-height: 1.4;
         text-align: justify;
+        page-break-inside: avoid;
+    }
+    .cmp .pagina-regreso {
+        page-break-before: always;
+    }
+    .cmp .bloque-salida,
+    .cmp .bloque-regreso {
+        page-break-inside: avoid;
+    }
+    .cmp .mini-header {
+        border-bottom: 2px solid #000;
+        padding-bottom: 4px;
+        margin-bottom: 6px;
+        font-size: 9.5px;
+        line-height: 1.45;
+    }
+    .cmp .mini-header strong {
+        font-size: 10.5px;
+        text-transform: uppercase;
+    }
+    .cmp .mini-header span {
+        display: inline-block;
+        margin-right: 10px;
     }
 </style>
 
@@ -155,6 +179,7 @@ $filaCampos = static function (array $campos, callable $campo, int $cols = 3): v
 ?>
 
 <div class="cmp">
+    <?php if ($mostrarSalida): ?>
     <div class="section">
         <div class="section-title">Datos de la comisión</div>
         <?php $filaCampos([
@@ -198,9 +223,10 @@ $filaCampos = static function (array $campos, callable $campo, int $cols = 3): v
         <div class="box" style="border:1.5px solid #000;padding:4px 6px;font-size:11px;">Sin mantenimientos finalizados registrados para este vehículo.</div>
         <?php endif; ?>
     </div>
+    <?php endif; ?>
 
     <?php if ($mostrarSalida): ?>
-    <div class="section">
+    <div class="section bloque-salida">
         <div class="section-title">Control de salida</div>
         <?php $filaCampos([
             ['Hora de salida', pdf_time($c['hora_salida'] ?? null)],
@@ -221,37 +247,90 @@ $filaCampos = static function (array $campos, callable $campo, int $cols = 3): v
             ['label' => 'Firma responsable vehículo', 'nombre' => $c['responsable_nombre'] ?? ''],
             ['label' => 'Autoriza salida (supervisor)', 'nombre' => ''],
         ]); ?>
+        <?php if ($esCompleto): ?>
+        <div class="leyenda">
+            El vehículo debe entregarse en las mismas condiciones físicas y mecánicas en que fue recibido.
+            De no ser así, el responsable asignado se hará cargo de los daños, faltantes o desperfectos ocasionados.
+        </div>
+        <?php endif; ?>
     </div>
     <?php endif; ?>
 
     <?php if ($mostrarRegreso): ?>
-    <div class="section">
-        <div class="section-title">Control de regreso</div>
-        <?php $filaCampos([
-            ['Hora de regreso', pdf_time($c['hora_regreso'] ?? null)],
-            ['Kilometraje regreso', isset($c['km_regreso']) ? number_format((int) $c['km_regreso']) : ''],
-            ['Km recorridos', isset($c['km_recorridos']) ? number_format((int) $c['km_recorridos']) : ''],
-            ['Combustible regreso', isset($c['combustible_regreso']) ? combustible_fraccion_etiqueta($c['combustible_regreso']) : ''],
-            ['Rendimiento (km/L)', isset($c['rendimiento']) ? number_format((float) $c['rendimiento'], 2) : ''],
-            ['Litros consumidos', isset($c['litros_consumidos']) ? number_format((float) $c['litros_consumidos'], 2) : ''],
-        ], $campo); ?>
-        <div class="luz-block-label">Niveles de líquidos (regreso)</div>
-        <?= $renderNivelesPdf($c['niveles_regreso'] ?? []) ?>
-        <div class="luz-block-label">Luces del tablero encendidas (regreso)</div>
-        <?= $renderLucesPdf($c['luces_regreso'] ?? []) ?>
-        <div class="luz-block-label">Herramientas que regresaron</div>
-        <?= $renderHerramientasPdf($c['herramientas_regreso'] ?? []) ?>
-        <?php pdf_render_firmas([
-            ['label' => 'Firma conductor (regreso)', 'nombre' => $c['conductor_nombre'] ?? '', 'firma' => $c['firma_digital'] ?? null],
-            ['label' => 'Recibe vehículo', 'nombre' => ''],
-        ]); ?>
+    <div class="<?= $esCompleto ? 'pagina-regreso' : '' ?>">
+        <?php if ($esCompleto): ?>
+        <div class="mini-header">
+            <strong>Control de regreso</strong><br>
+            <span><strong>Folio:</strong> <?= e(pdf_val($c['folio'] ?? null)) ?: '—' ?></span>
+            <span><strong>Vehículo:</strong> <?= e(pdf_val($c['numero_economico'] ?? null)) ?: '—' ?></span>
+            <span><strong>Placas:</strong> <?= e(pdf_val($c['placas'] ?? null)) ?: '—' ?></span>
+            <span><strong>Conductor:</strong> <?= e(pdf_val($c['conductor_nombre'] ?? null)) ?: '—' ?></span>
+            <span><strong>Destino:</strong> <?= e(pdf_val($c['destino'] ?? null)) ?: '—' ?></span>
+        </div>
+        <?php elseif (!$mostrarSalida): ?>
+        <div class="section">
+            <div class="section-title">Datos de la comisión</div>
+            <?php $filaCampos([
+                ['Folio', pdf_val($c['folio'] ?? null)],
+                ['Fecha de la revista', pdf_date($c['fecha'] ?? null)],
+                ['Identificador', pdf_val($c['numero_economico'] ?? null)],
+                ['Placas', pdf_val($c['placas'] ?? null)],
+                ['Conductor', pdf_val($c['conductor_nombre'] ?? null)],
+                ['Responsable de regreso', pdf_val($c['responsable_regreso_nombre'] ?? null)],
+            ], $campo); ?>
+            <table class="grid two-col" style="margin-top:4px;">
+                <tr>
+                    <td>
+                        <div class="inline-block"><span class="lbl">Destino</span>
+                            <div class="box"><?= e(pdf_val($c['destino'] ?? null)) ?: '&nbsp;' ?></div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="inline-block"><span class="lbl">Motivo del viaje</span>
+                            <div class="box"><?= e(pdf_val($c['motivo'] ?? null)) ?: '&nbsp;' ?></div>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <?php endif; ?>
+
+        <div class="section bloque-regreso">
+            <div class="section-title">Control de regreso</div>
+            <?php $filaCampos([
+                ['Hora de regreso', pdf_time($c['hora_regreso'] ?? null)],
+                ['Kilometraje regreso', isset($c['km_regreso']) ? number_format((int) $c['km_regreso']) : ''],
+                ['Km recorridos', isset($c['km_recorridos']) ? number_format((int) $c['km_recorridos']) : ''],
+                ['Combustible regreso', isset($c['combustible_regreso']) ? combustible_fraccion_etiqueta($c['combustible_regreso']) : ''],
+                ['Rendimiento (km/L)', isset($c['rendimiento']) ? number_format((float) $c['rendimiento'], 2) : ''],
+                ['Litros consumidos', isset($c['litros_consumidos']) ? number_format((float) $c['litros_consumidos'], 2) : ''],
+            ], $campo); ?>
+            <div class="luz-block-label">Niveles de líquidos (regreso)</div>
+            <?= $renderNivelesPdf($c['niveles_regreso'] ?? []) ?>
+            <div class="luz-block-label">Luces del tablero encendidas (regreso)</div>
+            <?= $renderLucesPdf($c['luces_regreso'] ?? []) ?>
+            <div class="luz-block-label">Herramientas que regresaron</div>
+            <?= $renderHerramientasPdf($c['herramientas_regreso'] ?? []) ?>
+            <?php pdf_render_firmas([
+                ['label' => 'Firma conductor (regreso)', 'nombre' => $c['conductor_nombre'] ?? '', 'firma' => $c['firma_digital'] ?? null],
+                ['label' => 'Recibe vehículo', 'nombre' => ''],
+            ]); ?>
+            <?php if ($esCompleto): ?>
+            <div class="leyenda">
+                El vehículo debe entregarse en las mismas condiciones físicas y mecánicas en que fue recibido.
+                De no ser así, el responsable asignado se hará cargo de los daños, faltantes o desperfectos ocasionados.
+            </div>
+            <?php endif; ?>
+        </div>
     </div>
     <?php endif; ?>
 
+    <?php if (!$esCompleto): ?>
     <div class="leyenda">
         El vehículo debe entregarse en las mismas condiciones físicas y mecánicas en que fue recibido.
         De no ser así, el responsable asignado se hará cargo de los daños, faltantes o desperfectos ocasionados.
     </div>
+    <?php endif; ?>
 </div>
 <?php
 $pdfBody = ob_get_clean();
