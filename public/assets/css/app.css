@@ -3180,3 +3180,44 @@ a.tab-btn {
     justify-content: flex-end;
     margin-top: .65rem;
 }
+
+/* ——— Alta de comisión (secciones colapsables) ——— */
+.comision-form-section {
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    background: var(--bg-card);
+    overflow: hidden;
+}
+
+.comision-form-section > summary {
+    cursor: pointer;
+    padding: .85rem 1.1rem;
+    font-size: .92rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    background: var(--bg-table-stripe);
+    border-bottom: 1px solid transparent;
+    list-style: none;
+}
+
+.comision-form-section > summary::-webkit-details-marker { display: none; }
+
+.comision-form-section > summary::before {
+    content: '▸';
+    display: inline-block;
+    margin-right: .45rem;
+    color: var(--text-secondary);
+    transition: transform .15s ease;
+}
+
+.comision-form-section[open] > summary {
+    border-bottom-color: var(--border-color);
+}
+
+.comision-form-section[open] > summary::before {
+    transform: rotate(90deg);
+}
+
+.comision-form-section-body {
+    padding: 1rem 1.1rem 1.1rem;
+}
