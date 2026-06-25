@@ -45,6 +45,14 @@ if ($selectedLuces === [] && !empty($vehiculo_luces_preset) && is_array($vehicul
                     <input type="number" id="kilometraje" name="kilometraje" class="form-control" required min="0" data-km-target value="<?= e((string) old('kilometraje')) ?>">
                     <small class="form-hint text-muted" data-km-hint>Seleccione un vehículo para ver el kilometraje actual.</small>
                 </div>
+                <div class="form-group">
+                    <label class="form-label">&nbsp;</label>
+                    <label class="form-check">
+                        <input type="checkbox" name="es_historico" value="1" data-km-historic-toggle <?= old('es_historico') ? 'checked' : '' ?>>
+                        Inspección olvidada (fecha o kilometraje anterior)
+                    </label>
+                    <small class="form-hint text-muted">Marque esta opción si la inspección se realizó antes y no actualizó el odómetro del vehículo.</small>
+                </div>
             </div>
         <?php App\Core\View::component('combustible-fraccion-select', [
             'id' => 'nivel_combustible',

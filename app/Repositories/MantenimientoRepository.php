@@ -222,7 +222,7 @@ final class MantenimientoRepository extends BaseRepository
                     SELECT MAX(kilometraje) FROM combustible_cargas WHERE vehiculo_id = ?
                 ), 0),
                 COALESCE((
-                    SELECT MAX(kilometraje) FROM inspecciones WHERE vehiculo_id = ?
+                    SELECT MAX(kilometraje) FROM inspecciones WHERE vehiculo_id = ? AND es_historico = 0
                 ), 0)
             ) AS km_max',
             array_merge($params, [$vehiculoId, $vehiculoId, $vehiculoId])

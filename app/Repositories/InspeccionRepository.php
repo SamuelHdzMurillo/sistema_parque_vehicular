@@ -131,14 +131,15 @@ final class InspeccionRepository extends BaseRepository
         try {
             $this->execute(
                 'INSERT INTO inspecciones (
-                    folio, vehiculo_id, responsable_id, kilometraje, nivel_combustible, fecha,
+                    folio, vehiculo_id, responsable_id, kilometraje, es_historico, nivel_combustible, fecha,
                     observaciones_generales, firma_digital, resultado_general
-                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                 [
                     $data['folio'],
                     (int) $data['vehiculo_id'],
                     (int) $data['responsable_id'],
                     (int) $data['kilometraje'],
+                    !empty($data['es_historico']) ? 1 : 0,
                     $data['nivel_combustible'] ?? null,
                     $data['fecha'],
                     $data['observaciones_generales'] ?? null,

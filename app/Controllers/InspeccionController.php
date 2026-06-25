@@ -38,9 +38,21 @@ final class InspeccionController extends BaseController
             $this->redirect('login');
         }
 
-        $id = $this->inspecciones->create($request->all(), $userId);
-        flash('success', 'Inspección registrada correctamente.');
-        $this->redirect('inspecciones/' . $id);
+        try {
+            $data = $request->all();
+            $data['es_historico'] = !empty($data['es_historico']) ? 1 : 0;
+            $id = $this->inspecciones->create($data, $userId);
+            flash('success', 'Inspección registrada correctamente.');
+            $this->redirect('inspecciones/' . $id);
+        } catch (\RuntimeException $e) {
+            $_SESSION['_old'] = $request->all();
+            flash('error', $e->getMessage());
+            $this->redirect('inspecciones/create');
+        } catch (\InvalidArgumentException $e) {
+            $_SESSION['_old'] = $request->all();
+            flash('error', $e->getMessage());
+            $this->redirect('inspecciones/create');
+        }
     }
 
     public function show(Request $request, string $id): never

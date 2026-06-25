@@ -17,6 +17,9 @@ $daniosAbiertos = $danios_abiertos ?? [];
             <span class="badge <?= ($i['resultado_general'] ?? '') === 'aprobada' ? 'badge-success' : (($i['resultado_general'] ?? '') === 'rechazada' ? 'badge-danger' : 'badge-warning') ?>">
                 <?= e(ucfirst($i['resultado_general'] ?? '')) ?>
             </span>
+            <?php if (!empty($i['es_historico'])): ?>
+            <span class="badge badge-info">Registro histórico</span>
+            <?php endif; ?>
         </p>
     </div>
     <?php if (!empty($i['vehiculo_id']) || can('inspecciones.delete')): ?>

@@ -91,6 +91,8 @@ final class InspeccionService
 
     public function create(array $data, int $userId): int
     {
+        $data = $this->normalizeHistorico($data);
+        $this->assertKilometrajeValido($data);
         $items = $this->parseItems($data);
         $lucesTablero = $this->parseLucesTablero($data);
         $data['responsable_id'] = $userId;
@@ -101,11 +103,45 @@ final class InspeccionService
         $data['folio'] = $this->repo->generateFolio();
         $data['nivel_combustible'] = $this->parseNivelCombustible($data);
         $id = $this->repo->createWithItems($data, $items, $lucesTablero);
-        $this->vehiculos->updateKilometraje((int) $data['vehiculo_id'], (int) $data['kilometraje'], $userId);
-        $this->vehiculos->syncLucesTablero((int) $data['vehiculo_id'], $lucesTablero, 'inspeccion', $id);
-        $this->generarAlertas((int) $data['vehiculo_id'], $id, $items);
+        if (empty($data['es_historico'])) {
+            $this->vehiculos->updateKilometraje((int) $data['vehiculo_id'], (int) $data['kilometraje'], $userId);
+            $this->vehiculos->syncLucesTablero((int) $data['vehiculo_id'], $lucesTablero, 'inspeccion', $id);
+            $this->generarAlertas((int) $data['vehiculo_id'], $id, $items);
+        }
         AuditService::log('CREATE', 'inspecciones', $id, null, ['vehiculo_id' => $data['vehiculo_id']]);
         return $id;
+    }
+
+    private function normalizeHistorico(array $data): array
+    {
+        $data['es_historico'] = !empty($data['es_historico']) ? 1 : 0;
+        return $data;
+    }
+
+    private function assertKilometrajeValido(array $data): void
+    {
+        if (!empty($data['es_historico'])) {
+            return;
+        }
+
+        $vehiculoId = (int) ($data['vehiculo_id'] ?? 0);
+        if ($vehiculoId <= 0) {
+            throw new \RuntimeException('Seleccione un vehículo.');
+        }
+
+        $vehiculo = $this->vehiculos->findById($vehiculoId);
+        if ($vehiculo === null) {
+            throw new \RuntimeException('Vehículo no encontrado.');
+        }
+
+        $km = (int) ($data['kilometraje'] ?? 0);
+        $kmActual = (int) $vehiculo['kilometraje_actual'];
+        if ($km < $kmActual) {
+            throw new \RuntimeException(
+                'El kilometraje (' . number_format($km) . ' km) no puede ser menor al actual del vehículo ('
+                . number_format($kmActual) . ' km). Marque «Inspección olvidada» si la inspección fue con menor kilometraje.'
+            );
+        }
     }
 
     private function parseItems(array $data): array
