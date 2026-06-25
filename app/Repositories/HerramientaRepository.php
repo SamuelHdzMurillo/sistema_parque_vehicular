@@ -82,8 +82,7 @@ final class HerramientaRepository extends BaseRepository
 
     public function ensureDefaultsForVehiculo(int $vehiculoId): void
     {
-        $tipos = ['gato', 'cruceta', 'extintor', 'botiquin', 'triangulos', 'linterna', 'llanta_refaccion'];
-        foreach ($tipos as $tipo) {
+        foreach (herramienta_catalogo_codigos() as $tipo) {
             $exists = $this->fetchOne(
                 'SELECT id FROM herramientas_vehiculo WHERE vehiculo_id = ? AND tipo = ?',
                 [$vehiculoId, $tipo]

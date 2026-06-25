@@ -2439,6 +2439,20 @@ a.tab-btn {
     font-size: .9rem;
 }
 
+.herramienta-custom-item .checklist-item-name {
+    display: flex;
+    align-items: center;
+    gap: .35rem;
+    flex-wrap: wrap;
+}
+
+.herramienta-custom-remove {
+    margin-left: auto;
+    min-width: 1.75rem;
+    padding: 0 .35rem;
+    line-height: 1.4;
+}
+
 .rating-group {
     display: flex;
     gap: .35rem;

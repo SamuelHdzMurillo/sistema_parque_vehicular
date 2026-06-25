@@ -90,7 +90,7 @@ if ($herramientasSalida === [] && !empty($vehiculo_herramientas_preset) && is_ar
             <div class="form-row">
                 <div class="form-group">
                     <label class="form-label" for="vehiculo_id">Vehículo <span class="required">*</span></label>
-                    <select id="vehiculo_id" name="vehiculo_id" class="form-select" required data-km-source data-luces-autofill>
+                    <select id="vehiculo_id" name="vehiculo_id" class="form-select" required data-km-source data-luces-autofill data-herramientas-autofill>
                         <option value="">Seleccione…</option>
                         <?php foreach ($vehiculos as $v): ?>
                         <option value="<?= (int) $v['id'] ?>" data-km="<?= (int) ($v['kilometraje_actual'] ?? 0) ?>" <?= (string) $preVehiculo === (string) $v['id'] ? 'selected' : '' ?>>

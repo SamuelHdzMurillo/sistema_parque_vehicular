@@ -32,6 +32,18 @@ final class HerramientaController extends BaseController
             $this->redirect('login');
         }
 
+        $nuevaNombre = trim((string) $request->input('nueva_herramienta_nombre', ''));
+        if ($nuevaNombre !== '') {
+            $estadoNueva = (string) $request->input('nueva_herramienta_estado', 'presente');
+            $error = $this->herramientas->addCustom((int) $vehiculoId, $nuevaNombre, $estadoNueva, $userId);
+            if ($error !== null) {
+                flash('error', $error);
+                $this->redirect('herramientas/vehiculo/' . $vehiculoId);
+            }
+            flash('success', 'Herramienta agregada al inventario.');
+            $this->redirect('herramientas/vehiculo/' . $vehiculoId);
+        }
+
         $items = $request->input('herramientas', []);
         if (!is_array($items)) {
             flash('error', 'Datos de herramientas inválidos.');

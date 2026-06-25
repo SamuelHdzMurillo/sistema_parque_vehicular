@@ -7,6 +7,7 @@ namespace App\Controllers;
 use App\Core\Request;
 use App\Core\Response;
 use App\Exceptions\ValidationException;
+use App\Services\HerramientaService;
 use App\Services\VehiculoService;
 use PDOException;
 use RuntimeException;
@@ -14,7 +15,8 @@ use RuntimeException;
 final class VehiculoController extends BaseController
 {
     public function __construct(
-        private readonly VehiculoService $vehiculos = new VehiculoService()
+        private readonly VehiculoService $vehiculos = new VehiculoService(),
+        private readonly HerramientaService $herramientas = new HerramientaService(),
     ) {
     }
 
@@ -86,6 +88,19 @@ final class VehiculoController extends BaseController
         Response::json([
             'ok' => true,
             'luces' => $this->vehiculos->getLucesTablero((int) $id),
+        ]);
+    }
+
+    public function apiHerramientas(Request $request, string $id): never
+    {
+        $vehiculo = $this->vehiculos->find((int) $id);
+        if ($vehiculo === null) {
+            Response::json(['ok' => false, 'error' => 'Vehículo no encontrado.'], 404);
+        }
+
+        Response::json([
+            'ok' => true,
+            'herramientas' => $this->herramientas->getPresentesByVehiculo((int) $id),
         ]);
     }
 

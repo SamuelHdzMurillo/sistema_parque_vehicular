@@ -345,6 +345,200 @@
         }
     }
 
+    function herramientaSlug(nombre) {
+        let slug = String(nombre || '').trim().toLowerCase();
+        slug = slug.replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+        if (!slug) {
+            slug = 'otro_' + Math.random().toString(36).slice(2, 10);
+        }
+        return slug.slice(0, 40);
+    }
+
+    function herramientaLabel(codigo) {
+        return String(codigo || '')
+            .replace(/_/g, ' ')
+            .replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+    }
+
+    function initHerramientasChecklist() {
+        document.querySelectorAll('[data-herramientas-checklist]').forEach(function (wrap) {
+            const catalogGrid = wrap.querySelector('[data-herramientas-catalog]');
+            const customGrid = wrap.querySelector('[data-herramientas-custom]');
+            const input = wrap.querySelector('[data-herramientas-custom-input]');
+            const addBtn = wrap.querySelector('[data-herramientas-custom-add]');
+            if (!catalogGrid || !customGrid || !input || !addBtn) {
+                return;
+            }
+
+            let catalogCodes = [];
+            try {
+                catalogCodes = JSON.parse(wrap.getAttribute('data-catalog-codes') || '[]');
+            } catch (e) {
+                catalogCodes = [];
+            }
+
+            const fieldName = (catalogGrid.querySelector('input[type="checkbox"]') || {}).name || 'herramientas_salida[]';
+
+            function existingCodes() {
+                const codes = new Set();
+                wrap.querySelectorAll('input[type="checkbox"][name="' + fieldName + '"]').forEach(function (cb) {
+                    codes.add(cb.value);
+                });
+                return codes;
+            }
+
+            function bindRemove(btn, label) {
+                btn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (label && label.parentNode) {
+                        label.parentNode.removeChild(label);
+                    }
+                });
+            }
+
+            customGrid.querySelectorAll('.herramienta-custom-remove').forEach(function (btn) {
+                bindRemove(btn, btn.closest('.herramienta-custom-item'));
+            });
+
+            function addCustomItem(codigo, labelText, checked) {
+                if (existingCodes().has(codigo)) {
+                    const existing = wrap.querySelector('input[type="checkbox"][name="' + fieldName + '"][value="' + codigo + '"]');
+                    if (existing) {
+                        existing.checked = checked !== false;
+                    }
+                    return;
+                }
+
+                const label = document.createElement('label');
+                label.className = 'checklist-item herramienta-custom-item';
+                label.style.cursor = 'pointer';
+
+                const inner = document.createElement('div');
+                inner.className = 'checklist-item-name';
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.name = fieldName;
+                checkbox.value = codigo;
+                checkbox.checked = checked !== false;
+
+                const text = document.createTextNode(' ' + labelText + ' ');
+
+                const removeBtn = document.createElement('button');
+                removeBtn.type = 'button';
+                removeBtn.className = 'btn btn-sm btn-secondary herramienta-custom-remove';
+                removeBtn.title = 'Quitar';
+                removeBtn.setAttribute('aria-label', 'Quitar herramienta');
+                removeBtn.innerHTML = '&times;';
+
+                inner.appendChild(checkbox);
+                inner.appendChild(text);
+                inner.appendChild(removeBtn);
+                label.appendChild(inner);
+                customGrid.appendChild(label);
+                bindRemove(removeBtn, label);
+            }
+
+            function addFromInput() {
+                const nombre = input.value.trim();
+                if (!nombre) {
+                    input.focus();
+                    return;
+                }
+                const codigo = herramientaSlug(nombre);
+                addCustomItem(codigo, herramientaLabel(codigo), true);
+                input.value = '';
+                input.focus();
+            }
+
+            addBtn.addEventListener('click', addFromInput);
+            input.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addFromInput();
+                }
+            });
+
+            wrap.addEventListener('herramientas:apply', function (e) {
+                const list = (e.detail && e.detail.herramientas) || [];
+                const set = new Set(list);
+                catalogGrid.querySelectorAll('input[type="checkbox"]').forEach(function (cb) {
+                    cb.checked = set.has(cb.value);
+                });
+                customGrid.querySelectorAll('.herramienta-custom-item').forEach(function (label) {
+                    const cb = label.querySelector('input[type="checkbox"]');
+                    if (!cb) {
+                        return;
+                    }
+                    if (set.has(cb.value)) {
+                        cb.checked = true;
+                        set.delete(cb.value);
+                    } else {
+                        label.remove();
+                    }
+                });
+                set.forEach(function (codigo) {
+                    if (catalogCodes.indexOf(codigo) === -1) {
+                        addCustomItem(codigo, herramientaLabel(codigo), true);
+                    }
+                });
+            });
+        });
+    }
+
+    function initHerramientasAutofill() {
+        const source = document.querySelector('[data-herramientas-autofill]');
+        const checklist = document.querySelector('[data-herramientas-checklist]');
+        if (!source || !checklist) {
+            return;
+        }
+
+        function hasCheckedHerramientas() {
+            return checklist.querySelectorAll('[data-herramientas-catalog] input[type="checkbox"]:checked, [data-herramientas-custom] input[type="checkbox"]:checked').length > 0;
+        }
+
+        function applyHerramientas(list) {
+            checklist.dispatchEvent(new CustomEvent('herramientas:apply', {
+                bubbles: true,
+                detail: { herramientas: list || [] }
+            }));
+        }
+
+        function fetchAndApply(force) {
+            const id = source.value;
+            if (!id) {
+                if (force) {
+                    applyHerramientas([]);
+                }
+                return;
+            }
+            fetch(appFetchUrl('vehiculos/' + id + '/herramientas'), {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    if (!data || !data.ok) {
+                        return;
+                    }
+                    if (force || !hasCheckedHerramientas()) {
+                        applyHerramientas(data.herramientas);
+                    }
+                })
+                .catch(function () {});
+        }
+
+        source.addEventListener('change', function () {
+            fetchAndApply(true);
+        });
+        if (source.value) {
+            fetchAndApply(false);
+        }
+    }
+
     /* ——— Kilometraje del vehículo en formularios ——— */
     function formatKmHint(km) {
         return Number(km || 0).toLocaleString('es-MX');
@@ -1397,6 +1591,8 @@
         initKmAutofill();
         initCombustibleFields();
         initLucesAutofill();
+        initHerramientasChecklist();
+        initHerramientasAutofill();
         initConductorSelect();
         initResponsableRegresoSelect();
         initAreaQuickModal();

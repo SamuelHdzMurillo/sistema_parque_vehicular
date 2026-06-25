@@ -980,6 +980,47 @@ function vehiculo_identificador_placeholder(): string
     return 'Ej. Patrulla 01, Unidad Norte, Camión 3…';
 }
 
+/** @return list<array{codigo: string, nombre: string}> */
+function herramienta_catalogo(): array
+{
+    return \App\Repositories\ComisionRepository::HERRAMIENTAS;
+}
+
+function herramienta_nombre(string $codigo): string
+{
+    foreach (herramienta_catalogo() as $item) {
+        if ($item['codigo'] === $codigo) {
+            return $item['nombre'];
+        }
+    }
+    return ucfirst(str_replace('_', ' ', $codigo));
+}
+
+function herramienta_slug(string $nombre): string
+{
+    $slug = strtolower(trim($nombre));
+    $slug = (string) preg_replace('/[^a-z0-9]+/', '_', $slug);
+    $slug = trim($slug, '_');
+    if ($slug === '') {
+        $slug = 'otro_' . substr(md5($nombre), 0, 8);
+    }
+    return substr($slug, 0, 40);
+}
+
+/** @return list<string> */
+function herramienta_catalogo_codigos(): array
+{
+    return array_column(herramienta_catalogo(), 'codigo');
+}
+
+function herramienta_es_codigo_valido(string $codigo): bool
+{
+    if (in_array($codigo, herramienta_catalogo_codigos(), true)) {
+        return true;
+    }
+    return (bool) preg_match('/^[a-z][a-z0-9_]{1,38}$/', $codigo);
+}
+
 /** @param array<string, mixed> $area */
 function catalogo_area_label(array $area): string
 {

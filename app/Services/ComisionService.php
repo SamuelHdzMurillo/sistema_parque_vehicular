@@ -104,12 +104,11 @@ final class ComisionService
     public function getHerramientasVehiculoPreset(int $vehiculoId): array
     {
         $rows = $this->herramientas->getByVehiculo($vehiculoId);
-        $valid = array_column(ComisionRepository::HERRAMIENTAS, 'codigo');
         $preset = [];
         foreach ($rows as $row) {
             $tipo = (string) ($row['tipo'] ?? '');
             $estado = (string) ($row['estado'] ?? '');
-            if (in_array($tipo, $valid, true) && $estado === 'presente') {
+            if ($estado === 'presente' && herramienta_es_codigo_valido($tipo)) {
                 $preset[] = $tipo;
             }
         }
@@ -403,11 +402,10 @@ final class ComisionService
         if (!is_array($selected)) {
             return [];
         }
-        $validTipos = array_column(ComisionRepository::HERRAMIENTAS, 'codigo');
         $tipos = [];
         foreach ($selected as $tipo) {
             $tipo = (string) $tipo;
-            if (in_array($tipo, $validTipos, true)) {
+            if (herramienta_es_codigo_valido($tipo)) {
                 $tipos[] = $tipo;
             }
         }
