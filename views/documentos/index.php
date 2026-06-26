@@ -80,7 +80,7 @@ $vehiculos = $vehiculos ?? [];
                         : '';
                     ?>
                     <tr>
-                        <td><?= e(ucfirst(str_replace('_', ' ', $d['tipo']))) ?></td>
+                        <td><?= e(documento_tipo_label((string) $d['tipo'])) ?></td>
                         <td><?= e($d['titulo']) ?></td>
                         <td><?= e($d['numero_documento'] ?? '—') ?></td>
                         <td><?= format_date($d['fecha_vencimiento']) ?></td>

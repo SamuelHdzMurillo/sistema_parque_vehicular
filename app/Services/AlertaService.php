@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Repositories\AlertaRepository;
 use App\Repositories\CatalogoRepository;
+use App\Repositories\DocumentoRepository;
 use App\Repositories\MantenimientoRepository;
 use App\Repositories\VehiculoRepository;
 
@@ -16,6 +17,7 @@ final class AlertaService
         private readonly MantenimientoRepository $mantenimientos = new MantenimientoRepository(),
         private readonly VehiculoRepository $vehiculos = new VehiculoRepository(),
         private readonly CatalogoRepository $catalogos = new CatalogoRepository(),
+        private readonly DocumentoRepository $documentos = new DocumentoRepository(),
     ) {
     }
 
@@ -84,9 +86,10 @@ final class AlertaService
         $perPage = 10;
         $serviciosKm = $this->repo->getServiciosKm();
         $grupos = [];
+        $filtroVehiculoId = $vehiculoId !== null && $vehiculoId > 0 ? $vehiculoId : null;
 
-        if ($vehiculoId !== null && $vehiculoId > 0) {
-            $vehiculo = $this->vehiculos->findById($vehiculoId);
+        if ($filtroVehiculoId !== null) {
+            $vehiculo = $this->vehiculos->findById($filtroVehiculoId);
             $vehiculosData = $vehiculo !== null ? [$vehiculo] : [];
             $total = count($vehiculosData);
             $page = 1;
@@ -97,7 +100,7 @@ final class AlertaService
         }
 
         foreach ($vehiculosData as $vehiculo) {
-            $vehiculoId = (int) $vehiculo['id'];
+            $vehiculoRowId = (int) $vehiculo['id'];
             $filas = [];
 
             foreach ($serviciosKm as $cfg) {
@@ -109,8 +112,8 @@ final class AlertaService
                 $filas[] = $fila;
             }
 
-            foreach ($this->repo->findPendientesDocumentoPorVehiculo($vehiculoId) as $alerta) {
-                $filas[] = $this->enriquecerFila($alerta);
+            foreach ($this->documentos->getActivosConVencimientoPorVehiculo($vehiculoRowId) as $documento) {
+                $filas[] = $this->buildFilaDocumentoDesdeRegistro($vehiculo, $documento);
             }
 
             if ($filas === []) {
@@ -126,7 +129,7 @@ final class AlertaService
             alerta_ordenar_filas($filas);
 
             $grupos[] = [
-                'vehiculo_id' => $vehiculoId,
+                'vehiculo_id' => $vehiculoRowId,
                 'numero_economico' => (string) $vehiculo['numero_economico'],
                 'kilometraje_actual' => (int) ($vehiculo['kilometraje_actual'] ?? 0),
                 'nivel_max' => $nivelMax,
@@ -151,7 +154,7 @@ final class AlertaService
             'counts' => $this->repo->getDashboardCounts(),
             'solo_pendientes' => $soloConAvisos,
             'modo' => 'matriz',
-            'vehiculo_id' => $vehiculoId !== null && $vehiculoId > 0 ? $vehiculoId : null,
+            'vehiculo_id' => $filtroVehiculoId,
             'vehiculos' => $this->catalogos->getVehiculosCatalogo(),
         ];
     }
@@ -323,6 +326,47 @@ final class AlertaService
         }
 
         $activa = $this->repo->findActive($vehiculoId, $tipo);
+        if ($activa !== null) {
+            $fila['id'] = (int) $activa['id'];
+        }
+
+        return $fila;
+    }
+
+    /** @return array<string, mixed> */
+    private function buildFilaDocumentoDesdeRegistro(array $vehiculo, array $documento): array
+    {
+        $vehiculoId = (int) $vehiculo['id'];
+        $titulo = (string) ($documento['titulo'] ?? '');
+        $tipoDocumento = documento_tipo_normalizado((string) ($documento['tipo'] ?? ''), $titulo);
+        $tipoAlerta = $this->repo->mapTipoDocumentoToAlerta($tipoDocumento, $titulo);
+        $config = $this->repo->getAlertaConfig($tipoAlerta);
+        $nombre = (string) ($config['nombre'] ?? documento_tipo_label($tipoDocumento));
+
+        $fila = [
+            'vehiculo_id' => $vehiculoId,
+            'numero_economico' => (string) ($vehiculo['numero_economico'] ?? ''),
+            'tipo' => $tipoAlerta,
+            'servicio_nombre' => $nombre,
+            'categoria' => 'documento',
+            'sin_alta' => false,
+            'documento_id' => (int) $documento['id'],
+            'documento_titulo' => $titulo,
+            'fecha_ultimo_mantenimiento' => !empty($documento['fecha_emision'])
+                ? substr((string) $documento['fecha_emision'], 0, 10)
+                : null,
+            'fecha_proximo_mantenimiento' => substr((string) $documento['fecha_vencimiento'], 0, 10),
+            'atendida' => 0,
+            'id' => null,
+            'nivel' => null,
+            'dias_restantes' => null,
+        ];
+
+        $diasRestantes = (int) ((strtotime($fila['fecha_proximo_mantenimiento']) - strtotime(date('Y-m-d'))) / 86400);
+        $fila['dias_restantes'] = $diasRestantes;
+        $fila['nivel'] = $this->repo->calcularNivelDocumento($diasRestantes, $config);
+
+        $activa = $this->repo->findActivePorDocumento((int) $documento['id']);
         if ($activa !== null) {
             $fila['id'] = (int) $activa['id'];
         }

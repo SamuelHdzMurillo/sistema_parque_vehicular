@@ -157,6 +157,30 @@ final class DocumentoRepository extends BaseRepository
         }
     }
 
+    public function getActivoPorVehiculoYTipo(int $vehiculoId, string $tipo): ?array
+    {
+        return $this->fetchOne(
+            'SELECT id, vehiculo_id, tipo, titulo, numero_documento, fecha_emision, fecha_vencimiento, version
+             FROM documentos
+             WHERE vehiculo_id = ? AND tipo = ? AND activo = 1
+             ORDER BY version DESC, id DESC
+             LIMIT 1',
+            [$vehiculoId, $tipo]
+        );
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function getActivosConVencimientoPorVehiculo(int $vehiculoId): array
+    {
+        return $this->fetchAll(
+            'SELECT id, vehiculo_id, tipo, titulo, numero_documento, fecha_emision, fecha_vencimiento, version
+             FROM documentos
+             WHERE vehiculo_id = ? AND activo = 1 AND fecha_vencimiento IS NOT NULL
+             ORDER BY fecha_vencimiento ASC, titulo ASC',
+            [$vehiculoId]
+        );
+    }
+
     public function getHistorialVersiones(int $vehiculoId, string $tipo): array
     {
         return $this->fetchAll(

@@ -136,13 +136,17 @@ final class DocumentoService extends BaseRepository
             'INSERT INTO documentos (vehiculo_id, tipo, titulo, numero_documento, fecha_emision, fecha_vencimiento, archivo_ruta, archivo_tipo, uploaded_by)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
             [
-                $data['vehiculo_id'] ? (int) $data['vehiculo_id'] : null, $data['tipo'], $data['titulo'],
+                $data['vehiculo_id'] ? (int) $data['vehiculo_id'] : null,
+                documento_tipo_normalizado((string) ($data['tipo'] ?? ''), (string) ($data['titulo'] ?? '')),
+                $data['titulo'],
                 $data['numero_documento'] ?? null, $data['fecha_emision'] ?? null, $data['fecha_vencimiento'] ?? null,
                 $ruta, $mime ?: 'application/octet-stream', $userId,
             ]
         );
         $id = (int) $this->lastInsertId();
         AuditService::log('INSERT', 'documentos', $id, null, $data);
+        (new AlertaService())->sincronizar();
+
         return $id;
     }
 
@@ -198,6 +202,8 @@ final class DocumentoService extends BaseRepository
                 'uploaded_by' => $userId,
             ]));
             AuditService::log('UPDATE', 'documentos', $newId, $doc, array_merge($payload, ['reemplaza_id' => $id]));
+            (new AlertaService())->sincronizar();
+
             return $newId;
         }
 
@@ -206,6 +212,8 @@ final class DocumentoService extends BaseRepository
         }
 
         AuditService::log('UPDATE', 'documentos', $id, $doc, $payload);
+        (new AlertaService())->sincronizar();
+
         return true;
     }
 
@@ -221,6 +229,8 @@ final class DocumentoService extends BaseRepository
         }
 
         AuditService::log('DELETE', 'documentos', $id, $doc, null);
+        (new AlertaService())->sincronizar();
+
         return true;
     }
 }

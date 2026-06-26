@@ -14,7 +14,7 @@ $esMatriz = $modo === 'matriz';
         <h1 class="page-title">Alertas</h1>
         <p class="page-subtitle">
             <?php if ($esMatriz): ?>
-            Mantenimiento por vehículo — según los km o meses indicados al registrar cada servicio
+            Mantenimiento y documentos por vehículo — según vencimientos y los km o meses de cada servicio
             <?php elseif ($totalPendientes > 0): ?>
             Historial de alertas atendidas y pendientes
             <?php else: ?>
@@ -118,7 +118,7 @@ $esMatriz = $modo === 'matriz';
                 <h2 class="alertas-vehiculo-nombre"><?= e($grupo['numero_economico']) ?></h2>
                 <p class="alertas-vehiculo-meta">
                     <?php if ($esMatriz): ?>
-                    <?= number_format($kmVehiculo, 0, '.', ',') ?> km actuales · <?= $totalGrupo ?> servicio<?= $totalGrupo === 1 ? '' : 's' ?>
+                    <?= number_format($kmVehiculo, 0, '.', ',') ?> km actuales · <?= $totalGrupo ?> aviso<?= $totalGrupo === 1 ? '' : 's' ?>
                     <?php else: ?>
                     <?= $totalGrupo ?> alerta<?= $totalGrupo === 1 ? '' : 's' ?>
                     <?php endif; ?>
@@ -132,7 +132,7 @@ $esMatriz = $modo === 'matriz';
             <table class="table alertas-grupo-tabla">
                 <thead>
                     <tr>
-                        <th>Servicio</th>
+                        <th>Servicio / Documento</th>
                         <th class="alertas-col-prioridad">Estado</th>
                         <th class="alertas-col-fecha">Último mantenimiento</th>
                         <th class="alertas-col-fecha">Próximo toca</th>
@@ -145,17 +145,16 @@ $esMatriz = $modo === 'matriz';
                     $atendida = !empty($a['atendida']);
                     $esMantenimiento = ($a['categoria'] ?? '') === 'mantenimiento';
                     $sinAlta = !empty($a['sin_alta']);
-                    $estado = $esMantenimiento ? alerta_estado_mantenimiento($a) : [
-                        'label' => alerta_nivel_label($a['nivel'] ?? null),
-                        'class' => semaforo_class($a['nivel'] ?? null),
-                    ];
+                    $estado = $esMantenimiento
+                        ? alerta_estado_mantenimiento($a)
+                        : alerta_estado_documento($a);
                     $proximaVencida = !empty($a['fecha_proximo_mantenimiento'])
                         && $a['fecha_proximo_mantenimiento'] < date('Y-m-d')
                         && !$sinAlta;
                     $accionUrl = alerta_accion_url($a);
                     $resumen = alerta_resumen_fila($a);
                     $puedeRegistrar = $esMantenimiento && can('mantenimiento.create');
-                    $puedeAtenderDoc = !$esMantenimiento && can('documentos.read');
+                    $puedeAtenderDoc = !$esMantenimiento && can('documentos.read') && !$sinAlta && ($a['nivel'] ?? null) !== null;
                     $mostrarAtender = !$atendida && (
                         ($esMantenimiento && !$sinAlta && ($a['nivel'] ?? null) !== null && $puedeRegistrar)
                         || $puedeAtenderDoc
@@ -189,7 +188,13 @@ $esMatriz = $modo === 'matriz';
                             <?= e(alerta_ultimo_mantenimiento_display($a)) ?>
                             <?php endif; ?>
                             <?php else: ?>
+                            <?php if (!empty($a['documento_titulo'])): ?>
+                            <span title="<?= e($a['documento_titulo']) ?>"><?= e($a['documento_titulo']) ?></span>
+                            <?php elseif (!empty($a['fecha_ultimo_mantenimiento'])): ?>
+                            <?= e(format_date($a['fecha_ultimo_mantenimiento'])) ?>
+                            <?php else: ?>
                             <span class="text-muted">Documento</span>
+                            <?php endif; ?>
                             <?php endif; ?>
                         </td>
                         <td class="alertas-col-fecha alertas-celda-proximo<?= $proximaVencida ? ' alertas-celda-proximo--vencida' : '' ?><?= $sinAlta ? ' text-muted' : '' ?>">

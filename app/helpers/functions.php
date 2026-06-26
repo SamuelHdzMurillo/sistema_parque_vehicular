@@ -469,6 +469,21 @@ function alerta_estado_mantenimiento(array $fila): array
     return ['label' => alerta_nivel_label($nivel), 'class' => semaforo_class($nivel)];
 }
 
+/** Estado visible en la matriz para documentos por vehículo. */
+function alerta_estado_documento(array $fila): array
+{
+    if (!empty($fila['sin_alta'])) {
+        return ['label' => 'Sin alta', 'class' => 'badge-secondary'];
+    }
+
+    $nivel = isset($fila['nivel']) ? (string) $fila['nivel'] : null;
+    if ($nivel === null || $nivel === '') {
+        return ['label' => 'En orden', 'class' => 'badge-info'];
+    }
+
+    return ['label' => alerta_nivel_label($nivel), 'class' => semaforo_class($nivel)];
+}
+
 /** Texto del último mantenimiento registrado o «Sin alta». */
 function alerta_ultimo_mantenimiento_display(array $fila): string
 {
@@ -582,6 +597,9 @@ function alerta_config_tipo_orden(string $tipo): int
         'tenencia' => 20,
         'verificacion' => 30,
         'licencia' => 40,
+        'tarjeta_circulacion' => 45,
+        'factura' => 48,
+        'otro' => 49,
         'bateria' => 50,
         'cambio_aceite' => 110,
         'afinacion' => 120,
@@ -688,6 +706,60 @@ function alerta_config_por_tipo(array $config, string $tipo): ?array
     }
 
     return null;
+}
+
+/** Normaliza el tipo de documento al catálogo de la base de datos. */
+function documento_tipo_normalizado(string $tipo, string $titulo = ''): string
+{
+    $tipo = strtolower(trim($tipo));
+    $tituloLower = strtolower($titulo);
+
+    if ($tipo === 'poliza_seguro' || $tipo === 'seguro') {
+        return 'poliza';
+    }
+
+    if ($tipo === '') {
+        if (str_contains($tituloLower, 'poliza') || str_contains($tituloLower, 'seguro')) {
+            return 'poliza';
+        }
+        if (str_contains($tituloLower, 'verificacion')) {
+            return 'verificacion';
+        }
+        if (str_contains($tituloLower, 'tenencia')) {
+            return 'tenencia';
+        }
+        if (str_contains($tituloLower, 'licencia')) {
+            return 'licencia';
+        }
+        if (str_contains($tituloLower, 'tarjeta') || str_contains($tituloLower, 'circulacion')) {
+            return 'tarjeta_circulacion';
+        }
+
+        return 'otro';
+    }
+
+    return $tipo;
+}
+
+/** @return array<string, string> */
+function documento_tipos_opciones(): array
+{
+    return [
+        'poliza' => 'Póliza de seguro',
+        'verificacion' => 'Verificación vehicular',
+        'tarjeta_circulacion' => 'Tarjeta de circulación',
+        'tenencia' => 'Tenencia',
+        'licencia' => 'Licencia de conductor',
+        'factura' => 'Factura',
+        'otro' => 'Otro',
+    ];
+}
+
+function documento_tipo_label(string $tipo): string
+{
+    $tipo = documento_tipo_normalizado($tipo);
+
+    return documento_tipos_opciones()[$tipo] ?? ucfirst(str_replace('_', ' ', $tipo));
 }
 
 function mantenimiento_servicio_label(?string $tipo): string
@@ -1028,6 +1100,11 @@ function alerta_accion_url(array $alerta): string
     }
 
     if (($alerta['categoria'] ?? '') === 'documento' && $vehiculoId > 0) {
+        $documentoId = (int) ($alerta['documento_id'] ?? 0);
+        if ($documentoId > 0) {
+            return url('documentos/' . $documentoId . '/edit');
+        }
+
         return url('documentos?vehiculo_id=' . $vehiculoId);
     }
 

@@ -2,7 +2,7 @@
 $pageTitle = 'Subir documento';
 $vehiculos = $vehiculos ?? [];
 $preVehiculo = $_GET['vehiculo_id'] ?? old('vehiculo_id');
-$tipos = ['poliza_seguro','verificacion','tarjeta_circulacion','factura','tenencia','otro'];
+$tipos = documento_tipos_opciones();
 ?>
 <div class="page-header">
     <div>
@@ -28,8 +28,10 @@ $tipos = ['poliza_seguro','verificacion','tarjeta_circulacion','factura','tenenc
             <div class="form-group">
                 <label class="form-label" for="tipo">Tipo <span class="required">*</span></label>
                 <select id="tipo" name="tipo" class="form-select" required>
-                    <?php foreach ($tipos as $t): ?>
-                    <option value="<?= e($t) ?>"><?= e(ucfirst(str_replace('_', ' ', $t))) ?></option>
+                    <?php foreach ($tipos as $valor => $etiqueta): ?>
+                    <option value="<?= e($valor) ?>" <?= (string) old('tipo', 'poliza') === (string) $valor ? 'selected' : '' ?>>
+                        <?= e($etiqueta) ?>
+                    </option>
                     <?php endforeach; ?>
                 </select>
             </div>

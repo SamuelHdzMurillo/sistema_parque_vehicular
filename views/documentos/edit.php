@@ -17,7 +17,7 @@ $archivoUrl = !empty($d['archivo_ruta'])
         </ul>
         <h1 class="page-title">Actualizar documento</h1>
         <p class="page-subtitle">
-            <?= e(ucfirst(str_replace('_', ' ', (string) ($d['tipo'] ?? '')))) ?>
+            <?= e(documento_tipo_label((string) ($d['tipo'] ?? ''))) ?>
             · Versión <?= e((string) ($d['version'] ?? '1')) ?>
             <?php if (!empty($d['numero_economico'])): ?>
             · Vehículo <?= e((string) $d['numero_economico']) ?>
@@ -31,7 +31,7 @@ $archivoUrl = !empty($d['archivo_ruta'])
         <div class="form-row">
             <div class="form-group">
                 <label class="form-label">Tipo</label>
-                <input type="text" class="form-control" readonly value="<?= e(ucfirst(str_replace('_', ' ', (string) ($d['tipo'] ?? '')))) ?>">
+                <input type="text" class="form-control" readonly value="<?= e(documento_tipo_label((string) ($d['tipo'] ?? ''))) ?>">
             </div>
             <div class="form-group">
                 <label class="form-label">Vehículo</label>

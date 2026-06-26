@@ -116,13 +116,14 @@ final class AlertaRepository extends BaseRepository
         $generadas = 0;
 
         foreach ($documentos as $doc) {
-            $tipoAlerta = $this->mapTipoDocumentoToAlerta($doc['tipo']);
-            if ($tipoAlerta === null) {
-                continue;
-            }
+            $tipoAlerta = $this->mapTipoDocumentoToAlerta(
+                (string) ($doc['tipo'] ?? ''),
+                (string) ($doc['titulo'] ?? '')
+            );
 
             $diasRestantes = (int) ((strtotime($doc['fecha_vencimiento']) - strtotime(date('Y-m-d'))) / 86400);
-            $nivel = $this->calcularNivelDocumento($diasRestantes);
+            $config = $this->getAlertaConfig($tipoAlerta);
+            $nivel = $this->calcularNivelDocumento($diasRestantes, $config);
 
             if ($nivel === null) {
                 continue;
@@ -164,6 +165,14 @@ final class AlertaRepository extends BaseRepository
         return $this->fetchOne(
             'SELECT id FROM alertas WHERE vehiculo_id = ? AND tipo = ? AND atendida = 0 LIMIT 1',
             [$vehiculoId, $tipo]
+        );
+    }
+
+    public function findActivePorDocumento(int $documentoId): ?array
+    {
+        return $this->fetchOne(
+            'SELECT id FROM alertas WHERE documento_id = ? AND atendida = 0 LIMIT 1',
+            [$documentoId]
         );
     }
 
@@ -230,6 +239,14 @@ final class AlertaRepository extends BaseRepository
     {
         return $this->fetchAll(
             'SELECT tipo, nombre FROM alerta_config WHERE unidad = "km" AND activo = 1 ORDER BY nombre ASC'
+        );
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function getTiposDocumento(): array
+    {
+        return $this->fetchAll(
+            'SELECT * FROM alerta_config WHERE unidad = "dias" AND activo = 1 ORDER BY nombre ASC'
         );
     }
 
@@ -388,26 +405,49 @@ final class AlertaRepository extends BaseRepository
         );
     }
 
-    private function mapTipoDocumentoToAlerta(string $tipo): ?string
+    public function mapTipoDocumentoToAlerta(string $tipo, string $titulo = ''): string
     {
+        $tipo = documento_tipo_normalizado($tipo, $titulo);
+
         return match ($tipo) {
             'poliza' => 'seguro',
             'tenencia' => 'tenencia',
             'verificacion' => 'verificacion',
             'licencia' => 'licencia',
+            'tarjeta_circulacion' => 'tarjeta_circulacion',
+            'factura' => 'factura',
+            default => 'otro',
+        };
+    }
+
+    public function mapAlertaToTipoDocumento(string $tipoAlerta): ?string
+    {
+        return match ($tipoAlerta) {
+            'seguro' => 'poliza',
+            'tenencia' => 'tenencia',
+            'verificacion' => 'verificacion',
+            'licencia' => 'licencia',
+            'tarjeta_circulacion' => 'tarjeta_circulacion',
+            'factura' => 'factura',
+            'otro' => 'otro',
             default => null,
         };
     }
 
-    private function calcularNivelDocumento(int $diasRestantes): ?string
+    /** @param array<string, mixed>|null $config */
+    public function calcularNivelDocumento(int $diasRestantes, ?array $config = null): ?string
     {
-        if ($diasRestantes < 0 || $diasRestantes <= 0) {
+        $umbrales = $config !== null
+            ? alerta_config_umbrales_dias_doc($config)
+            : ['aviso' => 60, 'atencion' => 30, 'urgente' => 0];
+
+        if ($diasRestantes < 0 || $diasRestantes <= $umbrales['urgente']) {
             return 'rojo';
         }
-        if ($diasRestantes <= 30) {
+        if ($diasRestantes <= $umbrales['atencion']) {
             return 'amarillo';
         }
-        if ($diasRestantes <= 60) {
+        if ($diasRestantes <= $umbrales['aviso']) {
             return 'verde';
         }
 
