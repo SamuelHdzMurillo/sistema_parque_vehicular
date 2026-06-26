@@ -47,6 +47,16 @@ final class InspeccionService
         return $data;
     }
 
+    public function getFormDataForEdit(int $id): ?array
+    {
+        $inspeccion = $this->repo->findWithItems($id);
+        if ($inspeccion === null) {
+            return null;
+        }
+
+        return array_merge($this->getFormData(), ['inspeccion' => $inspeccion]);
+    }
+
     public function find(int $id): ?array
     {
         $data = $this->repo->findWithItems($id);
@@ -111,6 +121,59 @@ final class InspeccionService
         }
         AuditService::log('CREATE', 'inspecciones', $id, null, ['vehiculo_id' => $data['vehiculo_id']]);
         return $id;
+    }
+
+    public function update(int $id, array $data, int $userId): ?string
+    {
+        try {
+            $before = $this->repo->findWithItems($id);
+            if ($before === null) {
+                return 'Inspección no encontrada.';
+            }
+
+            $data = $this->normalizeHistorico($data);
+            $merged = array_merge($before, $data);
+            $merged['vehiculo_id'] = (int) ($data['vehiculo_id'] ?? $before['vehiculo_id']);
+            $this->assertKilometrajeValido($merged);
+
+            $items = $this->parseItems($data);
+            $lucesTablero = $this->parseLucesTablero($data);
+
+            if (!empty($data['firma_data'])) {
+                $this->eliminarFirmaArchivo($before['firma_digital'] ?? null);
+                $data['firma_digital'] = FileUploader::saveBase64Signature((string) $data['firma_data'], 'firmas/inspecciones');
+            } else {
+                $data['firma_digital'] = $before['firma_digital'] ?? null;
+            }
+
+            $data['resultado_general'] = $this->calcularResultadoGeneral($items);
+            $data['folio'] = $this->resolveFolio($data['folio'] ?? $before['folio'], $id);
+            $data['nivel_combustible'] = $this->parseNivelCombustible($data);
+
+            $wasHistoric = !empty($before['es_historico']);
+            $isHistoric = !empty($data['es_historico']);
+            $oldVehiculoId = (int) $before['vehiculo_id'];
+            $newVehiculoId = (int) ($data['vehiculo_id'] ?? $oldVehiculoId);
+
+            $this->repo->updateWithItems($id, array_merge($before, $data), $items, $lucesTablero);
+
+            if (!$wasHistoric) {
+                $this->vehiculos->clearLucesTableroIfOrigin($oldVehiculoId, 'inspeccion', $id);
+            }
+            if (!$isHistoric) {
+                $this->vehiculos->syncLucesTablero($newVehiculoId, $lucesTablero, 'inspeccion', $id);
+                $this->vehiculos->updateKilometraje($newVehiculoId, (int) $data['kilometraje'], $userId);
+            }
+
+            AuditService::log('UPDATE', 'inspecciones', $id, $before, $data);
+            return null;
+        } catch (\InvalidArgumentException $e) {
+            throw $e;
+        } catch (\RuntimeException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            return user_facing_error($e, 'No se pudo actualizar la inspección.');
+        }
     }
 
     private function normalizeHistorico(array $data): array
@@ -257,7 +320,19 @@ final class InspeccionService
         }
     }
 
-    private function resolveFolio(?string $input): string
+    private function eliminarFirmaArchivo(mixed $ruta): void
+    {
+        $ruta = trim((string) ($ruta ?? ''));
+        if ($ruta === '') {
+            return;
+        }
+        $path = storage_path('uploads/' . ltrim($ruta, '/'));
+        if (is_file($path)) {
+            @unlink($path);
+        }
+    }
+
+    private function resolveFolio(?string $input, ?int $excludeId = null): string
     {
         $folio = trim((string) ($input ?? ''));
         if ($folio === '') {
@@ -271,7 +346,7 @@ final class InspeccionService
         if (preg_match('/^INS-(\d{4})-(\d+)$/i', $folio, $m)) {
             $folio = sprintf('INS-%s-%04d', $m[1], (int) $m[2]);
         }
-        if ($this->repo->folioExists($folio)) {
+        if ($this->repo->folioExists($folio, $excludeId)) {
             throw new \RuntimeException('El folio "' . $folio . '" ya está registrado. Elija otro.');
         }
 

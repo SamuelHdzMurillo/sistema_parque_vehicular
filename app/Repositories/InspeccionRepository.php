@@ -137,6 +137,60 @@ final class InspeccionRepository extends BaseRepository
         return ((int) ($this->fetchOne($sql, $params)['c'] ?? 0)) > 0;
     }
 
+    public function updateWithItems(int $id, array $data, array $items, array $lucesTablero = []): bool
+    {
+        $this->db->beginTransaction();
+        try {
+            $this->execute(
+                'UPDATE inspecciones SET
+                    folio = ?, vehiculo_id = ?, kilometraje = ?, es_historico = ?, nivel_combustible = ?,
+                    fecha = ?, observaciones_generales = ?, firma_digital = ?, resultado_general = ?
+                 WHERE id = ?',
+                [
+                    $data['folio'],
+                    (int) $data['vehiculo_id'],
+                    (int) $data['kilometraje'],
+                    !empty($data['es_historico']) ? 1 : 0,
+                    $data['nivel_combustible'] ?? null,
+                    $data['fecha'],
+                    $data['observaciones_generales'] ?? null,
+                    $data['firma_digital'] ?? null,
+                    $data['resultado_general'] ?? 'aprobada',
+                    $id,
+                ]
+            );
+
+            $this->execute('DELETE FROM inspeccion_items WHERE inspeccion_id = ?', [$id]);
+            foreach ($items as $item) {
+                $this->execute(
+                    'INSERT INTO inspeccion_items (inspeccion_id, item_codigo, item_nombre, calificacion, observaciones)
+                     VALUES (?, ?, ?, ?, ?)',
+                    [
+                        $id,
+                        $item['item_codigo'],
+                        $item['item_nombre'],
+                        $item['calificacion'],
+                        $item['observaciones'] ?? null,
+                    ]
+                );
+            }
+
+            $this->execute('DELETE FROM inspeccion_luces_tablero WHERE inspeccion_id = ?', [$id]);
+            foreach ($lucesTablero as $luzCodigo) {
+                $this->execute(
+                    'INSERT INTO inspeccion_luces_tablero (inspeccion_id, luz_codigo) VALUES (?, ?)',
+                    [$id, $luzCodigo]
+                );
+            }
+
+            $this->db->commit();
+            return true;
+        } catch (\Throwable $e) {
+            $this->db->rollBack();
+            throw $e;
+        }
+    }
+
     public function createWithItems(array $data, array $items, array $lucesTablero = []): int
     {
         $this->db->beginTransaction();

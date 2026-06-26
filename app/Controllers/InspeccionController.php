@@ -65,6 +65,45 @@ final class InspeccionController extends BaseController
         $this->render('inspecciones.show', $data);
     }
 
+    public function edit(Request $request, string $id): never
+    {
+        $data = $this->inspecciones->getFormDataForEdit((int) $id);
+        if ($data === null) {
+            flash('error', 'Inspección no encontrada.');
+            $this->redirect('inspecciones');
+        }
+        $this->render('inspecciones.edit', $data);
+    }
+
+    public function update(Request $request, string $id): never
+    {
+        $this->validateCsrf($request);
+        $userId = auth_id();
+        if ($userId === null) {
+            $this->redirect('login');
+        }
+
+        try {
+            $data = $request->all();
+            $data['es_historico'] = !empty($data['es_historico']) ? 1 : 0;
+            $error = $this->inspecciones->update((int) $id, $data, $userId);
+            if ($error !== null) {
+                flash('error', $error);
+                $this->redirect('inspecciones/' . $id . '/edit');
+            }
+            flash('success', 'Inspección actualizada correctamente.');
+            $this->redirect('inspecciones/' . $id);
+        } catch (\RuntimeException $e) {
+            $_SESSION['_old'] = $request->all();
+            flash('error', $e->getMessage());
+            $this->redirect('inspecciones/' . $id . '/edit');
+        } catch (\InvalidArgumentException $e) {
+            $_SESSION['_old'] = $request->all();
+            flash('error', $e->getMessage());
+            $this->redirect('inspecciones/' . $id . '/edit');
+        }
+    }
+
     public function eliminar(Request $request, string $id): never
     {
         $this->validateCsrf($request);

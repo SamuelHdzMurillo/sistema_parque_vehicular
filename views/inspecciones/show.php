@@ -22,11 +22,14 @@ $daniosAbiertos = $danios_abiertos ?? [];
             <?php endif; ?>
         </p>
     </div>
-    <?php if (!empty($i['vehiculo_id']) || can('inspecciones.delete')): ?>
+    <?php if (!empty($i['vehiculo_id']) || can('inspecciones.update') || can('inspecciones.delete')): ?>
     <div class="page-actions">
         <?php if (!empty($i['vehiculo_id'])): ?>
         <a href="<?= url('formatos/inspeccion/' . $i['id']) ?>" class="btn btn-secondary" target="_blank">Descargar PDF / Imprimir</a>
         <a href="<?= url('vehiculos/' . $i['vehiculo_id']) ?>" class="btn btn-secondary">Ver expediente</a>
+        <?php endif; ?>
+        <?php if (can('inspecciones.update')): ?>
+        <a href="<?= url('inspecciones/' . $i['id'] . '/edit') ?>" class="btn btn-primary">Editar</a>
         <?php endif; ?>
         <?php if (can('inspecciones.delete')): ?>
         <form action="<?= url('inspecciones/' . $i['id'] . '/eliminar') ?>" method="post" class="inline-form">

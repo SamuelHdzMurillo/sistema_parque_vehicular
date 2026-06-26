@@ -24,7 +24,12 @@
                     <td><?= number_format((int) ($i['kilometraje'] ?? 0)) ?></td>
                     <td><?= e(combustible_fraccion_etiqueta($i['nivel_combustible'] ?? null)) ?></td>
                     <td><span class="badge <?= ($i['resultado_general'] ?? '') === 'aprobada' ? 'badge-success' : (($i['resultado_general'] ?? '') === 'rechazada' ? 'badge-danger' : 'badge-warning') ?>"><?= e(ucfirst($i['resultado_general'] ?? '')) ?></span></td>
-                    <td><a href="<?= url('inspecciones/' . $i['id']) ?>" class="btn btn-sm btn-info">Ver</a></td>
+                    <td>
+                        <a href="<?= url('inspecciones/' . $i['id']) ?>" class="btn btn-sm btn-info">Ver</a>
+                        <?php if (can('inspecciones.update')): ?>
+                        <a href="<?= url('inspecciones/' . $i['id'] . '/edit') ?>" class="btn btn-sm btn-secondary">Editar</a>
+                        <?php endif; ?>
+                    </td>
                 </tr>
                 <?php endforeach; endif; ?>
             </tbody>

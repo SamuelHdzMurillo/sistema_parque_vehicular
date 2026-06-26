@@ -88,6 +88,8 @@ $router->get('inspecciones', [InspeccionController::class, 'index'], $perm('insp
 $router->get('inspecciones/create', [InspeccionController::class, 'create'], $perm('inspecciones.create'));
 $router->post('inspecciones', [InspeccionController::class, 'store'], $perm('inspecciones.create'));
 $router->get('inspecciones/{id}', [InspeccionController::class, 'show'], $perm('inspecciones.read'));
+$router->get('inspecciones/{id}/edit', [InspeccionController::class, 'edit'], $perm('inspecciones.update'));
+$router->post('inspecciones/{id}', [InspeccionController::class, 'update'], $perm('inspecciones.update'));
 $router->post('inspecciones/{id}/eliminar', [InspeccionController::class, 'eliminar'], $perm('inspecciones.delete'));
 
 // ——— Daños ———
