@@ -35,6 +35,20 @@ if ($roles === []) {
                 <?php else: ?>
                 <p class="roles-guia-item-text text-muted">Sin descripción disponible.</p>
                 <?php endif; ?>
+                <?php if (!empty($r['permisos_resumen'])): ?>
+                <p class="roles-guia-permisos-resumen"><?= e((string) $r['permisos_resumen']) ?></p>
+                <?php endif; ?>
+                <?php if (!empty($r['permisos_grupos'])): ?>
+                <details class="roles-guia-permisos">
+                    <summary>Ver permisos de este rol</summary>
+                    <div class="roles-guia-permisos-body">
+                        <?php App\Core\View::component('usuario-permisos', [
+                            'permisos_grupos' => $r['permisos_grupos'],
+                            'compacto' => true,
+                        ]); ?>
+                    </div>
+                </details>
+                <?php endif; ?>
             </article>
             <?php endforeach; ?>
         </div>

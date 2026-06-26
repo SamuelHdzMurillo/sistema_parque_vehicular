@@ -1566,6 +1566,217 @@ function rol_nivel_label(string $slug): string
     };
 }
 
+/** Nombre legible del módulo de un permiso. */
+function permiso_modulo_label(string $modulo): string
+{
+    return match ($modulo) {
+        'usuarios' => 'Usuarios del sistema',
+        'vehiculos' => 'Vehículos',
+        'expediente' => 'Expediente digital',
+        'comisiones' => 'Comisiones',
+        'inspecciones' => 'Inspecciones',
+        'danios' => 'Daños',
+        'mantenimiento' => 'Mantenimiento',
+        'proveedores' => 'Proveedores',
+        'catalogos' => 'Catálogos',
+        'combustible' => 'Combustible',
+        'herramientas' => 'Herramientas',
+        'documentos' => 'Documentos',
+        'alertas' => 'Alertas',
+        'dashboard' => 'Panel principal',
+        'reportes' => 'Reportes',
+        'auditoria' => 'Auditoría',
+        default => ucfirst(str_replace('_', ' ', $modulo)),
+    };
+}
+
+/** Verbo legible de la acción de un permiso. */
+function permiso_accion_label(string $accion): string
+{
+    return match ($accion) {
+        'read' => 'Consultar',
+        'create' => 'Registrar',
+        'update' => 'Modificar',
+        'delete' => 'Eliminar',
+        'authorize' => 'Autorizar',
+        'config' => 'Configurar',
+        'export' => 'Exportar',
+        default => ucfirst($accion),
+    };
+}
+
+/** Etiquetas fijas en español (no dependen de la BD). */
+function permiso_etiquetas(): array
+{
+    return [
+        'usuarios.read' => 'Ver usuarios del sistema',
+        'usuarios.create' => 'Registrar nuevos usuarios',
+        'usuarios.update' => 'Editar usuarios existentes',
+        'usuarios.delete' => 'Eliminar usuarios',
+        'vehiculos.read' => 'Ver vehículos',
+        'vehiculos.create' => 'Registrar vehículos',
+        'vehiculos.update' => 'Editar vehículos',
+        'vehiculos.delete' => 'Dar de baja vehículos',
+        'expediente.read' => 'Consultar expediente digital',
+        'comisiones.read' => 'Ver comisiones',
+        'comisiones.create' => 'Registrar comisiones',
+        'comisiones.update' => 'Editar comisiones',
+        'comisiones.delete' => 'Cancelar comisiones',
+        'comisiones.authorize' => 'Autorizar comisiones',
+        'inspecciones.read' => 'Ver inspecciones',
+        'inspecciones.create' => 'Registrar inspecciones',
+        'inspecciones.update' => 'Editar inspecciones',
+        'inspecciones.delete' => 'Eliminar inspecciones',
+        'danios.read' => 'Ver reportes de daños',
+        'danios.create' => 'Reportar daños',
+        'danios.update' => 'Actualizar daños',
+        'mantenimiento.read' => 'Ver mantenimientos',
+        'mantenimiento.create' => 'Registrar mantenimientos',
+        'mantenimiento.update' => 'Editar mantenimientos',
+        'mantenimiento.authorize' => 'Autorizar mantenimientos',
+        'mantenimiento.delete' => 'Eliminar mantenimientos',
+        'proveedores.read' => 'Ver proveedores',
+        'proveedores.create' => 'Registrar proveedores',
+        'proveedores.update' => 'Editar proveedores',
+        'catalogos.read' => 'Ver catálogos (planteles, áreas, conductores y servicios)',
+        'catalogos.create' => 'Dar de alta en catálogos',
+        'catalogos.update' => 'Editar catálogos',
+        'combustible.read' => 'Ver cargas de combustible',
+        'combustible.create' => 'Registrar cargas de combustible',
+        'combustible.update' => 'Editar cargas de combustible',
+        'herramientas.read' => 'Ver herramientas del vehículo',
+        'herramientas.update' => 'Actualizar herramientas',
+        'documentos.read' => 'Ver documentos',
+        'documentos.create' => 'Subir documentos',
+        'documentos.update' => 'Actualizar documentos',
+        'alertas.read' => 'Ver alertas',
+        'alertas.config' => 'Configurar alertas',
+        'dashboard.read' => 'Ver panel principal',
+        'reportes.export' => 'Exportar reportes',
+        'auditoria.read' => 'Consultar auditoría del sistema',
+    ];
+}
+
+/** Detecta textos dañados por codificación incorrecta en la BD. */
+function permiso_texto_sospechoso(string $texto): bool
+{
+    if ($texto === '') {
+        return true;
+    }
+
+    if (str_contains($texto, '??')) {
+        return true;
+    }
+
+    return (bool) preg_match('/(?:Ã.|�|ï¿½)/u', $texto);
+}
+
+/** @param array<string, mixed> $perm */
+function permiso_enriquecer(array $perm): array
+{
+    $perm['texto'] = permiso_texto_amigable($perm);
+
+    return $perm;
+}
+
+/** @param list<array<string, mixed>> $permisos */
+function permiso_enriquecer_lista(array $permisos): array
+{
+    return array_map('permiso_enriquecer', $permisos);
+}
+
+/** Texto claro para mostrar a usuarios no técnicos. */
+function permiso_texto_amigable(array $perm): string
+{
+    $slug = (string) ($perm['slug'] ?? '');
+    $etiquetas = permiso_etiquetas();
+
+    if ($slug !== '' && isset($etiquetas[$slug])) {
+        return $etiquetas[$slug];
+    }
+
+    $descripcion = trim((string) ($perm['descripcion'] ?? ''));
+    if ($descripcion !== '' && !permiso_texto_sospechoso($descripcion)) {
+        return $descripcion;
+    }
+
+    $accion = permiso_accion_label((string) ($perm['accion'] ?? ''));
+    $modulo = permiso_modulo_label((string) ($perm['modulo'] ?? ''));
+
+    return $accion . ' — ' . $modulo;
+}
+
+/**
+ * Agrupa permisos por módulo para mostrar en listas.
+ *
+ * @param list<array<string, mixed>> $permisos
+ * @return list<array{modulo: string, label: string, permisos: list<array<string, mixed>>}>
+ */
+function permiso_agrupar_por_modulo(array $permisos): array
+{
+    $grupos = [];
+
+    foreach ($permisos as $perm) {
+        $modulo = (string) ($perm['modulo'] ?? 'otro');
+        if (!isset($grupos[$modulo])) {
+            $grupos[$modulo] = [
+                'modulo' => $modulo,
+                'label' => permiso_modulo_label($modulo),
+                'permisos' => [],
+            ];
+        }
+        $grupos[$modulo]['permisos'][] = permiso_enriquecer($perm);
+    }
+
+    uasort($grupos, static fn (array $a, array $b): int => strcasecmp($a['label'], $b['label']));
+
+    return array_values($grupos);
+}
+
+/** @param array<int, list<array<string, mixed>>> $permisosPorRol */
+function permiso_json_por_rol(array $permisosPorRol): array
+{
+    $json = [];
+    foreach ($permisosPorRol as $roleId => $permisos) {
+        $json[$roleId] = permiso_agrupar_por_modulo($permisos);
+    }
+
+    return $json;
+}
+
+/** Resumen corto del alcance de un rol. */
+function permiso_resumen_rol(array $permisos): string
+{
+    $total = count($permisos);
+    if ($total === 0) {
+        return 'Sin permisos asignados';
+    }
+
+    $modulos = [];
+    $soloConsulta = true;
+
+    foreach ($permisos as $perm) {
+        $modulos[(string) ($perm['modulo'] ?? '')] = true;
+        if (($perm['accion'] ?? '') !== 'read') {
+            $soloConsulta = false;
+        }
+    }
+
+    $modulosCount = count($modulos);
+    if ($soloConsulta && $total <= 3) {
+        return 'Solo puede consultar información';
+    }
+
+    return sprintf(
+        '%d acción%s permitida%s en %d área%s del sistema',
+        $total,
+        $total === 1 ? '' : 'es',
+        $total === 1 ? '' : 's',
+        $modulosCount,
+        $modulosCount === 1 ? '' : 's'
+    );
+}
+
 /** @return array<string, string> */
 function auditoria_modulos(): array
 {

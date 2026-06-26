@@ -138,7 +138,7 @@ final class UserRepository extends BaseRepository
         $params[] = $perPage;
         $params[] = $offset;
         $rows = $this->fetchAll(
-            "SELECT u.id, u.nombre, u.apellido_paterno, u.email, u.activo,
+            "SELECT u.id, u.nombre, u.apellido_paterno, u.email, u.activo, u.role_id,
                     r.slug AS role_slug, r.nombre AS rol, r.descripcion AS rol_descripcion, a.nombre AS area
              FROM users u
              JOIN roles r ON r.id = u.role_id
@@ -147,6 +147,49 @@ final class UserRepository extends BaseRepository
             $params
         );
         return ['data' => $rows, 'total' => $total, 'page' => $page, 'per_page' => $perPage];
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function getAllPermissions(): array
+    {
+        return $this->fetchAll(
+            'SELECT id, slug, modulo, accion, descripcion
+             FROM permissions
+             ORDER BY modulo ASC, accion ASC, slug ASC'
+        );
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function getPermissionsByRoleDetailed(int $roleId): array
+    {
+        return $this->fetchAll(
+            'SELECT p.id, p.slug, p.modulo, p.accion, p.descripcion
+             FROM permissions p
+             JOIN role_permissions rp ON rp.permission_id = p.id
+             WHERE rp.role_id = ?
+             ORDER BY p.modulo ASC, p.accion ASC, p.slug ASC',
+            [$roleId]
+        );
+    }
+
+    /** @return array<int, list<array<string, mixed>>> */
+    public function getPermissionsGroupedByRole(): array
+    {
+        $rows = $this->fetchAll(
+            'SELECT rp.role_id, p.id, p.slug, p.modulo, p.accion, p.descripcion
+             FROM role_permissions rp
+             JOIN permissions p ON p.id = rp.permission_id
+             ORDER BY rp.role_id ASC, p.modulo ASC, p.accion ASC, p.slug ASC'
+        );
+
+        $map = [];
+        foreach ($rows as $row) {
+            $roleId = (int) $row['role_id'];
+            unset($row['role_id']);
+            $map[$roleId][] = $row;
+        }
+
+        return $map;
     }
 
     public function getActiveSessions(int $userId): array

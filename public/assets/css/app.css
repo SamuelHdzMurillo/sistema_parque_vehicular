@@ -1957,6 +1957,235 @@ details[open] > .servicios-picker-item--add .servicios-picker-chip--add {
 [data-theme="dark"] .rol-ayuda-inner--responsable_vehiculo { background: rgba(240, 173, 78, .12); }
 [data-theme="dark"] .rol-ayuda-inner--consulta { background: var(--bg-input); }
 
+/* ——— Permisos de usuario (legible) ——— */
+.usuarios-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 0 1.25rem 1.25rem;
+}
+
+.usuario-card {
+    margin: 0;
+    overflow: hidden;
+}
+
+.usuario-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.15rem 1.25rem .75rem;
+}
+
+.usuario-card-nombre {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.usuario-card-meta {
+    margin: .25rem 0 0;
+    font-size: .82rem;
+    color: var(--text-muted);
+}
+
+.usuario-card-resumen {
+    margin: .45rem 0 0;
+    font-size: .8rem;
+    color: var(--text-secondary);
+}
+
+.usuario-card-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .35rem;
+    justify-content: flex-end;
+}
+
+.usuario-card-rol-desc {
+    margin: 0;
+    padding: 0 1.25rem .85rem;
+    font-size: .82rem;
+    line-height: 1.55;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.usuario-permisos-details {
+    border-top: 1px solid var(--border-color);
+}
+
+.usuario-permisos-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    padding: .85rem 1.25rem;
+    cursor: pointer;
+    font-size: .875rem;
+    font-weight: 600;
+    color: var(--color-primary);
+    list-style: none;
+}
+
+.usuario-permisos-summary::-webkit-details-marker { display: none; }
+
+.usuario-permisos-count {
+    font-size: .75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    background: var(--bg-table-stripe);
+    padding: .2rem .55rem;
+    border-radius: 999px;
+}
+
+.usuario-permisos-details-body {
+    padding: 0 1.25rem 1.15rem;
+    border-top: 1px dashed var(--border-color);
+    background: var(--bg-table-stripe);
+}
+
+.usuario-card-actions {
+    padding: .75rem 1.25rem 1rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.usuario-permisos-intro {
+    margin: 0 0 .85rem;
+    font-size: .82rem;
+    color: var(--text-secondary);
+}
+
+.usuario-permisos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: .85rem;
+}
+
+.usuario-permisos-modulo {
+    padding: .75rem .85rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+}
+
+.usuario-permisos-modulo-title {
+    margin: 0 0 .55rem;
+    font-size: .78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--text-primary);
+}
+
+.usuario-permisos-lista {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: .35rem;
+}
+
+.usuario-permisos-item {
+    display: flex;
+    align-items: flex-start;
+    gap: .45rem;
+    font-size: .8rem;
+    line-height: 1.45;
+    color: var(--text-secondary);
+    word-break: break-word;
+}
+
+.usuario-permisos-item > span:last-child {
+    flex: 1;
+    min-width: 0;
+}
+
+.usuario-permisos-check {
+    flex-shrink: 0;
+    width: 1.1rem;
+    height: 1.1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(118, 188, 67, .18);
+    color: var(--color-accent);
+    font-size: .65rem;
+    font-weight: 700;
+    margin-top: .1rem;
+}
+
+.usuario-permisos--compacto .usuario-permisos-intro {
+    display: none;
+}
+
+.usuario-permisos--compacto .usuario-permisos-grid {
+    gap: .65rem;
+}
+
+.roles-guia-permisos-resumen {
+    margin: .65rem 0 0;
+    font-size: .78rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.roles-guia-permisos {
+    margin-top: .75rem;
+}
+
+.roles-guia-permisos summary {
+    cursor: pointer;
+    font-size: .78rem;
+    font-weight: 600;
+    color: var(--color-primary);
+}
+
+.roles-guia-permisos-body {
+    margin-top: .65rem;
+}
+
+.rol-permisos-preview {
+    margin-top: 1rem;
+    padding: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    background: var(--bg-table-stripe);
+}
+
+.rol-permisos-preview-kicker {
+    display: block;
+    font-size: .72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--text-muted);
+}
+
+.rol-permisos-preview-resumen {
+    margin: .35rem 0 .85rem;
+    font-size: .82rem;
+    color: var(--text-secondary);
+}
+
+@media (max-width: 768px) {
+    .usuario-card-header {
+        flex-direction: column;
+    }
+
+    .usuario-card-badges {
+        justify-content: flex-start;
+    }
+
+    .usuario-permisos-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 .badge[title] {
     cursor: help;
 }

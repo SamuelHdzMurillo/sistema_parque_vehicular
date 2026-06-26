@@ -42,6 +42,10 @@ $areas = $areas ?? [];
                     <?php endforeach; ?>
                 </select>
                 <?php App\Core\View::component('rol-ayuda-select'); ?>
+                <?php App\Core\View::component('rol-permisos-preview', [
+                    'permisos_por_rol' => $permisos_por_rol ?? [],
+                    'role_id_inicial' => (int) old('role_id', 0),
+                ]); ?>
             </div>
             <div class="form-group">
                 <label class="form-label" for="area_id">Área</label>

@@ -44,6 +44,10 @@ $u = $usuario;
                     <?php endforeach; ?>
                 </select>
                 <?php App\Core\View::component('rol-ayuda-select'); ?>
+                <?php App\Core\View::component('rol-permisos-preview', [
+                    'permisos_por_rol' => $permisos_por_rol ?? [],
+                    'role_id_inicial' => (int) ($u['role_id'] ?? 0),
+                ]); ?>
             </div>
             <div class="form-group">
                 <label class="form-label" for="area_id">Área</label>
@@ -79,3 +83,17 @@ $u = $usuario;
         </div>
     </form>
 </div>
+
+<?php if (!empty($u['permisos_grupos'])): ?>
+<div class="card mt-3">
+    <div class="card-header">
+        <h3 class="mb-0">Permisos actuales de este usuario</h3>
+    </div>
+    <div class="card-body">
+        <p class="text-muted mb-3">
+            Según su rol <strong><?= e($u['role_nombre'] ?? '') ?></strong>, esta persona puede:
+        </p>
+        <?php App\Core\View::component('usuario-permisos', ['permisos_grupos' => $u['permisos_grupos']]); ?>
+    </div>
+</div>
+<?php endif; ?>

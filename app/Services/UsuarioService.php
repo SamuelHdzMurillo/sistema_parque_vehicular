@@ -16,22 +16,65 @@ final class UsuarioService
 
     public function paginate(int $page = 1, ?string $search = null): array
     {
-        return array_merge(
-            $this->users->paginate($page, 15, $search),
-            ['roles' => $this->users->getRoles()]
-        );
+        $result = $this->users->paginate($page, 15, $search);
+        $permisosPorRol = $this->users->getPermissionsGroupedByRole();
+        $roles = $this->users->getRoles();
+
+        foreach ($result['data'] as &$usuario) {
+            $roleId = (int) ($usuario['role_id'] ?? 0);
+            $permisos = $permisosPorRol[$roleId] ?? [];
+            $usuario['permisos'] = permiso_enriquecer_lista($permisos);
+            $usuario['permisos_grupos'] = permiso_agrupar_por_modulo($permisos);
+            $usuario['permisos_resumen'] = permiso_resumen_rol($permisos);
+        }
+        unset($usuario);
+
+        foreach ($roles as &$rol) {
+            $roleId = (int) ($rol['id'] ?? 0);
+            $permisos = $permisosPorRol[$roleId] ?? [];
+            $rol['permisos'] = permiso_enriquecer_lista($permisos);
+            $rol['permisos_grupos'] = permiso_agrupar_por_modulo($permisos);
+            $rol['permisos_resumen'] = permiso_resumen_rol($permisos);
+        }
+        unset($rol);
+
+        return array_merge($result, [
+            'roles' => $roles,
+            'permisos_por_rol' => $permisosPorRol,
+        ]);
     }
 
     public function find(int $id): ?array
     {
-        return $this->users->findById($id);
+        $usuario = $this->users->findById($id);
+        if ($usuario === null) {
+            return null;
+        }
+
+        $permisos = $this->users->getPermissionsByRoleDetailed((int) $usuario['role_id']);
+        $usuario['permisos'] = permiso_enriquecer_lista($permisos);
+        $usuario['permisos_grupos'] = permiso_agrupar_por_modulo($permisos);
+        $usuario['permisos_resumen'] = permiso_resumen_rol($permisos);
+
+        return $usuario;
     }
 
     public function getFormData(): array
     {
+        $roles = $this->users->getRoles();
+        $permisosPorRol = $this->users->getPermissionsGroupedByRole();
+
+        foreach ($roles as &$rol) {
+            $roleId = (int) ($rol['id'] ?? 0);
+            $permisos = $permisosPorRol[$roleId] ?? [];
+            $rol['permisos_grupos'] = permiso_agrupar_por_modulo($permisos);
+        }
+        unset($rol);
+
         return [
-            'roles' => $this->users->getRoles(),
+            'roles' => $roles,
             'areas' => $this->users->getAreas(),
+            'permisos_por_rol' => $permisosPorRol,
         ];
     }
 
