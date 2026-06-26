@@ -62,4 +62,52 @@ final class DocumentoController extends BaseController
         }
         Response::download($file['path'], $file['filename'], $file['content_type']);
     }
+
+    public function edit(Request $request, string $id): never
+    {
+        $data = $this->documentos->getEditFormData((int) $id);
+        if ($data === null) {
+            flash('error', 'Documento no encontrado.');
+            $this->redirect('documentos');
+        }
+        $this->render('documentos.edit', $data);
+    }
+
+    public function update(Request $request, string $id): never
+    {
+        $this->validateCsrf($request);
+        $userId = auth_id();
+        if ($userId === null) {
+            $this->redirect('login');
+        }
+
+        $docId = (int) $id;
+        try {
+            $result = $this->documentos->update($docId, $request->all(), $request->file('archivo'), $userId);
+            if ($result === false) {
+                flash('error', 'No se pudo actualizar el documento.');
+                $this->redirect('documentos/' . $docId . '/edit');
+            }
+            if (is_int($result)) {
+                flash('success', 'Documento actualizado con nueva versión del archivo.');
+            } else {
+                flash('success', 'Documento actualizado correctamente.');
+            }
+        } catch (RuntimeException $e) {
+            flash('error', $e->getMessage());
+            $this->redirect('documentos/' . $docId . '/edit');
+        }
+        $this->redirect('documentos');
+    }
+
+    public function destroy(Request $request, string $id): never
+    {
+        $this->validateCsrf($request);
+        if (!$this->documentos->delete((int) $id)) {
+            flash('error', 'No se pudo eliminar el documento.');
+            $this->redirect('documentos');
+        }
+        flash('success', 'Documento eliminado correctamente.');
+        $this->redirect('documentos');
+    }
 }

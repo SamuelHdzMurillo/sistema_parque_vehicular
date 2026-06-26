@@ -371,18 +371,34 @@ $fotoUrl = !empty($fotoRuta) ? url('storage/uploads/' . ltrim((string) $fotoRuta
             <?php endif; ?>
             <div class="table-responsive">
                 <table class="table">
-                    <thead><tr><th>Tipo</th><th>Título</th><th>No. documento</th><th>Vencimiento</th><th>Versión</th></tr></thead>
+                    <thead><tr><th>Tipo</th><th>Título</th><th>No. documento</th><th>Vencimiento</th><th>Versión</th><th></th></tr></thead>
                     <tbody>
                     <?php if (empty($documentos)): ?>
-                    <tr><td colspan="5" class="text-center text-muted">Sin documentos</td></tr>
+                    <tr><td colspan="6" class="text-center text-muted">Sin documentos</td></tr>
                     <?php else: foreach ($documentos as $doc): ?>
+                    <?php
+                    $docArchivoUrl = !empty($doc['archivo_ruta'])
+                        ? url('storage/uploads/' . ltrim((string) $doc['archivo_ruta'], '/'))
+                        : '';
+                    ?>
                     <tr>
                         <td><?= e(ucfirst(str_replace('_', ' ', $doc['tipo']))) ?></td>
                         <td><?= e($doc['titulo']) ?></td>
                         <td><?= e($doc['numero_documento'] ?? '—') ?></td>
                         <td><?= format_date($doc['fecha_vencimiento']) ?></td>
                         <td><?= e((string) ($doc['version'] ?? '1')) ?></td>
-                    </tr>
+                        <td class="table-actions">
+                            <?php if ($docArchivoUrl !== ''): ?>
+                            <a href="<?= e($docArchivoUrl) ?>" class="btn btn-sm btn-info" target="_blank" rel="noopener">Ver</a>
+                            <?php endif; ?>
+                            <?php if (can('documentos.update')): ?>
+                            <a href="<?= url('documentos/' . $doc['id'] . '/edit') ?>" class="btn btn-sm btn-secondary">Actualizar</a>
+                            <form action="<?= url('documentos/' . $doc['id'] . '/eliminar') ?>" method="post" class="inline-form">
+                                <?= csrf_field() ?>
+                                <button type="submit" class="btn btn-sm btn-danger" data-confirm="¿Confirma eliminar el documento «<?= e($doc['titulo']) ?>»?">Eliminar</button>
+                            </form>
+                            <?php endif; ?>
+                        </td>
                     <?php endforeach; endif; ?>
                     </tbody>
                 </table>

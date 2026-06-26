@@ -285,7 +285,7 @@ final class VehiculoRepository extends BaseRepository
             [$id]
         );
         $vehiculo['documentos'] = $this->fetchAll(
-            'SELECT id, tipo, titulo, numero_documento, fecha_vencimiento, version, activo
+            'SELECT id, tipo, titulo, numero_documento, fecha_vencimiento, version, activo, archivo_ruta
              FROM documentos WHERE vehiculo_id = ? AND activo = 1 ORDER BY fecha_vencimiento ASC',
             [$id]
         );

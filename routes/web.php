@@ -131,6 +131,9 @@ $router->post('combustible', [CombustibleController::class, 'store'], $perm('com
 $router->get('documentos', [DocumentoController::class, 'index'], $perm('documentos.read'));
 $router->get('documentos/create', [DocumentoController::class, 'create'], $perm('documentos.create'));
 $router->post('documentos', [DocumentoController::class, 'store'], $perm('documentos.create'));
+$router->get('documentos/{id}/edit', [DocumentoController::class, 'edit'], $perm('documentos.update'));
+$router->post('documentos/{id}', [DocumentoController::class, 'update'], $perm('documentos.update'));
+$router->post('documentos/{id}/eliminar', [DocumentoController::class, 'destroy'], $perm('documentos.update'));
 $router->get('documentos/{id}/download', [DocumentoController::class, 'download'], $perm('documentos.read'));
 
 // ——— Herramientas (por vehículo) ———

@@ -96,6 +96,13 @@ $vehiculos = $vehiculos ?? [];
                             <?php else: ?>
                             <span class="text-muted">Sin archivo</span>
                             <?php endif; ?>
+                            <?php if (can('documentos.update')): ?>
+                            <a href="<?= url('documentos/' . $d['id'] . '/edit') ?>" class="btn btn-sm btn-secondary">Actualizar</a>
+                            <form action="<?= url('documentos/' . $d['id'] . '/eliminar') ?>" method="post" class="inline-form">
+                                <?= csrf_field() ?>
+                                <button type="submit" class="btn btn-sm btn-danger" data-confirm="¿Confirma eliminar el documento «<?= e($d['titulo']) ?>»?">Eliminar</button>
+                            </form>
+                            <?php endif; ?>
                         </td>
                     </tr>
                     <?php endforeach; ?>

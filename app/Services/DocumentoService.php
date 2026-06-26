@@ -6,11 +6,13 @@ namespace App\Services;
 
 use App\Helpers\FileUploader;
 use App\Repositories\BaseRepository;
+use App\Repositories\DocumentoRepository;
 use App\Services\AuditService;
 
 final class DocumentoService extends BaseRepository
 {
     public function __construct(
+        private readonly DocumentoRepository $repo = new DocumentoRepository(),
         private readonly \App\Repositories\CatalogoRepository $catalogos = new \App\Repositories\CatalogoRepository(),
     ) {
         parent::__construct();
@@ -96,10 +98,12 @@ final class DocumentoService extends BaseRepository
 
     public function find(int $id): ?array
     {
-        return $this->fetchOne(
-            'SELECT d.*, v.numero_economico FROM documentos d LEFT JOIN vehiculos v ON v.id = d.vehiculo_id WHERE d.id = ? AND d.activo = 1',
-            [$id]
-        );
+        $doc = $this->repo->findById($id);
+        if ($doc === null || (int) ($doc['activo'] ?? 0) !== 1) {
+            return null;
+        }
+
+        return $doc;
     }
 
     public function getFormData(): array
@@ -107,6 +111,16 @@ final class DocumentoService extends BaseRepository
         return [
             'vehiculos' => $this->catalogos->getVehiculosCatalogo(),
         ];
+    }
+
+    public function getEditFormData(int $id): ?array
+    {
+        $documento = $this->find($id);
+        if ($documento === null) {
+            return null;
+        }
+
+        return array_merge($this->getFormData(), ['documento' => $documento]);
     }
 
     public function create(array $data, array $file, int $userId): int
@@ -147,5 +161,66 @@ final class DocumentoService extends BaseRepository
             'filename' => basename($doc['archivo_ruta']),
             'content_type' => $doc['archivo_tipo'],
         ];
+    }
+
+    /** @return int|bool ID del nuevo documento si se subió archivo; true si solo metadatos; false si falló */
+    public function update(int $id, array $data, ?array $file, int $userId): int|bool
+    {
+        $doc = $this->find($id);
+        if ($doc === null) {
+            return false;
+        }
+
+        $payload = [
+            'titulo' => trim((string) ($data['titulo'] ?? '')),
+            'numero_documento' => $data['numero_documento'] ?? null,
+            'fecha_emision' => $data['fecha_emision'] ?? null,
+            'fecha_vencimiento' => $data['fecha_vencimiento'] ?? null,
+        ];
+
+        if ($payload['titulo'] === '') {
+            throw new \RuntimeException('El título es obligatorio.');
+        }
+
+        $hasFile = $file !== null && (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE;
+        if ($hasFile) {
+            $ruta = FileUploader::uploadDocument($file, 'documentos');
+            if ($ruta === null) {
+                throw new \RuntimeException('No se pudo subir el archivo.');
+            }
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $mime = finfo_file($finfo, storage_path('uploads/' . $ruta));
+            finfo_close($finfo);
+
+            $newId = $this->repo->createVersion($id, array_merge($payload, [
+                'archivo_ruta' => $ruta,
+                'archivo_tipo' => $mime ?: 'application/octet-stream',
+                'uploaded_by' => $userId,
+            ]));
+            AuditService::log('UPDATE', 'documentos', $newId, $doc, array_merge($payload, ['reemplaza_id' => $id]));
+            return $newId;
+        }
+
+        if (!$this->repo->update($id, $payload)) {
+            return false;
+        }
+
+        AuditService::log('UPDATE', 'documentos', $id, $doc, $payload);
+        return true;
+    }
+
+    public function delete(int $id): bool
+    {
+        $doc = $this->find($id);
+        if ($doc === null) {
+            return false;
+        }
+
+        if (!$this->repo->softDelete($id)) {
+            return false;
+        }
+
+        AuditService::log('DELETE', 'documentos', $id, $doc, null);
+        return true;
     }
 }
