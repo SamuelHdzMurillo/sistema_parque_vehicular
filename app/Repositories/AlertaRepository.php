@@ -126,6 +126,10 @@ final class AlertaRepository extends BaseRepository
             $nivel = $this->calcularNivelDocumento($diasRestantes, $config);
 
             if ($nivel === null) {
+                $this->dismissActivasPorDocumento(
+                    (int) $doc['id'],
+                    'Documento fuera del umbral de aviso.'
+                );
                 continue;
             }
 
@@ -267,6 +271,16 @@ final class AlertaRepository extends BaseRepository
             'UPDATE alertas SET atendida = 1, comentario_atencion = ?, updated_at = NOW()
              WHERE vehiculo_id = ? AND tipo = ? AND atendida = 0 AND documento_id IS NULL',
             [$comentario, $vehiculoId, $tipoServicio]
+        );
+    }
+
+    /** Cierra alertas de documento que ya no aplican (renovado o fuera de umbral). */
+    public function dismissActivasPorDocumento(int $documentoId, string $comentario = ''): bool
+    {
+        return $this->execute(
+            'UPDATE alertas SET atendida = 1, comentario_atencion = ?, updated_at = NOW()
+             WHERE documento_id = ? AND atendida = 0',
+            [$comentario, $documentoId]
         );
     }
 

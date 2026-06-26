@@ -84,8 +84,6 @@ final class AlertaService
         $this->sincronizar();
 
         $perPage = 10;
-        $serviciosKm = $this->repo->getServiciosKm();
-        $grupos = [];
         $filtroVehiculoId = $vehiculoId !== null && $vehiculoId > 0 ? $vehiculoId : null;
 
         if ($filtroVehiculoId !== null) {
@@ -99,59 +97,14 @@ final class AlertaService
             $total = $vehiculosResult['total'];
         }
 
-        foreach ($vehiculosData as $vehiculo) {
-            $vehiculoRowId = (int) $vehiculo['id'];
-            $filas = [];
-
-            foreach ($serviciosKm as $cfg) {
-                $tipo = (string) $cfg['tipo'];
-                $fila = $this->buildFilaMantenimiento($vehiculo, $tipo, $cfg);
-                if (!empty($fila['sin_alta'])) {
-                    continue;
-                }
-                $filas[] = $fila;
-            }
-
-            foreach ($this->documentos->getActivosConVencimientoPorVehiculo($vehiculoRowId) as $documento) {
-                $filas[] = $this->buildFilaDocumentoDesdeRegistro($vehiculo, $documento);
-            }
-
-            if ($filas === []) {
-                continue;
-            }
-
-            $nivelMax = alerta_nivel_max_filas($filas);
-
-            if ($soloConAvisos && $nivelMax === null) {
-                continue;
-            }
-
-            alerta_ordenar_filas($filas);
-
-            $grupos[] = [
-                'vehiculo_id' => $vehiculoRowId,
-                'numero_economico' => (string) $vehiculo['numero_economico'],
-                'kilometraje_actual' => (int) ($vehiculo['kilometraje_actual'] ?? 0),
-                'nivel_max' => $nivelMax,
-                'alertas' => $filas,
-            ];
-        }
-
-        usort($grupos, static function (array $a, array $b): int {
-            $cmp = alerta_nivel_peso($b['nivel_max']) <=> alerta_nivel_peso($a['nivel_max']);
-            if ($cmp !== 0) {
-                return $cmp;
-            }
-
-            return strcasecmp($a['numero_economico'], $b['numero_economico']);
-        });
+        $grupos = $this->buildGruposFromVehiculos($vehiculosData, $soloConAvisos);
 
         return [
             'grupos' => $grupos,
             'page' => $page,
             'total' => $total,
             'per_page' => $perPage,
-            'counts' => $this->repo->getDashboardCounts(),
+            'counts' => $this->getDashboardCounts(),
             'solo_pendientes' => $soloConAvisos,
             'modo' => 'matriz',
             'vehiculo_id' => $filtroVehiculoId,
@@ -171,7 +124,70 @@ final class AlertaService
 
     public function getDashboardCounts(): array
     {
-        return $this->repo->getDashboardCounts();
+        return $this->getAvisosDashboard()['counts'];
+    }
+
+    /**
+     * Grupos por vehículo con avisos activos (vista «Solo con avisos» de alertas).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function getGruposConAvisos(): array
+    {
+        $this->sincronizar();
+        $vehiculos = $this->vehiculos->paginate(1, 1000)['data'];
+
+        return $this->buildGruposFromVehiculos($vehiculos, true);
+    }
+
+    /**
+     * Avisos calculados en vivo (misma lógica que la pantalla de alertas).
+     *
+     * @return array{
+     *     counts: array{verde: int, amarillo: int, rojo: int, total: int},
+     *     grupos: list<array<string, mixed>>,
+     *     total_grupos: int,
+     *     mantenimientos_por_vencer: list<array<string, mixed>>
+     * }
+     */
+    public function getAvisosDashboard(int $limiteGrupos = 20): array
+    {
+        $this->sincronizar();
+
+        $avisos = $this->collectAvisosActivos();
+        alerta_ordenar_filas($avisos);
+
+        $counts = ['verde' => 0, 'amarillo' => 0, 'rojo' => 0, 'total' => 0];
+        foreach ($avisos as $aviso) {
+            $nivel = isset($aviso['nivel']) ? (string) $aviso['nivel'] : '';
+            if ($nivel !== '' && isset($counts[$nivel])) {
+                $counts[$nivel]++;
+                $counts['total']++;
+            }
+        }
+
+        $vehiculos = $this->vehiculos->paginate(1, 1000)['data'];
+        $grupos = alerta_filtrar_grupos_dashboard(
+            $this->buildGruposFromVehiculos($vehiculos, false)
+        );
+
+        $mantenimientosPorVencer = [];
+        foreach ($grupos as $grupo) {
+            $kmActual = (int) ($grupo['kilometraje_actual'] ?? 0);
+            foreach ($grupo['alertas'] ?? [] as $fila) {
+                if (alerta_fila_mantenimiento_por_vencer($fila, $kmActual)) {
+                    $mantenimientosPorVencer[] = $fila;
+                }
+            }
+        }
+        alerta_ordenar_filas($mantenimientosPorVencer);
+
+        return [
+            'counts' => $counts,
+            'grupos' => array_slice($grupos, 0, $limiteGrupos),
+            'total_grupos' => count($grupos),
+            'mantenimientos_por_vencer' => $mantenimientosPorVencer,
+        ];
     }
 
     /** @return list<array<string, mixed>> */
@@ -243,6 +259,11 @@ final class AlertaService
 
             $evaluacion = alerta_evaluar_intervalos($kmDesde, $diasDesde, $intervaloKm, $intervaloDias);
             if ($evaluacion === null) {
+                $this->repo->dismissActivasPorServicio(
+                    $vehiculoId,
+                    $tipoConfig,
+                    'Servicio dentro del intervalo permitido.'
+                );
                 continue;
             }
 
@@ -271,6 +292,91 @@ final class AlertaService
     private function buildMensajeMantenimiento(string $nombreServicio, string $motivo): string
     {
         return sprintf('%s · %s', $nombreServicio, $motivo);
+    }
+
+    /** @return list<array<string, mixed>> */
+    private function buildGruposFromVehiculos(array $vehiculosData, bool $soloConAvisos): array
+    {
+        $serviciosKm = $this->repo->getServiciosKm();
+        $grupos = [];
+
+        foreach ($vehiculosData as $vehiculo) {
+            $vehiculoRowId = (int) $vehiculo['id'];
+            $filas = [];
+
+            foreach ($serviciosKm as $cfg) {
+                $tipo = (string) $cfg['tipo'];
+                $fila = $this->buildFilaMantenimiento($vehiculo, $tipo, $cfg);
+                if (!empty($fila['sin_alta'])) {
+                    continue;
+                }
+                $filas[] = $fila;
+            }
+
+            foreach ($this->documentos->getActivosConVencimientoPorVehiculo($vehiculoRowId) as $documento) {
+                $filas[] = $this->buildFilaDocumentoDesdeRegistro($vehiculo, $documento);
+            }
+
+            if ($filas === []) {
+                continue;
+            }
+
+            $nivelMax = alerta_nivel_max_filas($filas);
+
+            if ($soloConAvisos && $nivelMax === null) {
+                continue;
+            }
+
+            alerta_ordenar_filas($filas);
+
+            $grupos[] = [
+                'vehiculo_id' => $vehiculoRowId,
+                'numero_economico' => (string) $vehiculo['numero_economico'],
+                'kilometraje_actual' => (int) ($vehiculo['kilometraje_actual'] ?? 0),
+                'nivel_max' => $nivelMax,
+                'alertas' => $filas,
+            ];
+        }
+
+        usort($grupos, static function (array $a, array $b): int {
+            $cmp = alerta_nivel_peso($b['nivel_max']) <=> alerta_nivel_peso($a['nivel_max']);
+            if ($cmp !== 0) {
+                return $cmp;
+            }
+
+            return strcasecmp($a['numero_economico'], $b['numero_economico']);
+        });
+
+        return $grupos;
+    }
+
+    /** @return list<array<string, mixed>> */
+    private function collectAvisosActivos(): array
+    {
+        $serviciosKm = $this->repo->getServiciosKm();
+        $vehiculos = $this->vehiculos->paginate(1, 1000)['data'];
+        $avisos = [];
+
+        foreach ($vehiculos as $vehiculo) {
+            foreach ($serviciosKm as $cfg) {
+                $tipo = (string) $cfg['tipo'];
+                $fila = $this->buildFilaMantenimiento($vehiculo, $tipo, $cfg);
+                if (!empty($fila['sin_alta']) || ($fila['nivel'] ?? null) === null) {
+                    continue;
+                }
+                $avisos[] = $fila;
+            }
+
+            foreach ($this->documentos->getActivosConVencimientoPorVehiculo((int) $vehiculo['id']) as $documento) {
+                $fila = $this->buildFilaDocumentoDesdeRegistro($vehiculo, $documento);
+                if (($fila['nivel'] ?? null) === null) {
+                    continue;
+                }
+                $avisos[] = $fila;
+            }
+        }
+
+        return $avisos;
     }
 
     /** @return array<string, mixed> */

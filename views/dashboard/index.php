@@ -2,7 +2,9 @@
 $pageTitle = 'Dashboard';
 $kpis = $kpis ?? [];
 $proximos_servicios = $proximos_servicios ?? [];
-$alertas = $alertas ?? [];
+$alertas_grupos = $alertas_grupos ?? [];
+$alertas_total_grupos = (int) ($alertas_total_grupos ?? 0);
+$mantenimientos_por_vencer = $mantenimientos_por_vencer ?? [];
 $documentos = $documentos ?? [];
 $mantenimientos = $mantenimientos ?? [];
 $comisiones = $comisiones ?? [];
@@ -20,6 +22,10 @@ $docTipos = [
     'poliza' => 'Póliza', 'tenencia' => 'Tenencia', 'verificacion' => 'Verificación',
     'licencia' => 'Licencia', 'tarjeta_circulacion' => 'Tarjeta circulación', 'factura' => 'Factura', 'otro' => 'Otro',
 ];
+
+$alertasRojas = (int) ($kpis['alertas_rojas'] ?? 0);
+$alertasAmarillas = (int) ($kpis['alertas_amarillas'] ?? 0);
+$alertasVerdes = (int) ($kpis['alertas_verdes'] ?? 0);
 ?>
 <div class="page-header">
     <div>
@@ -48,16 +54,129 @@ $docTipos = [
         <span class="dash-kpi-note">salidas activas</span>
     </div>
     <div class="dash-kpi">
-        <span class="dash-kpi-label">Alertas críticas</span>
-        <span class="dash-kpi-value text-danger"><?= (int) ($kpis['alertas_rojas'] ?? 0) ?></span>
-        <span class="dash-kpi-note"><?= (int) ($kpis['alertas_pendientes'] ?? 0) ?> pendientes total</span>
+        <span class="dash-kpi-label">Urgentes</span>
+        <span class="dash-kpi-value text-danger"><?= $alertasRojas ?></span>
+        <span class="dash-kpi-note"><?= $alertasAmarillas ?> en atención · <?= $alertasVerdes ?> avisos</span>
     </div>
     <div class="dash-kpi">
         <span class="dash-kpi-label">Por atender</span>
         <span class="dash-kpi-value text-warning"><?= (int) ($kpis['servicios_pendientes'] ?? 0) + (int) ($kpis['docs_por_vencer'] ?? 0) ?></span>
-        <span class="dash-kpi-note">mant. + docs 60 días</span>
+        <span class="dash-kpi-note">mant. abiertos + docs 60 días</span>
     </div>
 </div>
+
+<section class="dash-section dash-section-alerts">
+    <div class="dash-section-head">
+        <div>
+            <h2 class="dash-section-title">Alertas</h2>
+            <p class="dash-section-desc">Misma vista que Alertas: mantenimientos y documentos por vencer</p>
+        </div>
+        <div class="dash-section-actions">
+            <?php if ($alertasRojas > 0): ?>
+            <span class="alertas-resumen-chip alertas-resumen-chip--rojo"><?= $alertasRojas ?> urgente<?= $alertasRojas === 1 ? '' : 's' ?></span>
+            <?php endif; ?>
+            <?php if ($alertasAmarillas > 0): ?>
+            <span class="alertas-resumen-chip alertas-resumen-chip--amarillo"><?= $alertasAmarillas ?> atención</span>
+            <?php endif; ?>
+            <?php if ($alertasVerdes > 0): ?>
+            <span class="alertas-resumen-chip alertas-resumen-chip--verde"><?= $alertasVerdes ?> aviso<?= $alertasVerdes === 1 ? '' : 's' ?></span>
+            <?php endif; ?>
+            <a href="<?= url('alertas') ?>" class="btn btn-sm btn-info">Abrir en alertas</a>
+        </div>
+    </div>
+
+    <?php if (empty($alertas_grupos)): ?>
+    <div class="card">
+        <div class="empty-state py-5 text-center text-muted">
+            Ningún vehículo con avisos pendientes en este momento.
+        </div>
+    </div>
+    <?php else: ?>
+    <?php App\Core\View::component('alertas-grupos-list', ['grupos' => $alertas_grupos, 'esMatriz' => true]); ?>
+    <?php if ($alertas_total_grupos > count($alertas_grupos)): ?>
+    <p class="dash-more-link text-muted text-center mt-2">
+        Mostrando <?= count($alertas_grupos) ?> de <?= $alertas_total_grupos ?> vehículos.
+        <a href="<?= url('alertas') ?>">Ver todos en alertas</a>
+    </p>
+    <?php endif; ?>
+    <?php endif; ?>
+</section>
+
+<?php if (!empty($mantenimientos_por_vencer)): ?>
+<section class="dash-section">
+    <div class="dash-section-head">
+        <div>
+            <h2 class="dash-section-title">Mantenimientos por vencer</h2>
+            <p class="dash-section-desc">Servicios preventivos próximos según fecha o kilometraje</p>
+        </div>
+        <a href="<?= url('alertas') ?>" class="btn btn-sm btn-info">Ver en alertas</a>
+    </div>
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table dash-table">
+                <thead>
+                    <tr>
+                        <th>Vehículo</th>
+                        <th>Servicio</th>
+                        <th>Estado</th>
+                        <th>Último mantenimiento</th>
+                        <th>Próximo toca</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach (array_slice($mantenimientos_por_vencer, 0, 12) as $item): ?>
+                    <?php
+                    $estado = alerta_estado_mantenimiento($item);
+                    $proximaVencida = !empty($item['fecha_proximo_mantenimiento'])
+                        && $item['fecha_proximo_mantenimiento'] < date('Y-m-d');
+                    ?>
+                    <tr>
+                        <td>
+                            <?php if (can('expediente.read')): ?>
+                            <a href="<?= url('vehiculos/' . (int) $item['vehiculo_id']) ?>" class="dash-alerts-vehiculo-link">
+                                <?= e($item['numero_economico']) ?>
+                            </a>
+                            <?php else: ?>
+                            <strong><?= e($item['numero_economico']) ?></strong>
+                            <?php endif; ?>
+                        </td>
+                        <td><?= e($item['servicio_nombre'] ?? '—') ?></td>
+                        <td>
+                            <span class="badge <?= e($estado['class']) ?>"><?= e($estado['label']) ?></span>
+                        </td>
+                        <td>
+                            <?php if (!empty($item['mantenimiento_id']) && can('mantenimiento.read')): ?>
+                            <a href="<?= url('mantenimiento/' . (int) $item['mantenimiento_id']) ?>">
+                                <?= e(alerta_ultimo_mantenimiento_display($item)) ?>
+                            </a>
+                            <?php else: ?>
+                            <?= e(alerta_ultimo_mantenimiento_display($item)) ?>
+                            <?php endif; ?>
+                        </td>
+                        <td class="<?= $proximaVencida ? 'text-danger' : '' ?>">
+                            <?php $proximo = alerta_proximo_partes($item); ?>
+                            <?php if ($proximo['fecha'] !== null): ?>
+                            <span><?= e($proximo['fecha']) ?></span>
+                            <?php endif; ?>
+                            <?php if ($proximo['km'] !== null): ?>
+                            <small class="text-muted"><?= e($proximo['km']) ?></small>
+                            <?php endif; ?>
+                            <?php if ($proximo['fecha'] === null && $proximo['km'] === null): ?>
+                            <span class="text-muted">—</span>
+                            <?php endif; ?>
+                        </td>
+                        <td class="text-right">
+                            <a href="<?= e(alerta_accion_url($item)) ?>" class="btn btn-sm btn-primary">Atender</a>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+<?php endif; ?>
 
 <section class="dash-section">
     <div class="dash-section-head">
@@ -161,145 +280,44 @@ $docTipos = [
     </div>
 </section>
 
-<div class="dash-layout">
-    <div class="dash-main">
-        <section class="dash-section dash-section-flush">
-            <div class="dash-section-head">
-                <div>
-                    <h2 class="dash-section-title">Próximo a mantenimiento</h2>
-                    <p class="dash-section-desc">Ordenado por urgencia según kilometraje recorrido</p>
-                </div>
-                <?php if (can('mantenimiento.create')): ?>
-                <a href="<?= url('mantenimiento/create') ?>" class="btn btn-sm btn-primary">Programar servicio</a>
-                <?php endif; ?>
-            </div>
-            <div class="card">
-                <?php if (empty($proximos_servicios)): ?>
-                <div class="card-body">
-                    <p class="dash-empty">Ningún vehículo requiere servicio preventivo por ahora.</p>
-                </div>
-                <?php else: ?>
-                <div class="table-responsive">
-                    <table class="table dash-table">
-                        <thead>
-                            <tr>
-                                <th>Vehículo</th>
-                                <th>Servicio</th>
-                                <th>Kilometraje</th>
-                                <th>Último servicio</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach (array_slice($proximos_servicios, 0, 8) as $item): ?>
-                            <tr>
-                                <td>
-                                    <span class="badge <?= semaforo_class($item['nivel']) ?> dash-priority-dot"><?= e(ucfirst($item['nivel'])) ?></span>
-                                    <strong class="dash-cell-title"><?= e($item['numero_economico']) ?></strong>
-                                </td>
-                                <td><?= e($item['servicio']) ?></td>
-                                <td class="dash-km-cell">
-                                    <span><?= number_format((int) $item['km_desde_servicio']) ?> km recorridos</span>
-                                    <?php if ((int) $item['km_vencido'] > 0): ?>
-                                    <small class="text-danger">Vencido por <?= number_format((int) $item['km_vencido']) ?> km</small>
-                                    <?php else: ?>
-                                    <small class="text-muted">Faltan <?= number_format((int) $item['km_restante']) ?> km</small>
-                                    <?php endif; ?>
-                                </td>
-                                <td><?= !empty($item['ultimo_servicio']) ? format_date($item['ultimo_servicio']) : '<span class="text-muted">Sin registro</span>' ?></td>
-                                <td class="text-right">
-                                    <?php if (can('expediente.read')): ?>
-                                    <a href="<?= url('vehiculos/' . (int) $item['vehiculo_id']) ?>" class="btn btn-sm btn-info">Expediente</a>
-                                    <?php endif; ?>
-                                </td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-                <?php endif; ?>
-            </div>
-        </section>
+<section class="dash-section">
+    <div class="dash-section-head">
+        <div>
+            <h2 class="dash-section-title">Documentos por vencer</h2>
+            <p class="dash-section-desc">Vencimientos en los próximos 60 días</p>
+        </div>
+        <a href="<?= url('documentos') ?>" class="btn btn-sm btn-info">Ver todos</a>
     </div>
-
-    <aside class="dash-sidebar">
-        <section class="dash-section dash-section-flush">
-            <div class="dash-section-head">
-                <div>
-                    <h2 class="dash-section-title">Requiere atención</h2>
-                    <p class="dash-section-desc">Alertas y vencimientos</p>
-                </div>
-            </div>
-
-            <div class="dash-stack">
-                <div class="card">
-                    <div class="card-header">
-                        <h3>Alertas</h3>
-                        <a href="<?= url('alertas') ?>" class="btn btn-sm btn-info">Ver todas</a>
-                    </div>
-                    <div class="card-body p-0">
-                        <?php if (empty($alertas)): ?>
-                        <p class="dash-empty">Sin alertas pendientes.</p>
-                        <?php else: ?>
-                        <ul class="dash-feed">
-                            <?php foreach (array_slice($alertas, 0, 5) as $a): ?>
-                            <li class="dash-feed-item">
-                                <?php
-                                $alertaHref = !empty($a['vehiculo_id']) && can('expediente.read')
-                                    ? url('vehiculos/' . (int) $a['vehiculo_id'])
-                                    : url('alertas');
-                                ?>
-                                <a href="<?= e($alertaHref) ?>" class="dash-feed-link">
-                                    <span class="dash-feed-row">
-                                        <span class="badge <?= semaforo_class($a['nivel'] ?? null) ?>"><?= e(ucfirst((string) ($a['nivel'] ?? '—'))) ?></span>
-                                        <span class="dash-feed-title dash-feed-title-truncate"><?= e($a['titulo']) ?></span>
-                                    </span>
-                                    <span class="dash-feed-meta"><?= e(mb_substr($a['mensaje'], 0, 100)) ?><?= mb_strlen($a['mensaje']) > 100 ? '…' : '' ?></span>
-                                </a>
-                            </li>
-                            <?php endforeach; ?>
-                        </ul>
-                        <?php endif; ?>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        <h3>Documentos por vencer</h3>
-                        <a href="<?= url('documentos') ?>" class="btn btn-sm btn-info">Ver todos</a>
-                    </div>
-                    <div class="card-body p-0">
-                        <?php if (empty($documentos)): ?>
-                        <p class="dash-empty">Nada próximo a vencer.</p>
-                        <?php else: ?>
-                        <ul class="dash-feed">
-                            <?php foreach (array_slice($documentos, 0, 5) as $doc): ?>
-                            <?php
-                            $dias = (int) ($doc['dias_restantes'] ?? 0);
-                            $nivelDoc = $dias < 0 ? 'rojo' : ($dias <= 30 ? 'amarillo' : 'verde');
-                            ?>
-                            <li class="dash-feed-item">
-                                <?php if (can('expediente.read')): ?>
-                                <a href="<?= url('vehiculos/' . (int) $doc['vehiculo_id']) ?>" class="dash-feed-link">
-                                <?php endif; ?>
-                                    <span class="dash-feed-row">
-                                        <span class="badge <?= semaforo_class($nivelDoc) ?>"><?= $dias < 0 ? 'Vencido' : $dias . ' días' ?></span>
-                                        <span class="dash-feed-title dash-feed-title-truncate"><?= e($doc['numero_economico']) ?></span>
-                                    </span>
-                                    <span class="dash-feed-meta">
-                                        <?= e($doc['titulo']) ?> · <?= e($docTipos[$doc['tipo']] ?? ucfirst($doc['tipo'])) ?>
-                                        · vence <?= format_date($doc['fecha_vencimiento']) ?>
-                                    </span>
-                                <?php if (can('expediente.read')): ?>
-                                </a>
-                                <?php endif; ?>
-                            </li>
-                            <?php endforeach; ?>
-                        </ul>
-                        <?php endif; ?>
-                    </div>
-                </div>
-            </div>
-        </section>
-    </aside>
-</div>
+    <div class="card">
+        <div class="card-body p-0">
+            <?php if (empty($documentos)): ?>
+            <p class="dash-empty">Nada próximo a vencer.</p>
+            <?php else: ?>
+            <ul class="dash-feed">
+                <?php foreach (array_slice($documentos, 0, 6) as $doc): ?>
+                <?php
+                $dias = (int) ($doc['dias_restantes'] ?? 0);
+                $nivelDoc = $dias < 0 ? 'rojo' : ($dias <= 30 ? 'amarillo' : 'verde');
+                ?>
+                <li class="dash-feed-item">
+                    <?php if (can('expediente.read')): ?>
+                    <a href="<?= url('vehiculos/' . (int) $doc['vehiculo_id']) ?>" class="dash-feed-link">
+                    <?php endif; ?>
+                        <span class="dash-feed-row">
+                            <span class="badge <?= semaforo_class($nivelDoc) ?>"><?= $dias < 0 ? 'Vencido' : $dias . ' días' ?></span>
+                            <span class="dash-feed-title dash-feed-title-truncate"><?= e($doc['numero_economico']) ?></span>
+                        </span>
+                        <span class="dash-feed-meta">
+                            <?= e($doc['titulo']) ?> · <?= e($docTipos[$doc['tipo']] ?? ucfirst($doc['tipo'])) ?>
+                            · vence <?= format_date($doc['fecha_vencimiento']) ?>
+                        </span>
+                    <?php if (can('expediente.read')): ?>
+                    </a>
+                    <?php endif; ?>
+                </li>
+                <?php endforeach; ?>
+            </ul>
+            <?php endif; ?>
+        </div>
+    </div>
+</section>

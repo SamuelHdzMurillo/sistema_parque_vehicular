@@ -641,6 +641,67 @@ function alerta_nivel_peso(?string $nivel): int
     };
 }
 
+/** Mantenimiento próximo a vencer (con aviso activo o fecha/km cercanos). */
+function alerta_fila_mantenimiento_por_vencer(array $fila, int $kmActual): bool
+{
+    if (!empty($fila['sin_alta']) || ($fila['categoria'] ?? '') !== 'mantenimiento') {
+        return false;
+    }
+
+    if (($fila['nivel'] ?? null) !== null) {
+        return true;
+    }
+
+    if (!empty($fila['fecha_proximo_mantenimiento'])) {
+        $dias = (int) ((strtotime((string) $fila['fecha_proximo_mantenimiento']) - strtotime(date('Y-m-d'))) / 86400);
+        if ($dias <= 90) {
+            return true;
+        }
+    }
+
+    if (!empty($fila['proximo_km'])) {
+        $kmRestante = (int) $fila['proximo_km'] - $kmActual;
+        if ($kmRestante <= 0) {
+            return true;
+        }
+
+        if (isset($fila['km_desde'], $fila['ultimo_km'])) {
+            $intervalo = (int) $fila['proximo_km'] - (int) $fila['ultimo_km'];
+            if ($intervalo > 0 && ((int) $fila['km_desde'] / $intervalo) * 100 >= 50) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+/** Grupo visible en dashboard: avisos activos o mantenimientos/documentos por vencer. */
+function alerta_grupo_relevante_dashboard(array $grupo): bool
+{
+    if (($grupo['nivel_max'] ?? null) !== null && ($grupo['nivel_max'] ?? '') !== '') {
+        return true;
+    }
+
+    $kmActual = (int) ($grupo['kilometraje_actual'] ?? 0);
+    foreach ($grupo['alertas'] ?? [] as $fila) {
+        if (($fila['categoria'] ?? '') === 'documento' && ($fila['nivel'] ?? null) !== null) {
+            return true;
+        }
+        if (alerta_fila_mantenimiento_por_vencer($fila, $kmActual)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/** @param list<array<string, mixed>> $grupos */
+function alerta_filtrar_grupos_dashboard(array $grupos): array
+{
+    return array_values(array_filter($grupos, 'alerta_grupo_relevante_dashboard'));
+}
+
 /** @return array{aviso: int, atencion: int, urgente: int} Umbrales de mantenimiento en km (desde último servicio). */
 function alerta_config_umbrales_km(array $row): array
 {
