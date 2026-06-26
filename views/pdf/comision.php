@@ -4,6 +4,7 @@ require_once view_path('pdf/helpers.php');
 $c = $comision ?? null;
 $parte = $parte ?? 'completo';
 $um = $ultimo_mantenimiento ?? null;
+$vencimientosRevistaTarjeta = $vencimientos_revista_tarjeta ?? null;
 $lucesCatalogo = $luces_catalogo ?? [];
 $lucesById = [];
 foreach ($lucesCatalogo as $luz) {
@@ -66,6 +67,20 @@ $renderLucesPdf = static function (array $codigos) use ($lucesById): string {
 $mostrarSalida = in_array($parte, ['salida', 'completo'], true);
 $mostrarRegreso = in_array($parte, ['regreso', 'completo'], true);
 $esCompleto = $mostrarSalida && $mostrarRegreso;
+
+$formatVencimientoRevistaTarjeta = static function (?array $vencimientos): string {
+    if ($vencimientos === null) {
+        return '';
+    }
+    $parts = [];
+    if (!empty($vencimientos['tarjeta_circulacion'])) {
+        $parts[] = pdf_date($vencimientos['tarjeta_circulacion']);
+    }
+    if (!empty($vencimientos['verificacion'])) {
+        $parts[] = pdf_date($vencimientos['verificacion']);
+    }
+    return implode(' / ', $parts);
+};
 
 $parteLabel = match ($parte) {
     'salida' => ' — Control de salida',
@@ -187,15 +202,14 @@ $filaCampos = static function (array $campos, callable $campo, int $cols = 3): v
         <div class="section-title">Datos de la comisión</div>
         <?php $filaCampos([
             ['Número de oficio de comisión', pdf_val($c['folio'] ?? null)],
-            ['Fecha de la revista', pdf_date($c['fecha'] ?? null)],
+            ['Fecha salida de comisión', pdf_date($c['fecha'] ?? null)],
+            ['Vencimiento revista / tarjeta de circulación', $formatVencimientoRevistaTarjeta($vencimientosRevistaTarjeta)],
             ['Hora de la comisión', pdf_time($c['hora_salida'] ?? null)],
             ['Identificador', pdf_val($c['numero_economico'] ?? null)],
             ['Placas', pdf_val($c['placas'] ?? null)],
             ['Estado', pdf_val(isset($c['estado']) ? ucfirst(str_replace('_', ' ', $c['estado'])) : null)],
             ['Área que solicita el vehículo', pdf_val($c['area_solicitante_nombre'] ?? null)],
             ['Responsable del vehículo', pdf_val($c['responsable_nombre'] ?? null)],
-            ['Conductor', pdf_val($c['conductor_nombre'] ?? null)],
-            ['Responsable de regreso (trae el vehículo)', pdf_val($c['responsable_regreso_nombre'] ?? null)],
         ], $campo); ?>
         <table class="grid two-col" style="margin-top:4px;">
             <tr>
@@ -272,11 +286,10 @@ $filaCampos = static function (array $campos, callable $campo, int $cols = 3): v
             <div class="section-title">Datos de la comisión</div>
             <?php $filaCampos([
                 ['Número de oficio de comisión', pdf_val($c['folio'] ?? null)],
-                ['Fecha de la revista', pdf_date($c['fecha'] ?? null)],
+                ['Fecha salida de comisión', pdf_date($c['fecha'] ?? null)],
+                ['Vencimiento revista / tarjeta de circulación', $formatVencimientoRevistaTarjeta($vencimientosRevistaTarjeta)],
                 ['Identificador', pdf_val($c['numero_economico'] ?? null)],
                 ['Placas', pdf_val($c['placas'] ?? null)],
-                ['Conductor', pdf_val($c['conductor_nombre'] ?? null)],
-                ['Responsable de regreso', pdf_val($c['responsable_regreso_nombre'] ?? null)],
             ], $campo); ?>
             <table class="grid two-col" style="margin-top:4px;">
                 <tr>

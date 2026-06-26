@@ -179,4 +179,26 @@ final class DocumentoRepository extends BaseRepository
             [$vehiculoId]
         ) !== null;
     }
+
+    /** @return array{tarjeta_circulacion: ?string, verificacion: ?string} */
+    public function getVencimientosRevistaTarjeta(int $vehiculoId): array
+    {
+        $rows = $this->fetchAll(
+            'SELECT tipo, fecha_vencimiento
+             FROM documentos
+             WHERE vehiculo_id = ? AND activo = 1
+               AND tipo IN ("tarjeta_circulacion", "verificacion")
+               AND fecha_vencimiento IS NOT NULL
+             ORDER BY version DESC, id DESC',
+            [$vehiculoId]
+        );
+        $result = ['tarjeta_circulacion' => null, 'verificacion' => null];
+        foreach ($rows as $row) {
+            $tipo = (string) $row['tipo'];
+            if (array_key_exists($tipo, $result) && $result[$tipo] === null) {
+                $result[$tipo] = (string) $row['fecha_vencimiento'];
+            }
+        }
+        return $result;
+    }
 }

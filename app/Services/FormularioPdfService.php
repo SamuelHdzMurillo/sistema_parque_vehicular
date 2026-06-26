@@ -8,6 +8,7 @@ use App\Core\View;
 use App\Repositories\CombustibleRepository;
 use App\Repositories\ComisionRepository;
 use App\Repositories\DanioRepository;
+use App\Repositories\DocumentoRepository;
 use App\Repositories\InspeccionRepository;
 use App\Repositories\MantenimientoRepository;
 use Dompdf\Dompdf;
@@ -21,6 +22,7 @@ final class FormularioPdfService
         private readonly MantenimientoRepository $mantenimientos = new MantenimientoRepository(),
         private readonly DanioRepository $danios = new DanioRepository(),
         private readonly CombustibleRepository $combustible = new CombustibleRepository(),
+        private readonly DocumentoRepository $documentos = new DocumentoRepository(),
     ) {
     }
 
@@ -33,8 +35,10 @@ final class FormularioPdfService
             exit('Comisión no encontrada.');
         }
         $ultimoMantenimiento = null;
+        $vencimientosRevistaTarjeta = null;
         if ($data !== null) {
             $ultimoMantenimiento = $this->mantenimientos->getUltimoFinalizado((int) $data['vehiculo_id']);
+            $vencimientosRevistaTarjeta = $this->documentos->getVencimientosRevistaTarjeta((int) $data['vehiculo_id']);
             $luces = $this->comisiones->getLuces((int) $data['id']);
             $data['luces_salida'] = $luces['salida'];
             $data['luces_regreso'] = $luces['regreso'];
@@ -52,6 +56,7 @@ final class FormularioPdfService
                 'comision' => $data,
                 'parte' => $parte,
                 'ultimo_mantenimiento' => $ultimoMantenimiento,
+                'vencimientos_revista_tarjeta' => $vencimientosRevistaTarjeta,
                 'luces_catalogo' => InspeccionRepository::LUCES_TABLERO,
                 'liquidos_catalogo' => ComisionRepository::LIQUIDOS,
                 'nivel_opciones' => ComisionRepository::NIVEL_OPCIONES,
