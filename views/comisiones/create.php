@@ -5,7 +5,7 @@ $areas = $areas ?? [];
 $planteles = $planteles ?? [];
 $conductores = $conductores ?? [];
 $usuarios = $usuarios ?? [];
-$folioSugerido = (string) old('folio', $folio_sugerido ?? '');
+$folioSugerido = (string) ($folio_sugerido ?? '');
 $preVehiculo = $_GET['vehiculo_id'] ?? old('vehiculo_id');
 $respRegresoSeleccionado = 0;
 $nombreRegreso = trim((string) old('responsable_regreso_nombre', ''));
@@ -17,12 +17,9 @@ if ($nombreRegreso !== '') {
         }
     }
 }
-$folioPersonalizado = trim((string) old('folio', ''));
-$folioEnFormulario = $folioPersonalizado !== '' ? $folioPersonalizado : '';
 $openOpciones = trim((string) old('observaciones', '')) !== ''
     || $nombreRegreso !== ''
-    || $respRegresoSeleccionado > 0
-    || ($folioPersonalizado !== '' && $folioPersonalizado !== $folioSugerido);
+    || $respRegresoSeleccionado > 0;
 $openInspeccion = false;
 if (!empty($_SESSION['_old'])) {
     $lucesOld = old('luces_salida', []);
@@ -75,8 +72,7 @@ if ($herramientasSalida === [] && !empty($vehiculo_herramientas_preset) && is_ar
         <ul class="breadcrumb"><li><a href="<?= url('comisiones') ?>">Comisiones</a></li><li>/ Nueva</li></ul>
         <h1 class="page-title">Nueva comisión</h1>
         <p class="page-subtitle text-muted">
-            Registre el viaje con los datos básicos. Folio propuesto: <strong><?= e($folioSugerido) ?></strong>
-            — el estado del vehículo se precarga del inventario y puede ajustarse si hace falta.
+            Registre el viaje con los datos básicos. El estado del vehículo se precarga del inventario y puede ajustarse si hace falta.
         </p>
     </div>
 </div>
@@ -87,6 +83,15 @@ if ($herramientasSalida === [] && !empty($vehiculo_herramientas_preset) && is_ar
     <div class="card mb-2">
         <div class="card-header"><h3>Datos del viaje</h3></div>
         <div class="card-body">
+            <?php if ($folioSugerido !== ''): ?>
+            <?php App\Core\View::component('folio-input', [
+                'id' => 'folio',
+                'tipo' => 'COM',
+                'pad' => 4,
+                'sugerido' => $folioSugerido,
+                'label' => 'Folio de comisión',
+            ]); ?>
+            <?php endif; ?>
             <div class="form-row">
                 <div class="form-group">
                     <label class="form-label" for="vehiculo_id">Vehículo <span class="required">*</span></label>
@@ -167,17 +172,6 @@ if ($herramientasSalida === [] && !empty($vehiculo_herramientas_preset) && is_ar
     <details class="comision-form-section mb-2"<?= $openOpciones ? ' open' : '' ?>>
         <summary>Opciones adicionales</summary>
         <div class="comision-form-section-body">
-            <div class="form-row">
-                <div class="form-group">
-                    <label class="form-label" for="folio">Folio personalizado</label>
-                    <input type="text" id="folio" name="folio" class="form-control"
-                           pattern="COM-\d{4}-\d+"
-                           title="Formato: COM-AAAA-NNNN (ejemplo: COM-2026-0001)"
-                           placeholder="<?= e($folioSugerido) ?> (automático si se deja vacío)"
-                           value="<?= e($folioEnFormulario) ?>">
-                    <small class="form-hint text-muted">Solo si necesita un folio distinto al propuesto.</small>
-                </div>
-            </div>
             <div class="form-group">
                 <label class="form-label" for="responsable_regreso_conductor">Responsable de regreso</label>
                 <div class="input-group">

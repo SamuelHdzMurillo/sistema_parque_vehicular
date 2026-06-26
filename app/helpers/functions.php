@@ -1264,6 +1264,30 @@ function combustible_porcentaje_a_fraccion(mixed $porcentaje): string
     return combustible_cuartos_a_fraccion($cuartos);
 }
 
+/**
+ * Separa un folio tipo XXX-AAAA-NNN en prefijo y número consecutivo.
+ *
+ * @return array{prefix: string, num: int, num_padded: string, full: string}|null
+ */
+function folio_partes(string $folio, int $pad = 4): ?array
+{
+    $folio = trim($folio);
+    if (!preg_match('/^([A-Z]{3}-\d{4}-)(\d+)$/i', $folio, $m)) {
+        return null;
+    }
+
+    $num = (int) $m[2];
+    $prefix = strtoupper($m[1]);
+    $numPadded = str_pad((string) $num, $pad, '0', STR_PAD_LEFT);
+
+    return [
+        'prefix' => $prefix,
+        'num' => $num,
+        'num_padded' => $numPadded,
+        'full' => $prefix . $numPadded,
+    ];
+}
+
 /** Folio legible de una inspección (almacenado o derivado del id). */
 function inspeccion_folio(array $inspeccion): string
 {

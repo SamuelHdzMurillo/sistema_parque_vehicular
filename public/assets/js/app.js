@@ -1578,6 +1578,81 @@
         });
     }
 
+    /* ——— Folio con prefijo fijo ——— */
+    function syncFolioInput(wrap, finalize) {
+        const prefixEl = wrap.querySelector('[data-folio-prefix]');
+        const seqInput = wrap.querySelector('[data-folio-seq]');
+        const hidden = wrap.querySelector('[data-folio-value]');
+        if (!prefixEl || !seqInput || !hidden) {
+            return;
+        }
+
+        const pad = parseInt(wrap.getAttribute('data-folio-pad') || '4', 10);
+        const raw = String(seqInput.value).replace(/\D/g, '');
+
+        if (!finalize) {
+            if (seqInput.value !== raw) {
+                seqInput.value = raw;
+            }
+            if (raw === '') {
+                return;
+            }
+            const num = parseInt(raw, 10);
+            if (!isNaN(num) && num > 0) {
+                hidden.value = prefixEl.textContent + String(num).padStart(pad, '0');
+            }
+            return;
+        }
+
+        let num = parseInt(raw, 10);
+        if (raw === '' || isNaN(num) || num < 1) {
+            const fallback = wrap.getAttribute('data-folio-default-seq') || String(1).padStart(pad, '0');
+            seqInput.value = fallback;
+            num = parseInt(fallback, 10);
+        } else {
+            seqInput.value = String(num).padStart(pad, '0');
+        }
+
+        hidden.value = prefixEl.textContent + String(num).padStart(pad, '0');
+    }
+
+    function initFolioInputs() {
+        document.querySelectorAll('[data-folio-input]').forEach(function (wrap) {
+            const seqInput = wrap.querySelector('[data-folio-seq]');
+            if (!seqInput || wrap.hasAttribute('data-folio-bound')) {
+                return;
+            }
+            wrap.setAttribute('data-folio-bound', '1');
+
+            seqInput.addEventListener('input', function () {
+                syncFolioInput(wrap, false);
+            });
+
+            seqInput.addEventListener('blur', function () {
+                syncFolioInput(wrap, true);
+            });
+
+            seqInput.addEventListener('focus', function () {
+                seqInput.select();
+            });
+        });
+
+        document.querySelectorAll('form').forEach(function (form) {
+            if (form.hasAttribute('data-folio-submit-bound')) {
+                return;
+            }
+            if (!form.querySelector('[data-folio-input]')) {
+                return;
+            }
+            form.setAttribute('data-folio-submit-bound', '1');
+            form.addEventListener('submit', function () {
+                form.querySelectorAll('[data-folio-input]').forEach(function (w) {
+                    syncFolioInput(w, true);
+                });
+            });
+        });
+    }
+
     /* ——— Init ——— */
     document.addEventListener('DOMContentLoaded', function () {
         initTheme();
@@ -1590,6 +1665,7 @@
         initDashLights();
         initKmAutofill();
         initCombustibleFields();
+        initFolioInputs();
         initLucesAutofill();
         initHerramientasChecklist();
         initHerramientasAutofill();

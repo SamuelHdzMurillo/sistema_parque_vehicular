@@ -40,15 +40,13 @@ if (!is_array($oldIntervalos)) {
         <section class="mantenimiento-form-section">
             <h2 class="mantenimiento-form-section-title">Datos generales</h2>
             <?php if ($folioSugerido !== ''): ?>
-            <div class="form-group">
-                <label class="form-label" for="folio">Folio de servicio</label>
-                <input type="text" id="folio" name="folio" class="form-control"
-                       pattern="MNT-\d{4}-\d+"
-                       title="Formato: MNT-AAAA-NNN (ejemplo: MNT-2026-001)"
-                       placeholder="<?= e($folioSugerido) ?> (automático si se deja vacío)"
-                       value="<?= e((string) old('folio', '')) ?>">
-                <small class="form-hint text-muted">Propuesto: <strong><?= e($folioSugerido) ?></strong>. Deje vacío para asignarlo automáticamente.</small>
-            </div>
+            <?php App\Core\View::component('folio-input', [
+                'id' => 'folio',
+                'tipo' => 'MNT',
+                'pad' => 3,
+                'sugerido' => $folioSugerido,
+                'label' => 'Folio de servicio',
+            ]); ?>
             <?php endif; ?>
             <div class="form-row form-row--2">
                 <div class="form-group mb-0">

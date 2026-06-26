@@ -4,6 +4,7 @@ $vehiculos = $vehiculos ?? [];
 $items = $items ?? [];
 $lucesTablero = $luces_tablero ?? [];
 $preVehiculo = $_GET['vehiculo_id'] ?? old('vehiculo_id');
+$folioSugerido = (string) ($folio_sugerido ?? '');
 $selectedLuces = old('luces_tablero', []);
 if (!is_array($selectedLuces)) {
     $selectedLuces = [];
@@ -24,6 +25,15 @@ if ($selectedLuces === [] && !empty($vehiculo_luces_preset) && is_array($vehicul
     <?= csrf_field() ?>
     <div class="card mb-2">
         <div class="card-body">
+            <?php if ($folioSugerido !== ''): ?>
+            <?php App\Core\View::component('folio-input', [
+                'id' => 'folio',
+                'tipo' => 'INS',
+                'pad' => 4,
+                'sugerido' => $folioSugerido,
+                'label' => 'Folio de inspección',
+            ]); ?>
+            <?php endif; ?>
             <div class="form-row">
                 <div class="form-group">
                     <label class="form-label" for="vehiculo_id">Vehículo <span class="required">*</span></label>

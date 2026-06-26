@@ -54,14 +54,15 @@ if ($oldIntervalos === []) {
 
         <section class="mantenimiento-form-section">
             <h2 class="mantenimiento-form-section-title">Datos generales</h2>
-            <div class="form-group">
-                <label class="form-label" for="folio">Folio de servicio</label>
-                <input type="text" id="folio" name="folio" class="form-control"
-                       pattern="MNT-\d{4}-\d+"
-                       title="Formato: MNT-AAAA-NNN (ejemplo: MNT-2026-001)"
-                       value="<?= e((string) old('folio', $m['folio'] ?? '')) ?>" required>
-                <small class="form-hint text-muted">Formato MNT-AAAA-NNN. Debe ser único en el sistema.</small>
-            </div>
+            <?php App\Core\View::component('folio-input', [
+                'id' => 'folio',
+                'tipo' => 'MNT',
+                'pad' => 3,
+                'sugerido' => (string) ($m['folio'] ?? ''),
+                'label' => 'Folio de servicio',
+                'required' => true,
+                'hint' => 'Formato MNT-AAAA-NNN. Debe ser único en el sistema.',
+            ]); ?>
             <div class="form-row form-row--2">
                 <div class="form-group mb-0">
                     <label class="form-label" for="tipo">Tipo</label>

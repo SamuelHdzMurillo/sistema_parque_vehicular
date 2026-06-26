@@ -125,6 +125,18 @@ final class InspeccionRepository extends BaseRepository
         return $prefix . str_pad((string) ($maxSeq + 1), 4, '0', STR_PAD_LEFT);
     }
 
+    public function folioExists(string $folio, ?int $excludeId = null): bool
+    {
+        $params = [$folio];
+        $sql = 'SELECT COUNT(*) AS c FROM inspecciones WHERE folio = ?';
+        if ($excludeId !== null) {
+            $sql .= ' AND id != ?';
+            $params[] = $excludeId;
+        }
+
+        return ((int) ($this->fetchOne($sql, $params)['c'] ?? 0)) > 0;
+    }
+
     public function createWithItems(array $data, array $items, array $lucesTablero = []): int
     {
         $this->db->beginTransaction();
