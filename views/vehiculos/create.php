@@ -1,6 +1,7 @@
 <?php
 $pageTitle = 'Registrar vehículo';
 $areas = $areas ?? [];
+$planteles = $planteles ?? [];
 $responsables = $responsables ?? [];
 $tipos_combustible = $tipos_combustible ?? [];
 $estados = $estados ?? [];
@@ -111,12 +112,17 @@ $combustibleLabel = ['gasolina' => 'Gasolina', 'diesel' => 'Diésel', 'hibrido' 
             </div>
             <div class="form-group">
                 <label class="form-label" for="area_id">Área <span class="required">*</span></label>
-                <select id="area_id" name="area_id" class="form-select<?= $invalidClass('area_id') ?>" required>
-                    <option value="">Seleccione…</option>
-                    <?php foreach ($areas as $a): ?>
-                    <option value="<?= (int) $a['id'] ?>" <?= (string) old('area_id') === (string) $a['id'] ? 'selected' : '' ?>><?= e(catalogo_area_label($a)) ?></option>
-                    <?php endforeach; ?>
-                </select>
+                <div class="input-group">
+                    <select id="area_id" name="area_id" class="form-select<?= $invalidClass('area_id') ?>" required data-area-select>
+                        <option value="">Seleccione…</option>
+                        <?php foreach ($areas as $a): ?>
+                        <option value="<?= (int) $a['id'] ?>" <?= (string) old('area_id') === (string) $a['id'] ? 'selected' : '' ?>><?= e(catalogo_area_label($a)) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <?php if (can('catalogos.create')): ?>
+                    <button type="button" class="btn btn-accent" data-area-quick-open title="Agregar área" aria-label="Agregar área">+</button>
+                    <?php endif; ?>
+                </div>
                 <?php if (!empty($fieldErrors['area_id'])): ?><span class="form-error"><?= e($fieldErrors['area_id']) ?></span><?php endif; ?>
             </div>
             <div class="form-group">
@@ -158,3 +164,8 @@ $combustibleLabel = ['gasolina' => 'Gasolina', 'diesel' => 'Diésel', 'hibrido' 
         </div>
     </form>
 </div>
+
+<?php if (can('catalogos.create')): ?>
+<?php App\Core\View::component('modal-area-quick', ['planteles' => $planteles]); ?>
+<?php App\Core\View::component('modal-plantel-quick'); ?>
+<?php endif; ?>

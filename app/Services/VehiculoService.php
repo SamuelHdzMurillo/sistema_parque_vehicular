@@ -48,6 +48,7 @@ final class VehiculoService
     {
         return [
             'areas' => $this->catalogos->getAreas(),
+            'planteles' => $this->catalogos->getPlanteles(),
             'responsables' => $this->catalogos->getUsersForSelect(),
             'tipos_combustible' => self::TIPOS_COMBUSTIBLE,
             'estados' => self::ESTADOS_INICIALES,

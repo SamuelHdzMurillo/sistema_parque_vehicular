@@ -976,3 +976,138 @@
 #17 C:\xampp\htdocs\sistema_parque_vehicular\public\index.php(13): App\Core\Application->run()
 #18 {main}
 ---
+[2026-06-29 09:11:20] RuntimeException: Error de conexión a base de datos: SQLSTATE[HY000] [1045] Access denied for user 'root'@'172.18.0.1' (using password: NO) | GET /sistema_parque_vehicular/public/usuarios | user:1
+#0 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Database.php(45): App\Core\Database->__construct()
+#1 C:\xampp\htdocs\sistema_parque_vehicular\app\Repositories\BaseRepository.php(16): App\Core\Database::getInstance()
+#2 C:\xampp\htdocs\sistema_parque_vehicular\app\Services\UsuarioService.php(12): App\Repositories\BaseRepository->__construct()
+#3 C:\xampp\htdocs\sistema_parque_vehicular\app\Controllers\UsuarioController.php(14): App\Services\UsuarioService->__construct()
+#4 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(92): App\Controllers\UsuarioController->__construct()
+#5 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(67): App\Core\Router->invokeHandler(Array, Array, Object(App\Core\Request))
+#6 C:\xampp\htdocs\sistema_parque_vehicular\app\Middlewares\PermissionMiddleware.php(24): App\Core\Router->App\Core\{closure}()
+#7 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(85): App\Middlewares\PermissionMiddleware->handle(Object(App\Core\Request), Object(Closure))
+#8 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(66): App\Core\Router->runMiddleware(Object(App\Middlewares\PermissionMiddleware), Object(App\Core\Request), Object(Closure))
+#9 C:\xampp\htdocs\sistema_parque_vehicular\app\Middlewares\AuthMiddleware.php(18): App\Core\Router->App\Core\{closure}()
+#10 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(85): App\Middlewares\AuthMiddleware->handle(Object(App\Core\Request), Object(Closure))
+#11 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(66): App\Core\Router->runMiddleware(Object(App\Middlewares\AuthMiddleware), Object(App\Core\Request), Object(Closure))
+#12 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(70): App\Core\Router->App\Core\{closure}()
+#13 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Application.php(36): App\Core\Router->dispatch(Object(App\Core\Request))
+#14 C:\xampp\htdocs\sistema_parque_vehicular\public\index.php(13): App\Core\Application->run()
+#15 {main}
+---
+[2026-06-29 10:19:53] RuntimeException: Error de conexión a base de datos: SQLSTATE[HY000] [1045] Access denied for user 'root'@'172.18.0.1' (using password: NO) | GET /sistema_parque_vehicular/public/usuarios | user:guest
+#0 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Database.php(45): App\Core\Database->__construct()
+#1 C:\xampp\htdocs\sistema_parque_vehicular\app\Repositories\BaseRepository.php(16): App\Core\Database::getInstance()
+#2 C:\xampp\htdocs\sistema_parque_vehicular\app\Services\AuthService.php(14): App\Repositories\BaseRepository->__construct()
+#3 C:\xampp\htdocs\sistema_parque_vehicular\app\Middlewares\AuthMiddleware.php(20): App\Services\AuthService->__construct()
+#4 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(85): App\Middlewares\AuthMiddleware->handle(Object(App\Core\Request), Object(Closure))
+#5 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(66): App\Core\Router->runMiddleware(Object(App\Middlewares\AuthMiddleware), Object(App\Core\Request), Object(Closure))
+#6 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(70): App\Core\Router->App\Core\{closure}()
+#7 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Application.php(36): App\Core\Router->dispatch(Object(App\Core\Request))
+#8 C:\xampp\htdocs\sistema_parque_vehicular\public\index.php(13): App\Core\Application->run()
+#9 {main}
+---
+[2026-06-29 12:57:08] RuntimeException: Error de conexión a base de datos: SQLSTATE[HY000] [1045] Access denied for user 'root'@'172.18.0.1' (using password: NO) | GET /sistema_parque_vehicular/public/login | user:guest
+#0 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Database.php(45): App\Core\Database->__construct()
+#1 C:\xampp\htdocs\sistema_parque_vehicular\app\Repositories\BaseRepository.php(16): App\Core\Database::getInstance()
+#2 C:\xampp\htdocs\sistema_parque_vehicular\app\Services\AuthService.php(14): App\Repositories\BaseRepository->__construct()
+#3 C:\xampp\htdocs\sistema_parque_vehicular\app\Controllers\AuthController.php(13): App\Services\AuthService->__construct()
+#4 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(92): App\Controllers\AuthController->__construct()
+#5 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(67): App\Core\Router->invokeHandler(Array, Array, Object(App\Core\Request))
+#6 C:\xampp\htdocs\sistema_parque_vehicular\app\Middlewares\GuestMiddleware.php(18): App\Core\Router->App\Core\{closure}()
+#7 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(85): App\Middlewares\GuestMiddleware->handle(Object(App\Core\Request), Object(Closure))
+#8 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(66): App\Core\Router->runMiddleware(Object(App\Middlewares\GuestMiddleware), Object(App\Core\Request), Object(Closure))
+#9 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(70): App\Core\Router->App\Core\{closure}()
+#10 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Application.php(36): App\Core\Router->dispatch(Object(App\Core\Request))
+#11 C:\xampp\htdocs\sistema_parque_vehicular\public\index.php(13): App\Core\Application->run()
+#12 {main}
+---
+[2026-06-29 12:57:17] RuntimeException: Error de conexión a base de datos: SQLSTATE[HY000] [1045] Access denied for user 'root'@'172.18.0.1' (using password: NO) | GET /sistema_parque_vehicular/public/login | user:guest
+#0 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Database.php(45): App\Core\Database->__construct()
+#1 C:\xampp\htdocs\sistema_parque_vehicular\app\Repositories\BaseRepository.php(16): App\Core\Database::getInstance()
+#2 C:\xampp\htdocs\sistema_parque_vehicular\app\Services\AuthService.php(14): App\Repositories\BaseRepository->__construct()
+#3 C:\xampp\htdocs\sistema_parque_vehicular\app\Controllers\AuthController.php(13): App\Services\AuthService->__construct()
+#4 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(92): App\Controllers\AuthController->__construct()
+#5 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(67): App\Core\Router->invokeHandler(Array, Array, Object(App\Core\Request))
+#6 C:\xampp\htdocs\sistema_parque_vehicular\app\Middlewares\GuestMiddleware.php(18): App\Core\Router->App\Core\{closure}()
+#7 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(85): App\Middlewares\GuestMiddleware->handle(Object(App\Core\Request), Object(Closure))
+#8 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(66): App\Core\Router->runMiddleware(Object(App\Middlewares\GuestMiddleware), Object(App\Core\Request), Object(Closure))
+#9 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(70): App\Core\Router->App\Core\{closure}()
+#10 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Application.php(36): App\Core\Router->dispatch(Object(App\Core\Request))
+#11 C:\xampp\htdocs\sistema_parque_vehicular\public\index.php(13): App\Core\Application->run()
+#12 {main}
+---
+[2026-06-29 13:22:44] RuntimeException: Error de conexión a base de datos: SQLSTATE[HY000] [1045] Access denied for user 'root'@'172.18.0.1' (using password: NO) | GET /sistema_parque_vehicular/public/login | user:guest
+#0 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Database.php(45): App\Core\Database->__construct()
+#1 C:\xampp\htdocs\sistema_parque_vehicular\app\Repositories\BaseRepository.php(16): App\Core\Database::getInstance()
+#2 C:\xampp\htdocs\sistema_parque_vehicular\app\Services\AuthService.php(14): App\Repositories\BaseRepository->__construct()
+#3 C:\xampp\htdocs\sistema_parque_vehicular\app\Controllers\AuthController.php(13): App\Services\AuthService->__construct()
+#4 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(92): App\Controllers\AuthController->__construct()
+#5 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(67): App\Core\Router->invokeHandler(Array, Array, Object(App\Core\Request))
+#6 C:\xampp\htdocs\sistema_parque_vehicular\app\Middlewares\GuestMiddleware.php(18): App\Core\Router->App\Core\{closure}()
+#7 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(85): App\Middlewares\GuestMiddleware->handle(Object(App\Core\Request), Object(Closure))
+#8 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(66): App\Core\Router->runMiddleware(Object(App\Middlewares\GuestMiddleware), Object(App\Core\Request), Object(Closure))
+#9 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(70): App\Core\Router->App\Core\{closure}()
+#10 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Application.php(36): App\Core\Router->dispatch(Object(App\Core\Request))
+#11 C:\xampp\htdocs\sistema_parque_vehicular\public\index.php(13): App\Core\Application->run()
+#12 {main}
+---
+[2026-06-29 13:22:52] RuntimeException: Error de conexión a base de datos: SQLSTATE[HY000] [1045] Access denied for user 'root'@'172.18.0.1' (using password: NO) | GET /sistema_parque_vehicular/public/login | user:guest
+#0 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Database.php(45): App\Core\Database->__construct()
+#1 C:\xampp\htdocs\sistema_parque_vehicular\app\Repositories\BaseRepository.php(16): App\Core\Database::getInstance()
+#2 C:\xampp\htdocs\sistema_parque_vehicular\app\Services\AuthService.php(14): App\Repositories\BaseRepository->__construct()
+#3 C:\xampp\htdocs\sistema_parque_vehicular\app\Controllers\AuthController.php(13): App\Services\AuthService->__construct()
+#4 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(92): App\Controllers\AuthController->__construct()
+#5 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(67): App\Core\Router->invokeHandler(Array, Array, Object(App\Core\Request))
+#6 C:\xampp\htdocs\sistema_parque_vehicular\app\Middlewares\GuestMiddleware.php(18): App\Core\Router->App\Core\{closure}()
+#7 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(85): App\Middlewares\GuestMiddleware->handle(Object(App\Core\Request), Object(Closure))
+#8 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(66): App\Core\Router->runMiddleware(Object(App\Middlewares\GuestMiddleware), Object(App\Core\Request), Object(Closure))
+#9 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(70): App\Core\Router->App\Core\{closure}()
+#10 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Application.php(36): App\Core\Router->dispatch(Object(App\Core\Request))
+#11 C:\xampp\htdocs\sistema_parque_vehicular\public\index.php(13): App\Core\Application->run()
+#12 {main}
+---
+[2026-06-30 12:00:11] RuntimeException: Error de conexión a base de datos: SQLSTATE[HY000] [1045] Access denied for user 'root'@'172.18.0.1' (using password: NO) | GET /sistema_parque_vehicular/public/login | user:guest
+#0 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Database.php(45): App\Core\Database->__construct()
+#1 C:\xampp\htdocs\sistema_parque_vehicular\app\Repositories\BaseRepository.php(16): App\Core\Database::getInstance()
+#2 C:\xampp\htdocs\sistema_parque_vehicular\app\Services\AuthService.php(14): App\Repositories\BaseRepository->__construct()
+#3 C:\xampp\htdocs\sistema_parque_vehicular\app\Controllers\AuthController.php(13): App\Services\AuthService->__construct()
+#4 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(92): App\Controllers\AuthController->__construct()
+#5 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(67): App\Core\Router->invokeHandler(Array, Array, Object(App\Core\Request))
+#6 C:\xampp\htdocs\sistema_parque_vehicular\app\Middlewares\GuestMiddleware.php(18): App\Core\Router->App\Core\{closure}()
+#7 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(85): App\Middlewares\GuestMiddleware->handle(Object(App\Core\Request), Object(Closure))
+#8 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(66): App\Core\Router->runMiddleware(Object(App\Middlewares\GuestMiddleware), Object(App\Core\Request), Object(Closure))
+#9 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(70): App\Core\Router->App\Core\{closure}()
+#10 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Application.php(36): App\Core\Router->dispatch(Object(App\Core\Request))
+#11 C:\xampp\htdocs\sistema_parque_vehicular\public\index.php(13): App\Core\Application->run()
+#12 {main}
+---
+[2026-06-30 12:00:51] RuntimeException: Error de conexión a base de datos: SQLSTATE[HY000] [1045] Access denied for user 'root'@'172.18.0.1' (using password: NO) | GET /sistema_parque_vehicular/public/login | user:guest
+#0 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Database.php(45): App\Core\Database->__construct()
+#1 C:\xampp\htdocs\sistema_parque_vehicular\app\Repositories\BaseRepository.php(16): App\Core\Database::getInstance()
+#2 C:\xampp\htdocs\sistema_parque_vehicular\app\Services\AuthService.php(14): App\Repositories\BaseRepository->__construct()
+#3 C:\xampp\htdocs\sistema_parque_vehicular\app\Controllers\AuthController.php(13): App\Services\AuthService->__construct()
+#4 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(92): App\Controllers\AuthController->__construct()
+#5 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(67): App\Core\Router->invokeHandler(Array, Array, Object(App\Core\Request))
+#6 C:\xampp\htdocs\sistema_parque_vehicular\app\Middlewares\GuestMiddleware.php(18): App\Core\Router->App\Core\{closure}()
+#7 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(85): App\Middlewares\GuestMiddleware->handle(Object(App\Core\Request), Object(Closure))
+#8 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(66): App\Core\Router->runMiddleware(Object(App\Middlewares\GuestMiddleware), Object(App\Core\Request), Object(Closure))
+#9 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(70): App\Core\Router->App\Core\{closure}()
+#10 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Application.php(36): App\Core\Router->dispatch(Object(App\Core\Request))
+#11 C:\xampp\htdocs\sistema_parque_vehicular\public\index.php(13): App\Core\Application->run()
+#12 {main}
+---
+[2026-07-01 08:09:23] RuntimeException: Error de conexión a base de datos: SQLSTATE[HY000] [1045] Access denied for user 'root'@'172.18.0.1' (using password: NO) | GET /sistema_parque_vehicular/public/login | user:guest
+#0 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Database.php(45): App\Core\Database->__construct()
+#1 C:\xampp\htdocs\sistema_parque_vehicular\app\Repositories\BaseRepository.php(16): App\Core\Database::getInstance()
+#2 C:\xampp\htdocs\sistema_parque_vehicular\app\Services\AuthService.php(14): App\Repositories\BaseRepository->__construct()
+#3 C:\xampp\htdocs\sistema_parque_vehicular\app\Controllers\AuthController.php(13): App\Services\AuthService->__construct()
+#4 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(92): App\Controllers\AuthController->__construct()
+#5 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(67): App\Core\Router->invokeHandler(Array, Array, Object(App\Core\Request))
+#6 C:\xampp\htdocs\sistema_parque_vehicular\app\Middlewares\GuestMiddleware.php(18): App\Core\Router->App\Core\{closure}()
+#7 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(85): App\Middlewares\GuestMiddleware->handle(Object(App\Core\Request), Object(Closure))
+#8 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(66): App\Core\Router->runMiddleware(Object(App\Middlewares\GuestMiddleware), Object(App\Core\Request), Object(Closure))
+#9 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Router.php(70): App\Core\Router->App\Core\{closure}()
+#10 C:\xampp\htdocs\sistema_parque_vehicular\app\Core\Application.php(36): App\Core\Router->dispatch(Object(App\Core\Request))
+#11 C:\xampp\htdocs\sistema_parque_vehicular\public\index.php(13): App\Core\Application->run()
+#12 {main}
+---
